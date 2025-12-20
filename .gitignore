@@ -152,4 +152,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Windows reserved names
 nul
+
+# Vendor files with embedded API keys (use CDN instead)
+static/vendor/summernote-bs5.min.js
+static/vendor/summernote-bs5.min.css
+static/vendor/jquery-3.6.0.min.js
