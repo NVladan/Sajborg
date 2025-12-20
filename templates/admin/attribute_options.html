@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+
+{% block title %}Upravljanje Opcijama za Atribut - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Opcije za: {{ attribute.name }}</h1>
+        <a href="{{ url_for('admin.manage_attributes', category_id=attribute.category_id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Nazad na Atribute
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Dodaj Novu Opciju</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.manage_attribute_options', attribute_id=attribute.id) }}" class="row g-3 align-items-end">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="col-8">
+                            <label for="option-value" class="form-label">Vrednost Opcije</label>
+                            <input type="text" class="form-control" id="option-value" name="value" required>
+                        </div>
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-primary w-100">Dodaj</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Postojeće Opcije</h4>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for option in attribute.options %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ option.value }}
+                        <form method="POST" action="{{ url_for('admin.delete_attribute_option', option_id=option.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Obriši ovu opciju?');">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">Nema definisanih opcija.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,356 @@
+{% extends "layout.html" %}
+
+{% block title %}Kupi {{ product.name }} - {{ product.category.name }} | Sajborg Shop{% endblock %}
+{% block meta_description %}{{ product.description|striptags|truncate(155) }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/product_detail.css', v=cache_buster) }}">
+{% endblock %}
+
+
+{% block content %}
+{% set images_sorted = product.images|sort(attribute='sort_order') %}
+{% set primary_image = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org/",
+  "@type": "Product",
+  "name": "{{ product.name }}",
+  "image": "{{ url_for('static', filename=primary_image.image_path if primary_image else 'img/no-image.svg', _external=True) }}",
+  "description": "{{ product.description|striptags|truncate(5000) }}",
+  "sku": "{{ product.id }}",
+  {% if reviews %}
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "{{ product.average_rating|round(2) }}",
+    "reviewCount": "{{ reviews|length }}"
+  },
+  "review": [
+    {% for review in reviews %}
+    {
+      "@type": "Review",
+      "reviewRating": {
+        "@type": "Rating",
+        "ratingValue": "{{ review.rating }}",
+        "bestRating": "5"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "{{ review.author.username }}"
+      }
+    }{{ "," if not loop.last }}
+    {% endfor %}
+  ],
+  {% endif %}
+  "offers": {
+    "@type": "Offer",
+    "url": "{{ url_for('product.product_detail', slug=product.slug, _external=True) }}",
+    "priceCurrency": "BAM",
+    "price": "{{ product.price|round(2) }}",
+    "priceValidUntil": "{{ (product.updated_at + timedelta(days=30)).strftime('%Y-%m-%d') }}",
+    "itemCondition": "https://schema.org/NewCondition",
+    "availability": "{% if product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+    "@type": "ListItem",
+    "position": 1,
+    "name": "Početna",
+    "item": "{{ url_for('main.index', _external=True) }}"
+  },{
+    "@type": "ListItem",
+    "position": 2,
+    "name": "Proizvodi",
+    "item": "{{ url_for('product.products', _external=True) }}"
+  },{
+    "@type": "ListItem",
+    "position": 3,
+    "name": "{{ product.category.name }}",
+    "item": "{{ url_for('product.products', category_slug=product.category.slug, _external=True) }}"
+  },{
+    "@type": "ListItem",
+    "position": 4,
+    "name": "{{ product.name }}"
+  }]
+}
+</script>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Početna</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('product.products') }}">Proizvodi</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('product.products', category_slug=product.category.slug) }}">{{ product.category.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-5 mb-4">
+            <img id="main-product-image" src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" alt="Slika za {{ product.name }} u Sajborg Shop-u" class="img-fluid product-gallery-img mb-3">
+            {% if images_sorted|length > 1 %}
+            <div class="d-flex flex-wrap gap-2">
+                {% for image in images_sorted %}
+                <img src="{{ url_for('static', filename=image.image_path) }}" alt="Mala slika za {{ product.name }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" onclick="document.getElementById('main-product-image').src=this.src;">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-7">
+            <h1 class="mb-2">{{ product.name }}</h1>
+
+            <div class="d-flex align-items-center mb-3">
+                <div class="rating-stars me-2">
+                    {% set avg_rating = product.average_rating | round(0, 'floor') | int %}
+                    {% for i in range(5) %}
+                        <i class="{% if i < avg_rating %}fas fa-star{% else %}far fa-star{% endif %}" aria-hidden="true"></i>
+                    {% endfor %}
+                </div>
+                <a href="#reviews" class="text-muted text-decoration-none">({{ reviews|length }} recenzija)</a>
+            </div>
+
+            <div class="mb-3">
+                {# IZMENA: Dodavanje ID-a i data-atributa za osnovnu cenu za JS #}
+                <h3 class="product-price" id="current-price" data-base-price="{{ product.price|round(2) }}">{{ product.price|round(2) }} KM</h3>
+                <span class="badge bg-secondary">{{ product.condition }}</span>
+                <span class="badge bg-info">{{ product.availability }}</span>
+                {% if product.stock > 10 %}
+                <span class="badge bg-success"><i class="fas fa-check"></i> Na stanju</span>
+                {% elif product.stock > 0 %}
+                <span class="badge bg-warning"><i class="fas fa-exclamation-circle"></i> Na izmaku (preostalo {{ product.stock }})</span>
+                {% else %}
+                <span class="badge bg-danger"><i class="fas fa-times"></i> Nema na stanju</span>
+                {% endif %}
+                {% if product.component_type %}
+                <span class="badge bg-info">{{ product.component_type }}</span>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                {{ product.description }}
+            </div>
+
+            {% if product.stock > 0 and current_user.is_authenticated %}
+            <form action="{{ url_for('interaction.add_to_cart') }}" method="POST" class="mb-4">
+                {{ form.hidden_tag() }}
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <label for="quantity" class="form-label mb-0">Količina:</label>
+                    </div>
+                    <div class="col-auto">
+                        {# ORIGINALNA ŠIRINA: 120px, prilagođavamo u CSS-u za desktop #}
+                        <div class="quantity-control" style="width: 120px;">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-secondary quantity-minus">-</button>
+                                {{ form.quantity(class="form-control text-center quantity-input", min=1, max=product.stock, value=1) }}
+                                <button type="button" class="btn btn-outline-secondary quantity-plus">+</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cart-plus"></i> Dodaj u korpu
+                        </button>
+                    </div>
+                </div>
+                {% if product.condition == 'Novo' %}
+                <div class="form-check mt-3">
+                    {# IZMENA: Dodavanje ID-a za lakšu manipulaciju #}
+                    <input class="form-check-input" type="checkbox" name="extended_warranty" id="extended_warranty_checkbox">
+                    <label class="form-check-label" for="extended_warranty_checkbox">
+                        Produžena garancija (+12 mjeseci) - <span class="text-success fw-bold">{{ (product.price * 0.1)|round(2) }} KM</span>
+                    </label>
+                </div>
+                {% endif %}
+            </form>
+            {% elif product.stock <= 0 %}
+            <div class="mb-4">
+                <button class="btn btn-secondary" disabled>Nema na stanju</button>
+                <button class="btn btn-outline-secondary">
+                    <i class="far fa-bell"></i> Obavesti me o dostupnosti
+                </button>
+            </div>
+            {% elif not current_user.is_authenticated %}
+            <div class="mb-4">
+                <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary">Prijavite se da kupite</a>
+            </div>
+            {% endif %}
+
+            {% if product.attribute_values %}
+            <div class="card specs-table mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Tehničke specifikacije</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped mb-0">
+                        <tbody>
+                            {% for attribute_value in product.attribute_values|sort(attribute='attribute.sort_order') %}
+                            <tr>
+                                <th style="width: 30%;">{{ attribute_value.attribute.name }}</th>
+                                <td>{{ attribute_value.value|bool_to_da_ne }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% elif product.specs %}
+            <div class="card specs-table mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Tehničke specifikacije</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped mb-0">
+                        <tbody>
+                            {% for key, value in product.specs|json_loads|items %}
+                            <tr>
+                                <th style="width: 30%;">{{ key|replace('_', ' ')|title }}</th>
+                                <td>{{ value }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="reviews" class="row mt-5">
+        <div class="col-12">
+            <div class="review-section">
+                <h3 class="mb-4 text-center">Recenzije kupaca</h3>
+                {% if reviews %}
+                    {% set total_reviews = reviews|length %}
+                    {% set five_stars = reviews|selectattr('rating', 'equalto', 5)|list|length %}
+                    {% set four_stars = reviews|selectattr('rating', 'equalto', 4)|list|length %}
+                    {% set three_stars = reviews|selectattr('rating', 'equalto', 3)|list|length %}
+                    {% set two_stars = reviews|selectattr('rating', 'equalto', 2)|list|length %}
+                    {% set one_star = reviews|selectattr('rating', 'equalto', 1)|list|length %}
+                    <div class="row align-items-center mb-5">
+                        <div class="col-md-4 review-summary">
+                            <div class="average-rating">{{ product.average_rating|round(1) }}</div>
+                            <div class="rating-stars">
+                                {% set avg_rating = product.average_rating | round(0, 'floor') | int %}
+                                {% for i in range(5) %}
+                                    <i class="{% if i < avg_rating %}fas fa-star{% else %}far fa-star{% endif %}" aria-hidden="true"></i>
+                                {% endfor %}
+                            </div>
+                            <div>Zasnovano na {{ total_reviews }} recenzija</div>
+                        </div>
+                        <div class="col-md-8 rating-distribution">
+                            {% for i in range(5, 0, -1) %}
+                            {% set star_count = reviews|selectattr('rating', 'equalto', i)|list|length %}
+                            <div class="rating-bar-container">
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ (star_count / total_reviews) * 100 if total_reviews > 0 else 0 }}%" aria-valuenow="{{ (star_count / total_reviews) * 100 if total_reviews > 0 else 0 }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if user_can_review %}
+                <div class="card mb-5" style="background: white; border: 2px solid #E8ECF0; box-shadow: var(--shadow-sm);">
+                    <div class="card-body">
+                        <h5 class="card-title" style="color: var(--text-primary); font-weight: 700;">Ostavite recenziju</h5>
+                        <p style="color: var(--text-secondary);">Podijelite svoje mišljenje o proizvodu "{{ product.name }}".</p>
+                        <form action="{{ url_for('product.add_review', product_id=product.id) }}" method="POST" novalidate>
+                            {{ review_form.hidden_tag() }}
+                            <div class="mb-3">
+                                <label for="rating" class="form-label">{{ review_form.rating.label }}</label>
+                                <div id="star-rating-input" class="rating-stars" style="cursor: pointer;">
+                                    <i class="far fa-star" data-rating="1"></i><i class="far fa-star" data-rating="2"></i><i class="far fa-star" data-rating="3"></i><i class="far fa-star" data-rating="4"></i><i class="far fa-star" data-rating="5"></i>
+                                </div>
+                                {{ review_form.rating(class="d-none", value=5) }}
+                            </div>
+                            <div class="mb-3">
+                                {{ review_form.text.label(class="form-label") }}
+                                {{ review_form.text(class="form-control", rows=4) }}
+                            </div>
+                            {{ review_form.submit(class="btn btn-primary") }}
+                        </form>
+                    </div>
+                </div>
+                {% elif current_user.is_authenticated and not user_can_review and reviews %}
+                <div class="alert alert-info mb-5">
+                    Već ste ocenili ovaj proizvod, ili Vaša narudžbina još uvek nije dostavljena.
+                </div>
+                {% endif %}
+
+                {% if reviews %}
+                    {% for review in reviews %}
+                    <div class="review-card">
+                        <div class="review-avatar">
+                            <img src="https://i.pravatar.cc/50?u={{ review.author.username }}" alt="Avatar korisnika {{ review.author.username }}">
+                        </div>
+                        <div class="review-content">
+                            <div class="review-header">
+                                <span class="review-author">{{ review.author.username }}</span>
+                                </div>
+                            <div class="rating-stars my-2">
+                                {% for i in range(5) %}
+                                    <i class="{% if i < review.rating %}fas fa-star{% else %}far fa-star{% endif %}" aria-hidden="true"></i>
+                                {% endfor %}
+                            </div>
+                            <p class="mb-0">{{ review.text | nl2br }}</p>
+                            <div class="review-footer">
+                                <small class="text-muted">{{ review.created_at.strftime('%d.%m.%Y.') }}</small>
+                            </div>
+                            </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center">Još uvek nema recenzija za ovaj proizvod. Budite prvi!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if related_products %}
+    <section class="mt-5">
+        <h3 class="mb-4">Slični proizvodi</h3>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for related in related_products %}
+            <div class="col">
+                <div class="card h-100 product-card">
+                    {% if related.stock < 5 and related.stock > 0 %}
+                    <div class="stock-badge badge bg-warning">Na izmaku</div>
+                    {% elif related.stock <= 0 %}
+                    <div class="stock-badge badge bg-danger">Nema na stanju</div>
+                    {% endif %}
+                    <a href="{{ url_for('product.product_detail', slug=related.slug) }}">
+                        {% set images_sorted_related = related.images|sort(attribute='sort_order') %}
+                        {% set primary_image_related = (images_sorted_related|selectattr('is_primary')|first) or (images_sorted_related|first) %}
+                        <img src="{{ url_for('static', filename=primary_image_related.image_path) if primary_image_related else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Slika sličnog proizvoda: {{ related.name }}">
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('product.product_detail', slug=related.slug) }}" class="text-decoration-none">
+                                {{ related.name }}
+                            </a>
+                        </h5>
+                        <p class="card-text product-price">{{ related.price|round(2) }} KM</p>
+                        <div class="d-grid">
+                            <a href="{{ url_for('product.product_detail', slug=related.slug) }}" class="btn btn-outline-primary">Pogledaj detalje</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/product_detail.js', v=cache_buster) }}"></script>
+{% endblock %}

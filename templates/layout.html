@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}Sajborg Shop{% endblock %} - PC Komponente i Gaming Oprema</title>
+
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
+
+    <meta name="description" content="{% block meta_description %}Sajborg Shop je vaša destinacija za PC komponente, gaming opremu i elektroniku u Bosni i Hercegovini, Srbiji i Hrvatskoj. Nudimo širok asortiman proizvoda po najboljim cijenama.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}PC komponente, gaming oprema, računari, dijelovi za PC, grafičke kartice, procesori, matične ploče, RAM, SSD, napajanja, kućišta, monitori, tastature, miševi, Bosna i Hercegovina, Srbija, Hrvatska, Bijeljina, Sarajevo, Banja Luka, Beograd, Zagreb{% endblock %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="canonical" href="{{ request.url }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css', v=cache_buster) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css', v=cache_buster) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css', v=cache_buster) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css', v=cache_buster) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css', v=cache_buster) }}">
+    <!-- Mobile Responsive Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css', v=cache_buster) }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body data-current-user-id="{{ current_user.id if current_user.is_authenticated else '' }}">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-microchip"></i>Sajborg Shop
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon" style="filter: brightness(0) invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'product.products' %}active{% endif %}" href="{{ url_for('product.products') }}">Proizvodi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and 'builder' in request.endpoint %}active{% endif %}" href="{{ url_for('builder.builder') }}">PC Konfigurator</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'blog.posts' %}active{% endif %}" href="{{ url_for('blog.posts') }}">Tech Magazin</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'main.about' %}active{% endif %}" href="{{ url_for('main.about') }}">O nama</a>
+                    </li>
+                </ul>
+
+                <form class="d-flex my-2 my-lg-0 ms-lg-auto me-lg-3" action="{{ url_for('product.products') }}" id="search-form" autocomplete="off" role="search">
+                    <div class="input-group">
+                        <input class="form-control" type="search" name="q" placeholder="Pretraži..." aria-label="Search" value="{{ search_query|default('') }}" autocomplete="off">
+                        <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+
+                <ul class="navbar-nav align-items-center flex-row">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative px-2 {% if request.endpoint == 'cart.view_cart' %}active{% endif %}" href="{{ url_for('cart.view_cart') }}" title="Korpa">
+                            <i class="fas fa-shopping-cart fa-lg"></i>
+                            {% set cart_count = current_user.cart_items|length %}
+                            {% if cart_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger cart-badge">
+                                {{ cart_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle ps-2" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Profil">
+                            <i class="fas fa-user-circle fa-lg"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><h6 class="dropdown-header">{{ current_user.username }}</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Moj profil</a></li>
+
+                            {% if current_user.role in ['admin', 'dobavljac', 'distributer'] %}
+                            <li><a class="dropdown-item" href="{{ url_for('lager.view_lager') }}">Lager</a></li>
+                            {% endif %}
+
+                            {% if current_user.role == 'admin' %}
+                            <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">Admin panel</a></li>
+                            {% endif %}
+
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Odjavi se</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}" href="{{ url_for('auth.login') }}">Prijava</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'auth.register' %}active{% endif %}" href="{{ url_for('auth.register') }}">Registracija</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="modal fade" id="flash-message-modal" tabindex="-1" aria-labelledby="flashMessageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="flashMessageModalLabel">Obaveštenje</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="flash-message-content"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">U redu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="flash-messages-data" style="display: none;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div data-category="{{ category }}" data-message="{{ message }}"></div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <main class="main-content py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if current_user.is_authenticated %}
+    <div id="chat-widget-container">
+        <audio id="chat-notification-sound" src="{{ url_for('static', filename='sounds/notification.mp3') }}" preload="auto"></audio>
+
+        <div id="chat-toggle-button">
+            <i class="fas fa-comments"></i>
+            <span id="chat-unread-badge" class="badge rounded-pill bg-danger d-none"></span>
+        </div>
+
+        <div id="chat-window" class="d-none">
+            <div id="chat-header">
+                <button id="chat-back-btn" class="d-none">&larr;</button>
+                <span id="chat-title">Podrška</span>
+                <button id="close-chat-btn">&times;</button>
+            </div>
+            <div id="admin-user-list" class="list-group list-group-flush d-none"></div>
+            <div id="chat-messages" class="d-none"></div>
+            <div id="chat-input-area" class="d-none">
+                <form id="chat-form" class="d-flex">
+                    <input type="text" id="chat-message-input" class="form-control" placeholder="Unesite poruku..." autocomplete="off" maxlength="1000">
+                    <button type="submit" class="btn btn-primary ms-2"><i class="fas fa-paper-plane"></i></button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4 mb-lg-0">
+                    <h5>Sajborg Shop</h5>
+                    <p>Vaša destinacija za računarske dijelove i elektroniku po najboljim cijenama u Bosni i Hercegovini.</p>
+                    <div class="social-icons">
+                        <a href="#" class="me-2"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+                    <h5>Brzi linkovi</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('main.index') }}">Početna</a></li>
+                        <li><a href="{{ url_for('product.products') }}">Proizvodi</a></li>
+                        <li><a href="{{ url_for('builder.builder') }}">PC Konfigurator</a></li>
+                        <li><a href="{{ url_for('main.about') }}">O nama</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+                    <h5>Kategorije</h5>
+                    <ul class="list-unstyled">
+                        {% for category in all_categories[:5] %}
+                            <li><a href="{{ url_for('product.products', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <h5>Newsletter</h5>
+                    <p>Prijavite se da primate obavještenja, ekskluzivne ponude i još mnogo toga.</p>
+                    <form action="{{ url_for('interaction.subscribe') }}" method="POST" class="mb-3">
+                        {{ form.hidden_tag() if form }}
+                        <div class="input-group">
+                            <input type="email" class="form-control" name="email" placeholder="Unesite Vaš email" required>
+                            <button class="btn btn-primary" type="submit">Prijavi se</button>
+                        </div>
+                    </form>
+                    <p class="small" style="color: rgba(255, 255, 255, 0.7);">Prijavom se slažete da primate marketinške email poruke od nas.</p>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="mb-0">&copy; 2025 Sajborg Shop. Sva prava zadržana.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="mb-0">
+                        <a href="{{ url_for('main.privacy_policy') }}">Politika privatnosti</a> |
+                        <a href="{{ url_for('main.terms_of_use') }}">Uslovi korišćenja</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/modal_utils.js', v=cache_buster) }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=cache_buster) }}"></script>
+    {% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/chat.js', v=cache_buster) }}"></script>
+    {% endif %}
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,201 @@
+{% extends 'layout.html' %}
+
+{% block title %}Upravljanje Korisnicima - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Upravljanje Korisnicima</h1>
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Nazad na Panel
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Filteri</h4>
+        </div>
+        <div class="card-body">
+            <form id="user-filter-form" action="{{ url_for('admin.users') }}" method="GET" class="row align-items-end">
+                <div class="col-md-3 mb-3">
+                    <label for="role" class="form-label">Uloga Korisnika</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="">Svi Korisnici</option>
+                        <option value="admin" {% if request.args.get('role') == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="dobavljac" {% if request.args.get('role') == 'dobavljac' %}selected{% endif %}>Dobavljač</option>
+                        <option value="distributer" {% if request.args.get('role') == 'distributer' %}selected{% endif %}>Distributer</option>
+                        <option value="musterija" {% if request.args.get('role') == 'musterija' %}selected{% endif %}>Musterija</option>
+                    </select>
+                </div>
+
+                <div class="col-md-5 mb-3">
+                    <label for="search" class="form-label">Pretraga</label>
+                    <input type="text" class="form-control" id="search" name="q" value="{{ search_query or '' }}" placeholder="Korisničko ime, Email ili Ime">
+                </div>
+
+                <div class="col-md-2 mb-3">
+                    <label for="sort" class="form-label">Sortiraj po</label>
+                    <select class="form-select" id="sort" name="sort">
+                        <option value="username_asc" {% if sort_by == 'username_asc' %}selected{% endif %}>Korisničko ime (A-Z)</option>
+                        <option value="created_desc" {% if sort_by == 'created_desc' %}selected{% endif %}>Datum kreiranja (najnovije)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-3">
+                    <button type="submit" class="btn btn-primary w-100">Primeni Filtere</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Korisnici</h4>
+                <span class="text-muted">{{ users.total }} korisnika pronađeno</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if users.items %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Korisničko ime</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Uloga</th>
+                            <th style="width: 350px;">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users.items %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.is_banned %}
+                                    <span class="badge bg-danger">Banovan</span>
+                                {% else %}
+                                    <span class="badge bg-success">Aktivan</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.role == 'admin' %}
+                                    <span class="badge bg-primary">{{ user.role|capitalize }}</span>
+                                {% elif user.role == 'dobavljac' %}
+                                    <span class="badge bg-info text-dark">{{ user.role|capitalize }}</span>
+                                {% elif user.role == 'distributer' %}
+                                    <span class="badge bg-success">{{ user.role|capitalize }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ user.role|capitalize }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.id != current_user.id %}
+                                <div class="d-flex gap-2">
+                                    <form action="{{ url_for('admin.update_user_role', user_id=user.id) }}" method="POST" class="d-inline-flex">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="input-group input-group-sm">
+                                            <select name="role" class="form-select">
+                                                <option value="musterija" {% if user.role == 'musterija' %}selected{% endif %}>Musterija</option>
+                                                <option value="distributer" {% if user.role == 'distributer' %}selected{% endif %}>Distributer</option>
+                                                <option value="dobavljac" {% if user.role == 'dobavljac' %}selected{% endif %}>Dobavljač</option>
+                                                <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-outline-primary">Sačuvaj</button>
+                                        </div>
+                                    </form>
+
+                                    {% if user.role != 'admin' %}
+                                        {% if user.is_banned %}
+                                        <form action="{{ url_for('admin.unban_user', user_id=user.id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-success">Odblokiraj</button>
+                                        </form>
+                                        {% else %}
+                                        <form action="{{ url_for('admin.ban_user', user_id=user.id) }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-warning">Banuj</button>
+                                        </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">Trenutni Korisnik</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if users.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if users.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.users', page=users.prev_num, q=search_query, sort=sort_by) }}">
+                            <i class="fas fa-chevron-left"></i> Prethodna
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i> Prethodna</span>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in users.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == users.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.users', page=page_num, q=search_query, sort=sort_by) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if users.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.users', page=users.next_num, q=search_query, sort=sort_by) }}">
+                            Sledeća <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Sledeća <i class="fas fa-chevron-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x mb-3 text-muted"></i>
+                <h3>Nema pronađenih korisnika</h3>
+                {% if search_query %}
+                <p>Nismo mogli pronaći korisnike koji odgovaraju pretrazi "{{ search_query }}".</p>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-primary">Prikaži sve korisnike</a>
+                {% else %}
+                <p>Još uvek nema korisnika u bazi podataka.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

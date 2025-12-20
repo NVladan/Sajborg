@@ -1,0 +1,770 @@
+/**
+ * Mobile-Specific Styles for Sajborg.com
+ * Optimized for smartphones and tablets
+ *
+ * Breakpoints:
+ * - Mobile: < 768px
+ * - Tablet: 768px - 991px
+ * - Desktop: ≥ 992px
+ */
+
+/* ============================================
+   GENERAL MOBILE IMPROVEMENTS
+   ============================================ */
+
+/* Prevent text size adjustment on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Ensure minimum font size to prevent zoom on iOS */
+@media (max-width: 767px) {
+  body {
+    font-size: 16px;
+  }
+
+  /* All form inputs must be 16px to prevent zoom */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ============================================
+   TOUCH TARGETS (Minimum 44x44px)
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Buttons */
+  .btn {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+
+  .btn-lg {
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+
+  /* Navigation links */
+  .nav-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Form controls */
+  .form-control,
+  .form-select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Quantity controls */
+  .quantity-btn,
+  .quantity-minus,
+  .quantity-plus {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    font-size: 1.25rem !important;
+  }
+
+  /* Card links */
+  a.card,
+  .card-link {
+    min-height: 44px;
+  }
+
+  /* Pagination */
+  .pagination .page-link {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+@media (max-width: 991px) {
+  /* Mobile navbar */
+  .navbar-collapse {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  /* Full-width nav items */
+  .navbar-nav .nav-item {
+    width: 100%;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+  }
+
+  /* Dropdown menus */
+  .navbar-nav .dropdown-menu {
+    position: static !important;
+    transform: none !important;
+    border: none;
+    box-shadow: none;
+    width: 100%;
+    margin: 0;
+    padding-left: 1rem;
+    background-color: #f8f9fa;
+  }
+
+  /* Search form full width */
+  .navbar .search-form {
+    width: 100%;
+    margin: 1rem 0;
+  }
+
+  .navbar .search-form input {
+    width: 100%;
+  }
+
+  /* Cart icon spacing */
+  .navbar .cart-icon {
+    font-size: 1.5rem;
+    padding: 0.5rem;
+  }
+}
+
+/* ============================================
+   PRODUCT LISTING
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Single column on mobile */
+  .product-grid .col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* Product cards */
+  .product-card {
+    margin-bottom: 1rem;
+  }
+
+  .product-card .card-body {
+    padding: 1rem;
+  }
+
+  .product-card .card-title {
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .product-card .product-price {
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+
+  /* Add to cart button on product cards */
+  .product-card .add-to-cart-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Filter sidebar - off-canvas style */
+  .filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 85%;
+    max-width: 320px;
+    height: 100vh;
+    background: white;
+    z-index: 1050;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  }
+
+  .filter-sidebar.show {
+    left: 0;
+  }
+
+  /* Filter overlay */
+  .filter-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 1040;
+    display: none;
+  }
+
+  .filter-overlay.show {
+    display: block;
+  }
+
+  /* Sort dropdown */
+  .sort-dropdown {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 768px) and (max-width: 991px) {
+  .product-grid .col {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+/* ============================================
+   PRODUCT DETAIL PAGE
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Image gallery */
+  .product-gallery {
+    margin-bottom: 1.5rem;
+  }
+
+  .product-gallery .main-image {
+    height: 300px;
+    object-fit: contain;
+  }
+
+  .product-gallery .thumbnail {
+    width: 60px;
+    height: 60px;
+    margin: 0.25rem;
+  }
+
+  /* Product info */
+  .product-info h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .product-price {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Quantity selector */
+  .quantity-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .quantity-input {
+    max-width: 80px;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  /* CTA buttons */
+  .add-to-cart-btn,
+  .buy-now-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Specifications table */
+  .specifications-table {
+    font-size: 0.9rem;
+  }
+
+  .specifications-table td,
+  .specifications-table th {
+    padding: 0.5rem;
+  }
+
+  /* Scroll hint for wide tables */
+  .table-responsive {
+    margin-bottom: 1rem;
+  }
+
+  .table-responsive::after {
+    content: "← Свајпујте за више информација →";
+    display: block;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.5rem;
+  }
+
+  /* Reviews */
+  .review-card {
+    margin-bottom: 1rem;
+  }
+
+  .review-form textarea {
+    min-height: 120px;
+  }
+}
+
+/* ============================================
+   CART PAGE
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Cart items stack vertically */
+  .cart-item {
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .cart-item-image {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto 1rem;
+  }
+
+  .cart-item-details {
+    width: 100%;
+    text-align: center;
+  }
+
+  .cart-item-title {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cart-item-price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+
+  /* Quantity controls */
+  .cart-quantity-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Remove button */
+  .cart-remove-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Cart summary */
+  .cart-summary {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 2px solid #dee2e6;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+    margin: 0 -15px;
+  }
+
+  .cart-total {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .checkout-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+
+  .continue-shopping-btn {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0.5rem;
+  }
+}
+
+/* ============================================
+   CHECKOUT PAGE
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Single column layout */
+  .checkout-form .col-md-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  /* Form sections */
+  .checkout-section {
+    margin-bottom: 2rem;
+  }
+
+  .checkout-section h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Form inputs */
+  .checkout-form .form-control,
+  .checkout-form .form-select {
+    min-height: 48px;
+    font-size: 16px;
+    margin-bottom: 1rem;
+  }
+
+  /* Payment method cards */
+  .payment-method-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    min-height: 60px;
+    cursor: pointer;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+  }
+
+  .payment-method-card.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+  }
+
+  .payment-method-card input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    margin-right: 1rem;
+  }
+
+  /* Order summary (sticky on mobile) */
+  .order-summary {
+    position: sticky;
+    top: 70px;
+    background: white;
+    padding: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 0.375rem;
+    margin-bottom: 2rem;
+  }
+
+  .order-summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .order-total {
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-top: 2px solid #dee2e6;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  /* Place order button */
+  .place-order-btn {
+    width: 100%;
+    min-height: 52px;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+}
+
+/* ============================================
+   PC BUILDER
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Component tabs */
+  .component-tabs {
+    flex-wrap: wrap;
+  }
+
+  .component-tab {
+    flex: 0 0 50%;
+    text-align: center;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  /* Component cards */
+  .component-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .component-card-image {
+    max-width: 100px;
+    margin: 0 auto 1rem;
+  }
+
+  .component-card-details {
+    text-align: center;
+  }
+
+  .component-select-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  /* Build summary */
+  .build-summary {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 1rem;
+    border-top: 2px solid #dee2e6;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+  }
+
+  .build-total {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .save-build-btn,
+  .add-build-to-cart-btn {
+    width: 100%;
+    min-height: 48px;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* ============================================
+   FORMS & INPUTS
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Form groups */
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  /* Labels */
+  label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Required field indicator */
+  .required::after {
+    content: " *";
+    color: #dc3545;
+  }
+
+  /* Form validation messages */
+  .invalid-feedback,
+  .valid-feedback {
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Checkboxes and radios */
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+  }
+
+  .form-check-label {
+    margin-left: 0.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* ============================================
+   IMAGES & MEDIA
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Responsive images */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Product images */
+  .product-image {
+    max-height: 300px;
+    object-fit: contain;
+    width: 100%;
+  }
+
+  /* Category images */
+  .category-image {
+    max-height: 200px;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  /* Logo */
+  .navbar-brand img {
+    max-height: 40px;
+  }
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Full screen modals on mobile */
+  .modal-dialog {
+    margin: 0;
+    max-width: 100%;
+    height: 100vh;
+  }
+
+  .modal-content {
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    max-height: calc(100vh - 120px);
+  }
+
+  .modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 2px solid #dee2e6;
+  }
+
+  /* Modal buttons */
+  .modal-footer .btn {
+    flex: 1;
+    min-height: 44px;
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+@media (max-width: 767px) {
+  /* Hide on mobile */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* Show only on mobile */
+  .show-mobile {
+    display: block !important;
+  }
+
+  /* Full width on mobile */
+  .mobile-full-width {
+    width: 100% !important;
+  }
+
+  /* Text alignment */
+  .mobile-text-center {
+    text-align: center !important;
+  }
+
+  /* Spacing utilities */
+  .mobile-mt-0 { margin-top: 0 !important; }
+  .mobile-mt-1 { margin-top: 0.25rem !important; }
+  .mobile-mt-2 { margin-top: 0.5rem !important; }
+  .mobile-mt-3 { margin-top: 1rem !important; }
+  .mobile-mt-4 { margin-top: 1.5rem !important; }
+
+  .mobile-mb-0 { margin-bottom: 0 !important; }
+  .mobile-mb-1 { margin-bottom: 0.25rem !important; }
+  .mobile-mb-2 { margin-bottom: 0.5rem !important; }
+  .mobile-mb-3 { margin-bottom: 1rem !important; }
+  .mobile-mb-4 { margin-bottom: 1.5rem !important; }
+
+  /* Padding utilities */
+  .mobile-p-0 { padding: 0 !important; }
+  .mobile-p-1 { padding: 0.25rem !important; }
+  .mobile-p-2 { padding: 0.5rem !important; }
+  .mobile-p-3 { padding: 1rem !important; }
+}
+
+/* ============================================
+   LANDSCAPE MODE (Mobile Horizontal)
+   ============================================ */
+
+@media (max-width: 900px) and (orientation: landscape) {
+  /* Reduce header height in landscape */
+  .navbar {
+    min-height: 50px;
+  }
+
+  /* Adjust modal height */
+  .modal-content {
+    max-height: 90vh;
+  }
+
+  /* Reduce excessive padding */
+  .py-5 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Focus states for keyboard navigation */
+@media (max-width: 767px) {
+  a:focus,
+  button:focus,
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+  }
+
+  /* Skip to main content link */
+  .skip-to-main {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #0d6efd;
+    color: white;
+    padding: 8px;
+    z-index: 100;
+  }
+
+  .skip-to-main:focus {
+    top: 0;
+  }
+}
+
+/* ============================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================ */
+
+/* Lazy loading skeleton */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Image loading placeholders */
+.img-loading {
+  background-color: #f0f0f0;
+  min-height: 200px;
+}
+
+/* ============================================
+   END OF MOBILE.CSS
+   ============================================ */

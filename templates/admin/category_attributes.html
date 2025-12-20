@@ -1,0 +1,109 @@
+{% extends 'layout.html' %}
+
+{% block title %}Upravljanje Atributima za {{ category.name }} - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Atributi za Kategoriju: {{ category.name }}</h1>
+        <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Nazad na Kategorije
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Dodaj Novi Atribut</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.manage_attributes', category_id=category.id) }}" class="row g-3 align-items-end">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-5">
+                    <label for="attr-name" class="form-label">Naziv Atributa</label>
+                    <input type="text" class="form-control" id="attr-name" name="name" required>
+                </div>
+                <div class="col-md-4">
+                    <label for="attr-type" class="form-label">Tip</label>
+                    <select class="form-select" id="attr-type" name="type">
+                        <option value="string">Tekst</option>
+                        <option value="int">Ceo broj</option>
+                        <option value="float">Decimalni broj</option>
+                        <option value="bool">Da/Ne</option>
+                        <option value="select">Select (Padajući meni)</option> {# NOVA OPCIJA #}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">Dodaj Atribut</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Postojeći Atributi</h4>
+        </div>
+        <div class="card-body">
+            {% if attributes %}
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Redosled</th>
+                        <th>Naziv</th>
+                        <th>Tip</th>
+                        <th>Opcije (za Select tip)</th> {# NOVA KOLONA #}
+                        <th style="width: 80px;">Sačuvaj</th>
+                        <th style="width: 80px;">Obriši</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attr in attributes %}
+                    <tr>
+                        <td class="d-flex gap-1">
+                            {# ... forme za pomeranje gore/dole ostaju iste ... #}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.update_attribute', attribute_id=attr.id) }}" id="edit-form-{{ attr.id }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="text" name="name" value="{{ attr.name }}" class="form-control" required form="edit-form-{{ attr.id }}">
+                        </td>
+                        <td>
+                                <select name="type" class="form-select" form="edit-form-{{ attr.id }}">
+                                    <option value="string" {% if attr.type == 'string' %}selected{% endif %}>Tekst</option>
+                                    <option value="int" {% if attr.type == 'int' %}selected{% endif %}>Ceo broj</option>
+                                    <option value="float" {% if attr.type == 'float' %}selected{% endif %}>Decimalni broj</option>
+                                    <option value="bool" {% if attr.type == 'bool' %}selected{% endif %}>Da/Ne</option>
+                                    <option value="select" {% if attr.type == 'select' %}selected{% endif %}>Select (Padajući meni)</option>
+                                </select>
+                        </td>
+                        {# NOVI DEO ZA PRIKAZ OPCIJA #}
+                        <td>
+                            {% if attr.type == 'select' %}
+                                <a href="{{ url_for('admin.manage_attribute_options', attribute_id=attr.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-list-ul"></i> Uredi Opcije ({{ attr.options|length }})
+                                </a>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                                <button type="submit" class="btn btn-sm btn-success">Sačuvaj</button>
+                            </form>
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('admin.delete_attribute', attribute_id=attr.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Obriši ovaj atribut?');">Obriši</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-info">Nema definisanih atributa za ovu kategoriju.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

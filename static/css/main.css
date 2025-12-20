@@ -1,0 +1,249 @@
+/* static/css/main.css - Modern Mobile-First Design */
+
+:root {
+  /* Modern gradient colors inspired by reference */
+  --gradient-start: #4A90E2;
+  --gradient-mid: #5BA3D9;
+  --gradient-end: #6DD5B0;
+  --gradient-bg: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+  
+  /* Neutral colors */
+  --bg-light: #F8FAFB;
+  --bg-white: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --text-primary: #2C3E50;
+  --text-secondary: #7F8C9A;
+  --text-light: #A8B4C0;
+  
+  /* Accent colors */
+  --accent-blue: #4A90E2;
+  --accent-green: #6DD5B0;
+  --success-color: #52C41A;
+  --danger-color: #FF4D4F;
+  --warning-color: #FAAD14;
+  
+  /* Shadows and borders */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --border-radius: 16px;
+  --border-radius-sm: 12px;
+  --border-radius-lg: 20px;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.main-content {
+  flex: 1;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+/* Modern Navigation */
+.navbar {
+  background: var(--gradient-bg) !important;
+  box-shadow: var(--shadow-md);
+  padding: 1rem 0;
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 1030;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: white !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-brand i {
+  font-size: 1.8rem;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem !important;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white !important;
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white !important;
+  font-weight: 600;
+}
+
+/* Modern search bar */
+.navbar .input-group {
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.navbar .form-control {
+  border: none;
+  padding: 0.6rem 1rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: var(--text-primary);
+}
+
+.navbar .form-control:focus {
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.navbar .btn-outline-light {
+  border: none;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.6rem 1.2rem;
+}
+
+.navbar .btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Mobile navigation improvements */
+.navbar-toggler {
+  border: none;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.navbar-collapse {
+  background-color: transparent;
+}
+
+/* Dropdown menus */
+.navbar .dropdown {
+  position: relative;
+  z-index: 10000;
+}
+
+.dropdown-menu {
+  border: none;
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-lg);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  z-index: 10001 !important;
+  position: absolute !important;
+  background-color: white !important;
+}
+
+.dropdown-item {
+  border-radius: var(--border-radius-sm);
+  padding: 0.6rem 1rem;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+}
+
+.dropdown-item:hover {
+  background-color: rgba(74, 144, 226, 0.1);
+  color: var(--accent-blue);
+}
+
+.dropdown-header {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Footer */
+.footer {
+  background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+  color: white;
+  padding: 3rem 0 1.5rem;
+  margin-top: 3rem;
+}
+
+.footer h5 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.footer a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.footer a:hover {
+  color: var(--accent-green);
+  transform: translateX(3px);
+}
+
+.footer .social-icons a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.footer .social-icons a:hover {
+  background-color: var(--accent-green);
+  transform: translateY(-3px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    background-color: rgba(74, 144, 226, 0.95);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem;
+    margin-top: 1rem;
+    backdrop-filter: blur(10px);
+  }
+  
+  .navbar .input-group {
+    margin: 1rem 0;
+  }
+  
+  .nav-link {
+    margin: 0.25rem 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+  
+  .main-content {
+    padding-top: 0.5rem;
+  }
+  
+  .footer {
+    padding: 2rem 0 1rem;
+  }
+}

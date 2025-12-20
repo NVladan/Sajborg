@@ -1,0 +1,123 @@
+{% extends 'layout.html' %}
+
+{% block title %}Korpa - PC Delovi Shop{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Korpa za kupovinu</h1>
+
+    <div class="row">
+        <div class="col-lg-8" id="cart-items-container">
+            {% if cart_items %}
+                {% for item in cart_items %}
+                {% set primary_image = (item.product.images|selectattr('is_primary')|first) or (item.product.images|first) %}
+                <div class="card mb-3 cart-item">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2 col-4 mb-3 mb-md-0">
+                                <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" alt="Slika proizvoda u korpi: {{ item.product.name }}" class="img-fluid cart-item-image">
+                            </div>
+                            <div class="col-md-4 col-8 mb-3 mb-md-0">
+                                <h5 class="mb-1">
+                                    <a href="{{ url_for('product.product_detail', slug=item.product.slug) }}" class="text-decoration-none">
+                                        {{ item.product.name }}
+                                    </a>
+                                </h5>
+                                <p class="mb-0 text-muted">{{ item.product.category.name }}</p>
+                                <p class="product-price mb-0">{{ item.product.price|round(2) }} KM</p>
+                                {% if item.product.condition == 'Novo' %}
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input warranty-checkbox" type="checkbox" role="switch" id="warranty-{{ item.id }}" data-item-id="{{ item.id }}" {% if item.extended_warranty %}checked{% endif %}>
+                                    <label class="form-check-label" for="warranty-{{ item.id }}">
+                                        <small>Produžena garancija (10%)</small>
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="d-flex align-items-center">
+                                    <label for="quantity-{{ item.id }}" class="me-2">Kol:</label>
+                                    <div class="quantity-control">
+                                        <div class="input-group">
+                                            <button type="button" class="btn btn-outline-secondary quantity-minus">-</button>
+                                            <input type="number" id="quantity-{{ item.id }}" class="form-control text-center cart-quantity-input"
+                                                   value="{{ item.quantity }}" min="0"
+                                                   data-item-id="{{ item.id }}"
+                                                   data-price="{{ item.product.price }}">
+                                            <button type="button" class="btn btn-outline-secondary quantity-plus">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 col-6 text-end">
+                                <div class="mb-2">
+                                    {% set item_total = item.product.price * item.quantity %}
+                                    {% if item.extended_warranty %}
+                                        {% set item_total = item_total * 1.1 %}
+                                    {% endif %}
+                                    <span id="subtotal-{{ item.id }}">{{ item_total|round(2) }} KM</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCartItem({{ item.id }})">
+                                    <i class="fas fa-trash"></i> Ukloni
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Nastavi sa kupovinom
+                    </a>
+                    <button type="button" id="update-cart-btn" class="btn btn-outline-primary">
+                        <i class="fas fa-sync-alt"></i> Ažuriraj korpu
+                    </button>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
+                    <h3>Vaša korpa je prazna</h3>
+                    <p>Izgleda da još niste dodali nijedan proizvod.</p>
+                    <a href="{{ url_for('product.products') }}" class="btn btn-primary">Pregledajte proizvode</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Pregled porudžbine</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Ukupno:</span>
+                        <span id="cart-subtotal">{{ subtotal|round(2) }} KM</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Dostava:</span>
+                        <span id="shipping-cost">{{ shipping_cost|round(2) }} KM</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>Ukupan iznos:</strong>
+                        <strong id="cart-grand-total">{{ total|round(2) }} KM</strong>
+                    </div>
+
+                    {% if cart_items %}
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('cart.checkout') }}" id="checkout-btn" class="btn btn-primary">
+                            Nastavi na plaćanje
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

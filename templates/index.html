@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+
+{% block title %}Sajborg Shop - Prodaja PC Komponenti i Gaming Opreme{% endblock %}
+
+{% block content %}
+<section class="hero-section text-center text-white">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content">
+        <h1 class="display-4 fw-bold">Sklopite Vaš Računar Iz Snova</h1>
+        <p class="lead mb-4">Najveći izbor PC komponenti i gaming opreme u regionu. Kvalitetne računarske komponente za entuzijaste i profesionalce.</p>
+        <a href="{{ url_for('product.products') }}" class="btn btn-primary btn-lg">Pregled Proizvoda</a>
+        <a href="{{ url_for('builder.builder') }}" class="btn btn-outline-light btn-lg">PC Konfigurator</a>
+    </div>
+</section>
+
+<div class="container mt-5">
+
+    <section class="featured-categories-section mb-5">
+        <h2 class="text-center mb-4">Kupujte po Kategoriji</h2>
+        <p class="text-center text-muted mb-4">Pronađite sve što vam je potrebno za vaš novi računar, od procesora i grafičkih kartica do kućišta i napajanja. Nudimo brzu dostavu za Sarajevo, Banja Luku, Mostar, Trebinje i ostatak zemlje.</p>
+        <div class="row">
+            {% for category in featured_categories %}
+            <div class="col-md-4 mb-4">
+                <a href="{{ url_for('product.products', category_slug=category.slug) }}" class="text-decoration-none">
+                    <div class="category-box">
+                        <img src="{{ url_for('static', filename=category.image_path) if category.image_path else url_for('static', filename='img/no-image.svg') }}" alt="Kategorija {{ category.name }} u Sajborg Shop-u">
+                        <div class="category-overlay">
+                            <h3 class="category-name">{{ category.name }}</h3>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="featured-products-section mb-5">
+        <h2 class="text-center mb-4">Istaknuti Proizvodi</h2>
+        {% if featured_products %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for product in featured_products %}
+            <div class="col">
+                <div class="card h-100 product-card">
+                    {% if product.stock < 5 and product.stock > 0 %}
+                    <div class="stock-badge badge bg-warning">Na izmaku</div>
+                    {% elif product.stock <= 0 %}
+                    <div class="stock-badge badge bg-danger">Nema na stanju</div>
+                    {% endif %}
+                    <a href="{{ url_for('product.product_detail', slug=product.slug) }}">
+                        {% set images_sorted = product.images|sort(attribute='sort_order') %}
+                        {% set primary_image = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
+                        <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Istaknuti proizvod: {{ product.name }}">
+                    </a>
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('product.product_detail', slug=product.slug) }}" class="text-decoration-none">
+                                {{ product.name }}
+                            </a>
+                        </h5>
+                        <p class="card-text product-price">{{ product.price|round(2) }} KM</p>
+                        <div class="d-grid">
+                           <a href="{{ url_for('product.product_detail', slug=product.slug) }}" class="btn btn-primary">Pogledaj Detalje</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center">Nema izdvojenih proizvoda za prikaz.</p>
+        {% endif %}
+    </section>
+
+    <section class="pc-builder-cta-section my-5 p-5 rounded text-center">
+        <div class="container">
+            <h2 class="display-5 fw-bold text-white">Sklopite Vaš Računar</h2>
+            <p class="lead text-white mb-4" style="opacity: 0.95;">Naš PC Konfigurator Vam pomaže da kreirate savršen računar birajući kompatibilne komponente. Idealan alat za sklapanje gaming računara po vašoj mjeri.</p>
+            <a href="{{ url_for('builder.builder') }}" class="btn btn-primary btn-lg">Započnite sa Sklapanjem</a>
+        </div>
+    </section>
+</div>
+{% endblock %}

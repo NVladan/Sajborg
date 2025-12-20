@@ -1,0 +1,172 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ build.name }} - PC Konfigurator - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Početna</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('builder.builder') }}">PC Konfigurator</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ build.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h1 class="mb-0">{{ build.name }}</h1>
+            {% if current_user.is_authenticated and build.user_id == current_user.id %}
+            <div>
+                <form method="POST" action="{{ url_for('builder.delete_build', build_id=build.id) }}" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovu konfiguraciju?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Obriši Konfiguraciju
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    {% if build.description %}
+                    <p class="lead">{{ build.description }}</p>
+                    {% endif %}
+
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="badge bg-secondary me-2">Kreirao: {{ build.user.username }}</span>
+                        <span class="badge bg-secondary me-2">{{ build.created_at.strftime('%d.%m.%Y.') }}</span>
+                        {% if build.is_public %}
+                        <span class="badge bg-success">Javna Konfiguracija</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Privatna Konfiguracija</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-md-4 text-md-end">
+                    <h3 class="mb-2">Ukupna Cena: {{ total_price|round(2) }} KM</h3>
+
+                    <form method="POST" action="{{ url_for('builder.add_build_to_cart', build_id=build.id) }}">
+                        {{ add_to_cart_form.hidden_tag() }}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cart-plus"></i> Dodaj Sve u Korpu
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if components|length > 1 %}
+                {% if is_compatible %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Sve komponente su kompatibilne!
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Problemi sa kompatibilnošću:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% for message in compatibility_messages %}
+                        <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Komponente</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Tip Komponente</th>
+                            <th style="width: 40%;">Proizvod</th>
+                            <th style="width: 15%;">Cena</th>
+                            <th style="width: 15%;">Stanje</th>
+                            <th style="width: 15%;">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for component in components %}
+                        <tr>
+                            <td>{{ component.component_type }}</td>
+                            <td>
+                                <a href="{{ url_for('product.product_detail', product_id=component.id) }}" class="text-decoration-none">
+                                    {{ component.name }}
+                                </a>
+                            </td>
+                            <td>{{ component.price|round(2) }} KM</td>
+                            <td>
+                                {% if component.stock > 10 %}
+                                <span class="badge bg-success">Na stanju</span>
+                                {% elif component.stock > 0 %}
+                                <span class="badge bg-warning">Na izmaku ({{ component.stock }})</span>
+                                {% else %}
+                                <span class="badge bg-danger">Nema na stanju</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if component.stock > 0 and current_user.is_authenticated %}
+                                <form action="{{ url_for('interaction.add_to_cart') }}" method="POST">
+                                    {{ add_to_cart_form.hidden_tag() }}
+                                    {{ add_to_cart_form.product_id(value=component.id) }}
+                                    {{ add_to_cart_form.quantity(value=1, type="hidden") }}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cart-plus"></i> Dodaj u korpu
+                                    </button>
+                                </form>
+                                {% elif component.stock <= 0 %}
+                                <button class="btn btn-sm btn-secondary" disabled>Nema na stanju</button>
+                                {% else %}
+                                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Prijavite se da kupite</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="2" class="text-end">Ukupno:</th>
+                            <th>{{ total_price|round(2) }} KM</th>
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if related_builds %}
+    <h3 class="mt-5 mb-3">Slične Konfiguracije</h3>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for related in related_builds %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{{ url_for('builder.view_build', build_id=related.id) }}" class="text-decoration-none">
+                            {{ related.name }}
+                        </a>
+                    </h5>
+                    <p class="card-text">{{ related.description|truncate(100) }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ related.components|length }} komponenti</small>
+                        <small class="text-muted">Autor: {{ related.user.username }}</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('builder.view_build', build_id=related.id) }}" class="btn btn-sm btn-outline-primary">Pogledaj Konfiguraciju</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

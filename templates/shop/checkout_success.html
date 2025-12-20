@@ -1,0 +1,79 @@
+{% extends 'layout.html' %}
+
+{% block title %}Porudžbina uspešna - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="mb-4">
+                <i class="fas fa-check-circle fa-5x text-success"></i>
+            </div>
+            <h1 class="mb-3">Hvala Vam na porudžbini!</h1>
+            <p class="lead mb-5">Vaša porudžbina je uspešno kreirana.</p>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Detalji porudžbine</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th style="width: 30%;">Broj porudžbine:</th>
+                                <td>{{ order.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>Datum porudžbine:</th>
+                                <td>{{ order.created_at.strftime('%d.%m.%Y, %H:%M') }}</td>
+                            </tr>
+                            <tr>
+                                <th>Ukupan iznos:</th>
+                                <td>{{ order.total_amount|round(2) }} KM</td>
+                            </tr>
+                            <tr>
+                                <th>Način plaćanja:</th>
+                                <td>Plaćanje pouzećem</td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-warning">Na čekanju</span>
+                                    {% elif order.status == 'paid' %}
+                                        <span class="badge bg-success">Plaćeno</span>
+                                    {% elif order.status == 'shipped' %}
+                                        <span class="badge bg-info">Poslato</span>
+                                    {% elif order.status == 'delivered' %}
+                                        <span class="badge bg-primary">Dostavljeno</span>
+                                    {% elif order.status == 'cancelled' %}
+                                        <span class="badge bg-danger">Otkazano</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Informacije o dostavi</h3>
+                </div>
+                <div class="card-body">
+                    <address class="mb-0">
+                        {{ order.full_shipping_address|nl2br }}
+                    </address>
+                </div>
+            </div>
+
+            <p>Email sa potvrdom je poslat na Vašu email adresu.</p>
+
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Nastavi sa kupovinom</a>
+                <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary">Pogledajte Vaše porudžbine</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

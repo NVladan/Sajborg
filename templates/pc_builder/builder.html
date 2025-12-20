@@ -1,0 +1,164 @@
+{% extends 'layout.html' %}
+
+{% block title %}PC Konfigurator - PC Delovi Shop{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/pc_builder.js') }}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Komponente</h4>
+                </div>
+                <div class="list-group list-group-flush component-type-tabs">
+                    {% for component_type in component_types %}
+                    <button class="list-group-item list-group-item-action component-type-tab" data-component-type="{{ component_type }}">
+                        {{ component_type }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Vaše Konfiguracije</h4>
+                </div>
+                <div class="card-body">
+                    {% if current_user.is_authenticated %}
+                        {% if saved_builds %}
+                        <select id="load-build-select" class="form-select mb-3">
+                            <option value="">Izaberite sačuvanu konfiguraciju</option>
+                            {% for build in saved_builds %}
+                            <option value="{{ build.id }}">{{ build.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary" onclick="if (document.getElementById('load-build-select').value) { loadBuild(document.getElementById('load-build-select').value); }">
+                                Učitaj Izabranu Konfiguraciju
+                            </button>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">Još uvek nemate sačuvanih konfiguracija.</p>
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted mb-0">
+                            <a href="{{ url_for('auth.login') }}">Prijavite se</a> da biste sačuvali svoje konfiguracije.
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if public_builds %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Istaknute Konfiguracije</h4>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for build in public_builds %}
+                    <a href="{{ url_for('builder.view_build', build_id=build.id) }}" class="list-group-item list-group-item-action">
+                        <h6 class="mb-1">{{ build.name }}</h6>
+                        <small class="text-muted">{{ build.components|length }} komponenti</small>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="mb-3" style="background: #e3f7fa; color: #1a3c4c; border-radius: 6px; padding: 12px;">
+                <i class="fas fa-info-circle"></i>
+                Izaberite komponente sa leve strane da biste sklopili svoj računar. Automatski ćemo proveriti kompatibilnost.
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Izaberite Komponente</h3>
+                </div>
+                <div class="card-body">
+                    <div id="components-list">
+                        <div class="text-center p-5">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Učitavanje komponenti...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Vaša Konfiguracija</h3>
+                    <div>
+                        {% if current_user.is_authenticated %}
+                        <button id="save-build-btn" class="btn btn-outline-primary">
+                            <i class="fas fa-save"></i> Sačuvaj Konfiguraciju
+                        </button>
+                        {% endif %}
+                        <button id="add-all-to-cart-btn" class="btn btn-primary ms-2">
+                            <i class="fas fa-cart-plus"></i> Dodaj Sve u Korpu
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="compatibility-alert">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Dodajte komponente da biste proverili kompatibilnost.
+                        </div>
+                    </div>
+
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h4 class="mb-0">Izabrane Komponente</h4>
+                        </div>
+                        <ul class="list-group list-group-flush" id="build-summary-list">
+                            <li class="list-group-item text-center text-muted">Nema izabranih komponenti</li>
+                        </ul>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>Ukupno:</strong>
+                                <strong id="build-total-price">0.00 KM</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="save-build-modal" tabindex="-1" aria-labelledby="saveBuildModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saveBuildModalLabel">Sačuvajte Vašu PC Konfiguraciju</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="save-build-form">
+                    <div class="mb-3">
+                        <label for="build-name" class="form-label">Naziv Konfiguracije</label>
+                        <input type="text" class="form-control" id="build-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="build-description" class="form-label">Opis (Opciono)</label>
+                        <textarea class="form-control" id="build-description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="build-is-public">
+                        <label class="form-check-label" for="build-is-public">Učini ovu konfiguraciju javnom</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="save-build-submit">Sačuvaj Konfiguraciju</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

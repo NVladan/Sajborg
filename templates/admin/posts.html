@@ -1,0 +1,72 @@
+{% extends 'layout.html' %}
+
+{% block title %}Upravljanje Člancima - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Upravljanje Člancima</h1>
+        <div>
+            <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Dodaj Novi Članak
+            </a>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Nazad na Panel
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if posts %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">Naslov</th>
+                            <th style="width: 15%;">Autor</th>
+                            <th style="width: 15%;">Datum Kreiranja</th>
+                            <th style="width: 10%;">Status</th>
+                            <th style="width: 20%;">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for post in posts %}
+                        <tr>
+                            <td>{{ post.title }}</td>
+                            <td>{{ post.author.username }}</td>
+                            <td>{{ post.created_at.strftime('%d.%m.%Y.') }}</td>
+                            <td>
+                                {% if post.is_published %}
+                                <span class="badge bg-success">Objavljeno</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Nacrt</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary" title="Izmeni">
+                                    <i class="fas fa-edit"></i> Izmeni
+                                </a>
+                                <form action="{{ url_for('admin.delete_post', post_id=post.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Obriši" onclick="return confirm('Da li ste sigurni da želite da obrišete ovaj članak?');">
+                                        <i class="fas fa-trash"></i> Obriši
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x mb-3 text-muted"></i>
+                <h3>Nema kreiranih članaka.</h3>
+                <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary mt-2">Kreiraj prvi članak</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

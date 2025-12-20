@@ -1,0 +1,480 @@
+{% extends 'layout.html' %}
+
+{% block title %}Interaktivni Lager{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/lager.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid lager-container">
+    <h1 class="mb-4">Interaktivni Lager Robe</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="controls d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded shadow-sm">
+        <!-- Leva strana: Kalkulator cena -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="percentage" class="mb-0 text-nowrap fw-semibold">Uvećaj cijenu:</label>
+            <input type="number" id="percentage" class="form-control form-control-sm" style="width: 70px;" value="10" min="0">
+            <span class="text-muted">%</span>
+            <button class="btn btn-info btn-sm" id="calculate-btn">
+                <i class="fas fa-calculator"></i> Izračunaj
+            </button>
+        </div>
+
+        <!-- Desna strana: Pretraga i Filter -->
+        <div class="d-flex align-items-center gap-3">
+            <!-- Pretraga -->
+            <div class="d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm" style="width: 280px;">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Pretraži artikle..." value="{{ search_query }}" onkeypress="if(event.key==='Enter') performSearch()">
+                    <button class="btn btn-primary" onclick="performSearch()" title="Pretraži">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    {% if search_query %}
+                    <button class="btn btn-outline-secondary" onclick="clearSearch()" title="Očisti pretragu">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Separator -->
+            <div class="vr" style="height: 30px;"></div>
+
+            <!-- Toggle dugme za nulte zalihe -->
+            <button class="btn btn-sm {% if show_zero_stock %}btn-outline-secondary{% else %}btn-secondary{% endif %}" onclick="toggleZeroStock()" id="toggleZeroBtn" title="Prikaži/sakrij artikle sa količinom 0">
+                <i class="fas fa-eye{% if not show_zero_stock %}-slash{% endif %}"></i>
+                {% if show_zero_stock %}
+                Sakrij artikle kojih nema na stanju
+                {% else %}
+                Prikaži artikle kojih nema na stanju
+                {% endif %}
+            </button>
+        </div>
+    </div>
+
+    <div class="tab-container">
+        <div class="tab-buttons">
+            {# DEFAULT TAB DUGME #}
+            <button class="tab-button {% if active_tab == 'Vrednost_Lagera' or active_tab == none %}active{% endif %}" onclick="openTab(event, 'Vrednost_Lagera')">Vrednost</button>
+
+            {% for category_name in data.keys() %}
+                {% set current_tab_slug = category_name|replace(' ', '_')|replace('/', '_') %}
+                {# OSTALA TAB DUGMAD #}
+                <button class="tab-button {% if active_tab == current_tab_slug %}active{% endif %}" onclick="openTab(event, '{{ current_tab_slug }}')">{{ category_name }}</button>
+            {% endfor %}
+        </div>
+
+        <div id="tab-contents">
+            {# DEFAULT TAB SADRŽAJ #}
+            <div id="Vrednost_Lagera" class="tab-content {% if active_tab == 'Vrednost_Lagera' or active_tab == none %}active{% endif %}">
+                <div id="stock-value-container">
+                    <div class="value-summary">
+                        <h2>Ukupna Vrednost Lagera</h2>
+                        <div class="total-value">{{ "%.2f KM"|format(stock_values.grand_total) }}</div>
+                    </div>
+                    <div class="category-values-grid">
+                        {% for name, total in stock_values.categories.items() %}
+                        <div class="category-card">
+                            <div class="name">{{ name }}</div>
+                            <div class="value">{{ "%.2f KM"|format(total) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            {% set user_role = current_user.role.lower() %}
+            {% for category_name, subcategories in data.items() %}
+                {% set tab_slug = category_name|replace(' ', '_')|replace('/', '_') %}
+
+                {# IZMENA: Jinja uslov vraćen za aktivaciju div-a, rešava problem prvog renderovanja #}
+                <div id="{{ tab_slug }}" class="tab-content {% if active_tab == tab_slug %}active{% endif %}">
+                    {% if user_role in ['admin', 'dobavljac'] or current_user.role in ['Admin', 'Dobavljač'] %}
+                    <div class="mb-3 d-flex gap-2">
+                        <button class="btn btn-primary" onclick="showAddProductForm('{{ category_name }}')">
+                            <i class="fas fa-plus"></i> Dodaj novi artikal
+                        </button>
+                        {# NOVI GUMB ZA PODKATEGORIJU #}
+                        <button class="btn btn-secondary" onclick="showAddSubcategoryForm('{{ category_name }}')">
+                            <i class="fas fa-folder-plus"></i> Dodaj podkategoriju
+                        </button>
+                    </div>
+                    {% endif %}
+                    {% for subcat_name, products in subcategories.items()|sort %}
+                        <div class="subcategory-card">
+                            {% if subcat_name != category_name %}
+                                <h3>{{ subcat_name }}</h3>
+                            {% else %}
+                                <h3>{{ category_name }} (Ostalo)</h3>
+                            {% endif %}
+                            <div class="table-wrapper">
+                                <table class="table table-striped table-hover data-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%;">MODEL</th>
+                                            <th class="text-center">KOL.</th>
+                                            <th class="text-end">NAB. CIJENA</th>
+                                            <th class="text-end">PROD. CIJENA</th>
+                                            <th class="text-center">NA FIRMU</th>
+                                            <th>REZ.</th>
+                                            <th>NAPOMENA</th>
+                                            <th class="text-center">AKCIJA</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in products %}
+                                        <form action="{{ url_for('lager.update_details', product_id=p.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            {# Sakriveno polje za aktivni tab (koristi ga serverska strana) #}
+                                            <input type="hidden" name="active_tab_slug" value="{{ tab_slug }}">
+
+                                            <tr data-id="{{ p.id }}" class="{{ 'quantity-zero' if p.stock == 0 }} {% if p.id in recent_item_ids %}recently-updated{% endif %}">
+
+                                                {# Polje Naziv Artikla #}
+                                                <td>
+                                                    <input type="text" name="product_name" class="form-control form-control-sm"
+                                                           value="{{ p.name }}"
+                                                           {% if user_role not in ['admin', 'dobavljac'] %}readonly{% endif %}>
+                                                </td>
+
+                                                <td class="text-center">
+                                                     <input type="number" name="stock" class="form-control form-control-sm text-center"
+                                                           value="{{ p.stock }}"
+                                                           {% if user_role not in ['admin', 'dobavljac'] %}readonly{% endif %}>
+                                                </td>
+                                                <td class="text-end price purchase-price">
+                                                    <input type="text" name="purchase_price" class="form-control form-control-sm text-end"
+                                                           value="{{ "%.2f"|format(p.purchase_price|float) if p.purchase_price else '0.00' }}"
+                                                           {% if user_role not in ['admin', 'dobavljac'] %}readonly{% endif %}>
+                                                </td>
+                                                <td class="text-end price selling-price"></td>
+                                                <td class="text-center">
+                                                    <div class="form-check d-flex justify-content-center">
+                                                        <input type="checkbox" name="for_company" class="form-check-input"
+                                                               {% if p.for_company %}checked{% endif %}
+                                                               {% if user_role not in ['admin', 'dobavljac'] %}disabled{% endif %}>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                     <input type="text" name="reservation_note" class="form-control form-control-sm"
+                                                           value="{{ p.reservation_note or '' }}"
+                                                           {% if user_role not in ['admin', 'dobavljac', 'distributer'] %}readonly{% endif %}>
+                                                </td>
+                                                <td>
+                                                     <textarea name="internal_note" class="form-control form-control-sm" rows="1"
+                                                               {% if user_role not in ['admin', 'dobavljac', 'distributer'] %}readonly{% endif %}>{{ p.internal_note or '' }}</textarea>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="submit" class="btn btn-sm btn-success">Sačuvaj</button>
+                                                </td>
+                                            </tr>
+                                        </form>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Dodaj Novi Artikal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addProductForm" method="POST" action="{{ url_for('lager.add_product') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="category_name" id="modal_category_name"/>
+
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">Naziv Proizvoda *</label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="subcategory" class="form-label">Podkategorija</label>
+                        {# IZMJENA: Polje se sada zove 'subcategory_name' za jasnocu #}
+                        <select class="form-select" id="subcategory" name="subcategory_name">
+                            <option value="">Izaberite podkategoriju...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="stock" class="form-label">Količina</label>
+                        <input type="number" class="form-control" id="stock" name="stock" value="0" min="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="purchase_price" class="form-label">Nabavna Cijena (KM)</label>
+                        <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price" value="0.00">
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="for_company" name="for_company">
+                            <label class="form-check-label" for="for_company">Na Firmu</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="internal_note" class="form-label">Napomena</label>
+                        <textarea class="form-control" id="internal_note" name="internal_note" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                    <button type="submit" class="btn btn-primary">Dodaj Artikal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSubcategoryModal" tabindex="-1" aria-labelledby="addSubcategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubcategoryModalLabel">Dodaj Novu Podkategoriju</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addSubcategoryForm" method="POST" action="{{ url_for('lager.add_subcategory') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="parent_category_name" id="modal_parent_category_name"/>
+
+                    <div class="mb-3">
+                        <label for="subcategory_name" class="form-label">Naziv Podkategorije *</label>
+                        <input type="text" class="form-control" id="subcategory_name" name="subcategory_name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                    <button type="submit" class="btn btn-primary">Dodaj Podkategoriju</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ISPRAVKA: Koristimo 'lager_category_data_for_js' da izbjegnemo konflikt
+    const categoryData = {{ lager_category_data_for_js|tojson|safe }};
+
+    function showAddProductForm(categoryName) {
+        const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+        document.getElementById('modal_category_name').value = categoryName;
+        document.getElementById('addProductModalLabel').textContent = 'Dodaj Novi Artikal u ' + categoryName;
+
+        const subcategorySelect = document.getElementById('subcategory');
+        subcategorySelect.innerHTML = '<option value="">Bez podkategorije (direktno u ' + categoryName + ')</option>';
+
+        if (categoryData[categoryName]) {
+            categoryData[categoryName].forEach(subcat => {
+                const option = document.createElement('option');
+                option.value = subcat;
+                option.textContent = subcat;
+                subcategorySelect.appendChild(option);
+            });
+        }
+
+        document.getElementById('addProductForm').reset();
+        document.getElementById('modal_category_name').value = categoryName;
+
+        modal.show();
+    }
+
+    function showAddSubcategoryForm(categoryName) {
+        const modal = new bootstrap.Modal(document.getElementById('addSubcategoryModal'));
+        document.getElementById('modal_parent_category_name').value = categoryName;
+        document.getElementById('addSubcategoryModalLabel').textContent = 'Dodaj Novu Podkategoriju u ' + categoryName;
+        document.getElementById('addSubcategoryForm').reset();
+        document.getElementById('modal_parent_category_name').value = categoryName;
+        modal.show();
+    }
+
+    // NOVO: Funkcija za toggle prikazivanja artikala sa Kol. 0
+    function toggleZeroStock() {
+        const currentUrl = new URL(window.location.href);
+        const currentShowZero = currentUrl.searchParams.get('show_zero') === 'true'; // default je false
+
+        // Toggle vrednost
+        currentUrl.searchParams.set('show_zero', currentShowZero ? 'false' : 'true');
+
+        // Zadrži trenutni tab - prvo iz URL-a, ako ne postoji onda iz DOM-a
+        let activeTabId = currentUrl.searchParams.get('active_tab');
+        if (!activeTabId) {
+            const activeTabElement = document.querySelector('.tab-content.active');
+            if (activeTabElement && activeTabElement.id) {
+                activeTabId = activeTabElement.id;
+            }
+        }
+        if (activeTabId && activeTabId !== 'Vrednost_Lagera') {
+            currentUrl.searchParams.set('active_tab', activeTabId);
+        }
+
+        // Zadrži pretragu - čitamo iz URL-a
+        const currentSearch = currentUrl.searchParams.get('search');
+        if (currentSearch) {
+            currentUrl.searchParams.set('search', currentSearch);
+        }
+
+        window.location.href = currentUrl.toString();
+    }
+
+    // NOVO: Funkcija za izvršavanje pretrage
+    function performSearch() {
+        const searchValue = document.getElementById('searchInput').value.trim();
+        const currentUrl = new URL(window.location.href);
+
+        if (searchValue) {
+            currentUrl.searchParams.set('search', searchValue);
+        } else {
+            currentUrl.searchParams.delete('search');
+        }
+
+        // Zadrži trenutni tab - prvo iz URL-a, ako ne postoji onda iz DOM-a
+        let activeTabId = currentUrl.searchParams.get('active_tab');
+        if (!activeTabId) {
+            const activeTabElement = document.querySelector('.tab-content.active');
+            if (activeTabElement && activeTabElement.id) {
+                activeTabId = activeTabElement.id;
+            }
+        }
+        if (activeTabId && activeTabId !== 'Vrednost_Lagera') {
+            currentUrl.searchParams.set('active_tab', activeTabId);
+        }
+
+        // Zadrži show_zero filter
+        const currentShowZero = currentUrl.searchParams.get('show_zero');
+        if (currentShowZero !== null) {
+            currentUrl.searchParams.set('show_zero', currentShowZero);
+        }
+
+        window.location.href = currentUrl.toString();
+    }
+
+    // NOVO: Funkcija za brisanje pretrage
+    function clearSearch() {
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete('search');
+
+        // Zadrži trenutni tab - prvo iz URL-a, ako ne postoji onda iz DOM-a
+        let activeTabId = currentUrl.searchParams.get('active_tab');
+        if (!activeTabId) {
+            const activeTabElement = document.querySelector('.tab-content.active');
+            if (activeTabElement && activeTabElement.id) {
+                activeTabId = activeTabElement.id;
+            }
+        }
+        if (activeTabId && activeTabId !== 'Vrednost_Lagera') {
+            currentUrl.searchParams.set('active_tab', activeTabId);
+        }
+
+        // Zadrži show_zero filter
+        const currentShowZero = currentUrl.searchParams.get('show_zero');
+        if (currentShowZero !== null) {
+            currentUrl.searchParams.set('show_zero', currentShowZero);
+        }
+
+        window.location.href = currentUrl.toString();
+    }
+
+    function openTab(evt, tabName) {
+        document.querySelectorAll(".tab-content").forEach(tc => tc.classList.remove("active"));
+        document.querySelectorAll(".tab-button").forEach(tb => tb.classList.remove("active"));
+        document.getElementById(tabName).classList.add("active");
+
+        // Postavi active klasu na dugme
+        if (evt && evt.currentTarget) {
+            evt.currentTarget.classList.add("active");
+        } else {
+            // Ako je poziv iz initializeLager, moramo pronaći dugme i aktivirati ga
+            const tabButton = document.querySelector(`.tab-button[onclick*="'${tabName}'"]`);
+            if (tabButton) {
+                tabButton.classList.add("active");
+            }
+        }
+
+        // NOVO: Ažuriraj URL parametar kada se menja tab (samo ako je kliknut, ne pri inicijalizaciji)
+        if (evt && evt.currentTarget) {
+            const currentUrl = new URL(window.location.href);
+            if (tabName !== 'Vrednost_Lagera') {
+                currentUrl.searchParams.set('active_tab', tabName);
+            } else {
+                currentUrl.searchParams.delete('active_tab');
+            }
+            // Ažuriraj URL bez reload-a stranice
+            window.history.pushState({}, '', currentUrl.toString());
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeLager);
+    } else {
+        initializeLager();
+    }
+
+    function initializeLager() {
+        const calculateBtn = document.getElementById('calculate-btn');
+        function calculatePrices() {
+            const percentage = parseFloat(document.getElementById('percentage').value);
+            if (isNaN(percentage)) return;
+
+            // Ispravljena logika za pronalazak elemenata unutar reda tabele (TR)
+            document.querySelectorAll('.data-table tbody tr[data-id]').forEach(row => {
+                // Elemente tražimo direktno unutar TR elementa (row)
+                const priceCell = row.querySelector('.selling-price');
+                const purchasePriceInput = row.querySelector('input[name="purchase_price"]');
+
+                if (!priceCell || !purchasePriceInput) return; // Zaštita
+
+                // Obrada unosa sa zarezom
+                const purchasePrice = parseFloat(purchasePriceInput.value.replace(',', '.'));
+
+                if (!isNaN(purchasePrice)) {
+                    priceCell.textContent = (purchasePrice * (1 + percentage / 100)).toFixed(2) + ' KM';
+                } else {
+                     priceCell.textContent = '0.00 KM'; // Prikazi nulu ako je nevažeća cena
+                }
+            });
+        }
+        calculateBtn.addEventListener('click', calculatePrices);
+
+        document.querySelectorAll('input[name="purchase_price"]').forEach(input => {
+            input.addEventListener('input', calculatePrices);
+        });
+
+        calculatePrices();
+
+        // NOVO: Ako je active_tab definisan (nakon redirekcije), pokreni aktivaciju taba
+        const activeTabSlug = "{{ active_tab | default('') }}";
+        if (activeTabSlug && activeTabSlug !== 'Vrednost_Lagera') {
+            // Koristimo setTimeout da damo Bootstrap-u priliku da se inicijalizuje, ako je potrebno
+            setTimeout(() => {
+                openTab(null, activeTabSlug);
+            }, 0);
+        }
+    }
+</script>
+{% endblock %}

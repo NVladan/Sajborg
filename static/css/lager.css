@@ -1,0 +1,415 @@
+/*
+    Stilovi za Interaktivni Lager - Modern Theme
+*/
+
+.lager-container {
+    max-width: 1600px;
+    margin: 20px auto;
+    background-color: white;
+    color: var(--text-primary);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.lager-container h1 {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.lager-container h3 {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.controls {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(109, 213, 176, 0.1) 100%);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 2px solid #E8ECF0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.controls label {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.tab-container {
+    border: none;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    background: var(--gradient-bg);
+    border-bottom: none;
+    padding: 0.5rem;
+    gap: 0.5rem;
+}
+
+.tab-button {
+    padding: 0.7rem 1.2rem;
+    cursor: pointer;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+    font-size: 0.95em;
+    color: white;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.tab-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.tab-button.active {
+    background-color: white;
+    color: var(--accent-blue);
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-content {
+    display: none;
+    padding: 20px 15px;
+    background-color: white;
+}
+
+.tab-content.active { 
+    display: block; 
+}
+
+/* Subcategory Cards */
+.subcategory-card {
+    background-color: #FAFBFC;
+    border: 2px solid #E8ECF0;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.subcategory-card:last-child {
+    margin-bottom: 5px;
+}
+
+.subcategory-card h3 {
+    margin-top: 0;
+    border-bottom: 3px solid var(--accent-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+/* Value Summary */
+.value-summary {
+    background: var(--gradient-bg);
+    color: white;
+    padding: 30px;
+    border-radius: var(--border-radius);
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-lg);
+}
+
+.value-summary h2 {
+    font-size: 1.2em;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1rem;
+}
+
+.value-summary .total-value {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: white;
+}
+
+.category-values-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.category-card {
+    background-color: white;
+    border: 2px solid #E8ECF0;
+    border-left: 5px solid var(--accent-blue);
+    padding: 15px;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--accent-green);
+}
+
+.category-card .name {
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+    color: var(--text-primary);
+}
+
+.category-card .value {
+    font-size: 1.6em;
+    color: var(--accent-blue);
+    text-align: right;
+    font-weight: 700;
+}
+
+/* Table Styles */
+.table {
+    color: var(--text-primary);
+    --bs-table-bg: transparent;
+    --bs-table-striped-bg: rgba(74, 144, 226, 0.05);
+    --bs-table-hover-bg: rgba(74, 144, 226, 0.08);
+    --bs-table-border-color: #E8ECF0;
+}
+
+.table thead {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(109, 213, 176, 0.1) 100%);
+}
+
+.table thead th {
+    color: var(--text-primary);
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-blue);
+}
+
+/* Stil za nedavno ažurirane (PLAVA).
+  Ovo će se primijeniti samo ako artikal NIJE .quantity-zero,
+  jer .quantity-zero ima !important.
+*/
+tr.recently-updated {
+    background-color: #cfe2ff; /* Bootstrap 'info-subtle' boja */
+}
+
+/* NOVI STIL (Prioritet 1):
+  Ako je artikal i nedavno ažuriran I ima stanje 0,
+  koristi MNOGO JAČU crvenu boju.
+  Ovo pravilo je specifičnije i ima !important, pa će pregaziti druga pravila.
+*/
+tr.recently-updated.quantity-zero {
+    background-color: #d9534f !important; /* Jača 'danger' crvena */
+    color: white !important; /* Svijetli tekst za bolji kontrast */
+}
+
+/* Postojeći stil za 0 stanje (Prioritet 2):
+  Ovo će se sada primjenjivati samo na artikle koji imaju stanje 0,
+  ALI NISU nedavno ažurirani (jer će njih uhvatiti gornje pravilo).
+*/
+.quantity-zero {
+    background-color: rgba(255, 77, 79, 0.1) !important;
+    color: var(--danger-color);
+}
+
+.quantity-btn {
+    border: 2px solid #E8ECF0;
+    transition: all 0.2s;
+    border-radius: var(--border-radius-sm);
+}
+
+.quantity-btn:hover {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: white;
+}
+
+.editable-note {
+    cursor: pointer;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.editable-note:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .lager-container {
+        padding: 15px 10px;
+        margin: 10px 5px;
+    }
+
+    .lager-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Make controls stack vertically on mobile */
+    .controls {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 15px;
+    }
+
+    .controls .form-group {
+        width: 100%;
+        margin: 0;
+    }
+
+    .controls label {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .controls input[type="number"],
+    .controls input[type="text"] {
+        width: 100% !important;
+    }
+
+    .controls .btn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    /* Tab buttons scroll horizontally */
+    .tab-buttons {
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem;
+        gap: 0.25rem;
+    }
+
+    .tab-button {
+        flex-shrink: 0;
+        padding: 0.6rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Make tables horizontally scrollable */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -10px;
+        padding: 0 10px;
+    }
+
+    .subcategory-card {
+        padding: 15px 10px;
+        margin-bottom: 20px;
+    }
+
+    .subcategory-card h3 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+    }
+
+    /* Table adjustments for mobile */
+    .data-table {
+        min-width: 900px; /* Ensure table is wide enough to show all columns */
+        font-size: 0.85rem;
+    }
+
+    .data-table thead th {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .data-table tbody td {
+        padding: 8px 6px;
+    }
+
+    .data-table input.form-control-sm,
+    .data-table textarea.form-control-sm {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.4rem;
+    }
+
+    .data-table .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.35rem 0.6rem;
+    }
+
+    /* Value summary for mobile */
+    .value-summary {
+        padding: 20px 15px;
+    }
+
+    .value-summary h2 {
+        font-size: 1rem;
+    }
+
+    .value-summary .total-value {
+        font-size: 2rem;
+    }
+
+    .category-values-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+
+    .category-card {
+        padding: 12px;
+    }
+
+    .category-card .name {
+        font-size: 0.95rem;
+    }
+
+    .category-card .value {
+        font-size: 1.3rem;
+    }
+
+    /* Add scroll indicator hint */
+    .table-wrapper::after {
+        content: '← Scroll →';
+        display: block;
+        text-align: center;
+        color: var(--text-light);
+        font-size: 0.75rem;
+        padding: 8px;
+        background: linear-gradient(90deg, transparent 0%, rgba(74, 144, 226, 0.05) 50%, transparent 100%);
+        margin-top: 10px;
+        border-radius: var(--border-radius-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .lager-container {
+        padding: 10px 5px;
+        margin: 5px 0;
+    }
+
+    .lager-container h1 {
+        font-size: 1.3rem;
+    }
+
+    .tab-button {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .data-table {
+        font-size: 0.8rem;
+    }
+
+    .value-summary .total-value {
+        font-size: 1.75rem;
+    }
+
+    .category-values-grid {
+        grid-template-columns: 1fr;
+    }
+}

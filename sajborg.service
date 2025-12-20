@@ -1,0 +1,15 @@
+[Unit]
+Description=Gunicorn instance to serve Sajborg.com
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/Sajborg
+Environment="PATH=/var/www/Sajborg/venv/bin"
+Environment="FLASK_ENV=production"
+EnvironmentFile=/var/www/Sajborg/.env
+ExecStart=/var/www/Sajborg/venv/bin/gunicorn --workers 4 --bind unix:/var/www/Sajborg/sajborg.sock --timeout 120 --access-logfile /var/log/gunicorn/sajborg_access.log --error-logfile /var/log/gunicorn/sajborg_error.log wsgi:application
+
+[Install]
+WantedBy=multi-user.target

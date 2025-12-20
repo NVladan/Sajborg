@@ -1,0 +1,416 @@
+{% extends 'layout.html' %}
+
+{% block title %}Proizvodi - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-3 mb-4 desktop-filter-sidebar">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Filteri</h4>
+                </div>
+                <div class="card-body">
+                    <form id="product-filter-form" action="{{ url_for('product.products', category_slug=request.view_args.get('category_slug')) }}" method="GET">
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Kategorija</label>
+                            <select class="form-select" id="category">
+                                <option value="" data-slug="">Sve kategorije</option>
+                                {% for category in categories %}
+                                <option value="{{ category.slug }}" data-slug="{{ category.slug }}" {% if category.id == category_id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {% if category_attributes %}
+                        <div class="mb-3">
+                            <h5 class="mb-2">Atributi</h5>
+                            {% for attr in category_attributes %}
+                            <div class="mb-2">
+                                <label class="form-label">{{ attr.name }}</label>
+                                {% set options = attribute_options.get(attr.id, []) %}
+                                {% if options %}
+                                    <select name="attr_{{ attr.id }}" class="form-select attribute-dropdown" onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true}))">
+                                        <option value="">--</option>
+                                        {% for option in options %}
+                                            {% if attr.type == 'bool' %}
+                                                {% set filter_value = '1' if option == 'Da' else '0' %}
+                                                <option value="{{ filter_value }}" {% if attr_filters.get(attr.id|string) == filter_value %}selected{% endif %}>{{ option }}</option>
+                                            {% else %}
+                                                <option value="{{ option }}" {% if attr_filters.get(attr.id|string) == option %}selected{% endif %}>{{ option }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="text" name="attr_{{ attr.id }}" class="form-control" value="{{ attr_filters.get(attr.id, '') }}">
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="sort" class="form-label">Sortiraj po</label>
+                            <select class="form-select" id="sort" name="sort" onchange="this.form.submit()">
+                                <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Nazivu (A-Z)</option>
+                                <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Nazivu (Z-A)</option>
+                                <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Ceni (rastuće)</option>
+                                <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Ceni (opadajuće)</option>
+                            </select>
+                        </div>
+
+                        {% if search_query %}
+                        <input type="hidden" name="q" value="{{ search_query }}">
+                        {% endif %}
+                        <input type="hidden" name="attr_filters" id="attr_filters_hidden" value='{{ attr_filters|tojson }}'>
+                        <div class="d-grid d-lg-none mt-3">
+                            <button type="submit" class="btn btn-primary">Primeni filtere</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">
+                    {% if search_query %}
+                    Rezultati pretrage za "{{ search_query }}"
+                    {% elif category_id %}
+                    {{ categories|selectattr('id', 'eq', category_id)|first|attr('name') }}
+                    {% else %}
+                    Svi proizvodi
+                    {% endif %}
+                </h1>
+                <div class="text-muted">
+                    Pronađeno {{ products.total }} proizvoda
+                </div>
+            </div>
+
+            {% if search_query %}
+            <div class="mb-3">
+                <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-times"></i> Obriši pretragu
+                </a>
+            </div>
+            {% endif %}
+
+            {% if products.items %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% for product in products.items %}
+                <div class="col">
+                    <div class="card h-100 product-card">
+                        {% if product.stock < 5 and product.stock > 0 %}
+                        <div class="stock-badge badge bg-warning">Na izmaku</div>
+                        {% elif product.stock <= 0 %}
+                        <div class="stock-badge badge bg-danger">Nema na stanju</div>
+                        {% endif %}
+
+                        <a href="{{ url_for('product.product_detail', slug=product.slug) }}">
+                            {% set images_sorted = product.images|sort(attribute='sort_order') %}
+                            {% set primary_image = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
+                            <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Slika proizvoda {{ product.name }}">
+                        </a>
+
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{{ url_for('product.product_detail', slug=product.slug) }}" class="text-decoration-none">
+                                    {{ product.name }}
+                                </a>
+                            </h5>
+                            <p class="card-text product-price">{{ product.price|round(2) }} KM</p>
+
+                            {% if product.stock > 0 and current_user.is_authenticated %}
+                            <form class="add-to-cart-form" action="{{ url_for('interaction.add_to_cart') }}" method="POST">
+                                {{ form.csrf_token }}
+                                {{ form.product_id(value=product.id) }}
+                                <div class="quantity-add-wrapper">
+                                    <div class="quantity-control">
+                                        <div class="input-group">
+                                            <button type="button" class="btn btn-outline-secondary quantity-minus">-</button>
+                                            {{ form.quantity(class="form-control text-center quantity-input", min=1, value=1) }}
+                                            <button type="button" class="btn btn-outline-secondary quantity-plus">+</button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary btn-add-to-cart">
+                                        <i class="fas fa-cart-plus"></i> Dodaj
+                                    </button>
+                                </div>
+                            </form>
+                            {% elif product.stock <= 0 %}
+                            <button class="btn btn-secondary w-100" disabled>Nema na stanju</button>
+                            {% elif not current_user.is_authenticated %}
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Prijavite se da kupite</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if products.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if products.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('product.products', page=products.prev_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">
+                            <i class="fas fa-chevron-left"></i> Prethodna
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i> Prethodna</span>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == products.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('product.products', page=page_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if products.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('product.products', page=products.next_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">
+                            Sledeća <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Sledeća <i class="fas fa-chevron-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x mb-3 text-muted"></i>
+                <h3>Nema pronađenih proizvoda</h3>
+                {% if search_query %}
+                <p>Nismo mogli pronaći proizvode koji odgovaraju pretrazi "{{ search_query }}".</p>
+                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Prikaži sve proizvode</a>
+                {% else %}
+                <p>Još uvek nema proizvoda u ovoj kategoriji.</p>
+                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Prikaži sve proizvode</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Filter Toggle Button -->
+<button class="mobile-filter-toggle" id="mobileFilterToggle" aria-label="Open Filters">
+    <i class="fas fa-filter"></i>
+</button>
+
+<!-- Mobile Filter Drawer -->
+<div class="mobile-filter-drawer" id="mobileFilterDrawer">
+    <div class="mobile-filter-content">
+        <div class="mobile-filter-header">
+            <h4>Filteri</h4>
+            <button class="mobile-filter-close" id="mobileFilterClose" aria-label="Close Filters">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="mobile-product-filter-form" action="{{ url_for('product.products', category_slug=request.view_args.get('category_slug')) }}" method="GET">
+            <div class="mb-3">
+                <label for="mobile-category" class="form-label">Kategorija</label>
+                <select class="form-select" id="mobile-category">
+                    <option value="" data-slug="">Sve kategorije</option>
+                    {% for category in categories %}
+                    <option value="{{ category.slug }}" data-slug="{{ category.slug }}" {% if category.id == category_id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if category_attributes %}
+            <div class="mb-3">
+                <h5 class="mb-3">Atributi</h5>
+                {% for attr in category_attributes %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ attr.name }}</label>
+                    {% set options = attribute_options.get(attr.id, []) %}
+                    {% if options %}
+                        <select name="attr_{{ attr.id }}" class="form-select mobile-attribute-dropdown">
+                            <option value="">--</option>
+                            {% for option in options %}
+                                {% if attr.type == 'bool' %}
+                                    {% set filter_value = '1' if option == 'Da' else '0' %}
+                                    <option value="{{ filter_value }}" {% if attr_filters.get(attr.id|string) == filter_value %}selected{% endif %}>{{ option }}</option>
+                                {% else %}
+                                    <option value="{{ option }}" {% if attr_filters.get(attr.id|string) == option %}selected{% endif %}>{{ option }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <input type="text" name="attr_{{ attr.id }}" class="form-control" value="{{ attr_filters.get(attr.id, '') }}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label for="mobile-sort" class="form-label">Sortiraj po</label>
+                <select class="form-select" id="mobile-sort" name="sort">
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Nazivu (A-Z)</option>
+                    <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Nazivu (Z-A)</option>
+                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Ceni (rastuće)</option>
+                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Ceni (opadajuće)</option>
+                </select>
+            </div>
+
+            {% if search_query %}
+            <input type="hidden" name="q" value="{{ search_query }}">
+            {% endif %}
+            <input type="hidden" name="attr_filters" id="mobile_attr_filters_hidden" value='{{ attr_filters|tojson }}'>
+            
+            <div class="d-grid gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary btn-lg" id="mobileFilterCancelBtn">Zatvori</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    if(categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const slug = selectedOption.dataset.slug;
+            if (slug) {
+                window.location.href = "{{ url_for('product.products') }}/" + slug;
+            } else {
+                window.location.href = "{{ url_for('product.products') }}";
+            }
+        });
+    }
+
+    const filterForm = document.getElementById('product-filter-form');
+
+    filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const attrInputs = filterForm.querySelectorAll('[name^="attr_"]');
+        const attrFilters = {};
+        attrInputs.forEach(input => {
+            if (input.value) {
+                const attrId = input.name.replace('attr_', '');
+                attrFilters[attrId] = input.value;
+            }
+        });
+        let attrFiltersInput = filterForm.querySelector('input[name="attr_filters"]');
+        if (!attrFiltersInput) {
+            attrFiltersInput = document.createElement('input');
+            attrFiltersInput.type = 'hidden';
+            attrFiltersInput.name = 'attr_filters';
+            filterForm.appendChild(attrFiltersInput);
+        }
+        attrFiltersInput.value = JSON.stringify(attrFilters);
+
+        filterForm.submit();
+    });
+
+    // Mobile filter drawer functionality
+    const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+    const mobileFilterDrawer = document.getElementById('mobileFilterDrawer');
+    const mobileFilterClose = document.getElementById('mobileFilterClose');
+    const mobileFilterCancelBtn = document.getElementById('mobileFilterCancelBtn');
+    const mobileFilterForm = document.getElementById('mobile-product-filter-form');
+    const mobileCategorySelect = document.getElementById('mobile-category');
+
+    if (mobileFilterToggle) {
+        mobileFilterToggle.addEventListener('click', function() {
+            mobileFilterDrawer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    function closeMobileFilter() {
+        mobileFilterDrawer.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (mobileFilterClose) {
+        mobileFilterClose.addEventListener('click', closeMobileFilter);
+    }
+
+    if (mobileFilterCancelBtn) {
+        mobileFilterCancelBtn.addEventListener('click', closeMobileFilter);
+    }
+
+    if (mobileFilterDrawer) {
+        mobileFilterDrawer.addEventListener('click', function(e) {
+            if (e.target === mobileFilterDrawer) {
+                closeMobileFilter();
+            }
+        });
+    }
+
+    if (mobileCategorySelect) {
+        mobileCategorySelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const slug = selectedOption.dataset.slug;
+            if (slug) {
+                window.location.href = "{{ url_for('product.products') }}/" + slug;
+            } else {
+                window.location.href = "{{ url_for('product.products') }}";
+            }
+        });
+    }
+
+    // Auto-submit mobile form when attribute filter changes
+    document.querySelectorAll('.mobile-attribute-dropdown').forEach(function(select) {
+        select.addEventListener('change', function(e) {
+            console.log('Mobile filter changed:', this.name, 'Value:', this.value);
+            // Trigger mobile form submit
+            mobileFilterForm.dispatchEvent(new Event('submit'));
+        });
+    });
+
+    if (mobileFilterForm) {
+        mobileFilterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const attrInputs = mobileFilterForm.querySelectorAll('[name^="attr_"]');
+            const attrFilters = {};
+            attrInputs.forEach(input => {
+                if (input.value) {
+                    const attrId = input.name.replace('attr_', '');
+                    attrFilters[attrId] = input.value;
+                }
+            });
+            let attrFiltersInput = mobileFilterForm.querySelector('input[name="attr_filters"]');
+            if (!attrFiltersInput) {
+                attrFiltersInput = document.createElement('input');
+                attrFiltersInput.type = 'hidden';
+                attrFiltersInput.name = 'attr_filters';
+                mobileFilterForm.appendChild(attrFiltersInput);
+            }
+            attrFiltersInput.value = JSON.stringify(attrFilters);
+            mobileFilterForm.submit();
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+/* static/css/pages.css */
+
+/* Hero section */
+.hero-section {
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 5rem 0;
+  position: relative;
+  background-color: #2c3e50; /* Fallback color */
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Featured Categories Section */
+.featured-categories-section .category-box {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* PC Builder CTA Section */
+.pc-builder-cta-section {
+    background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('../img/pc-builds.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+/* Cart */
+.cart-badge {
+  /* IZMJENA: Korištenje transform za preciznije pozicioniranje */
+  transform: translate(-50%, -50%);
+  font-size: 0.7rem;
+  padding: 0.2em 0.4em;
+}
+
+.cart-item {
+  border-bottom: 1px solid var(--secondary-dark);
+  padding: 1rem 0;
+}
+
+.cart-item-image {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.cart-quantity-input {
+  width: 60px;
+}
+
+/* PC Builder */
+.builder-component-box {
+  border: 2px dashed #ccc;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  height: 100%;
+}
+
+.builder-component-box.selected {
+  border: 2px solid var(--accent-color);
+}
+
+.component-dropdown {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Product details */
+.product-gallery-img {
+  height: 400px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+
+.specs-table {
+  margin-top: 1rem;
+}
+
+/* Checkout */
+.checkout-summary {
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+}
+
+.payment-method-card {
+  cursor: pointer;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.payment-method-card:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+.payment-method-card.selected {
+  background-color: rgba(13, 110, 253, 0.2);
+  border-color: var(--accent-color);
+}

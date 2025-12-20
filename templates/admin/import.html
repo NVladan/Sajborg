@@ -1,0 +1,176 @@
+{% extends 'layout.html' %}
+
+{% block title %}Uvoz Proizvoda - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Uvoz Proizvoda</h1>
+        <div>
+            <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Nazad na Proizvode
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Otpremite Fajl</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.import_products') }}" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-4">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                Otpremite CSV ili Excel fajl sa podacima o proizvodima. Fajl mora imati zahtevane kolone kao što je prikazano u primeru.
+                            </div>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Upozorenje:</strong> Uvoz će obrisati sve postojeće proizvode iz inventara i zameniti ih proizvodima iz Vašeg fajla!
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.file.label(class="form-label") }}
+                            {% if form.file.errors %}
+                                {{ form.file(class="form-control is-invalid") }}
+                                <div class="invalid-feedback">
+                                    {% for error in form.file.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.file(class="form-control") }}
+                            {% endif %}
+                            <div class="form-text">Podržani formati: CSV (.csv), Excel (.xls, .xlsx)</div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="mb-0">Preuzmite Primer Fajla</h3>
+                </div>
+                <div class="card-body">
+                    <p>Preuzmite primer fajla da biste videli zahtevani format za uvoz proizvoda.</p>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('admin.download_sample') }}" class="btn btn-success">
+                            <i class="fas fa-download"></i> Preuzmi CSV
+                        </a>
+                        <a href="{{ url_for('admin.download_sample', format='excel') }}" class="btn btn-success">
+                            <i class="fas fa-download"></i> Preuzmi Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Vodič za Format Uvoza</h3>
+                </div>
+                <div class="card-body">
+                    <h4 class="mb-3">Obavezne Kolone</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Kolona</th>
+                                    <th>Opis</th>
+                                    <th>Obavezno</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>name</code></td>
+                                    <td>Naziv proizvoda</td>
+                                    <td><span class="badge bg-danger">Obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>description</code></td>
+                                    <td>Opis proizvoda</td>
+                                    <td><span class="badge bg-danger">Obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>price</code></td>
+                                    <td>Cena proizvoda u EUR</td>
+                                    <td><span class="badge bg-danger">Obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>stock</code></td>
+                                    <td>Broj artikala na stanju</td>
+                                    <td><span class="badge bg-danger">Obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>category_id</code></td>
+                                    <td>ID kategorije proizvoda</td>
+                                    <td><span class="badge bg-warning">Jedno obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>category_name</code></td>
+                                    <td>Naziv kategorije proizvoda (kreiraće se ako ne postoji)</td>
+                                    <td><span class="badge bg-warning">Jedno obavezno</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>image_url</code></td>
+                                    <td>URL do slike proizvoda</td>
+                                    <td><span class="badge bg-secondary">Opciono</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>specs</code></td>
+                                    <td>JSON string sa specifikacijama proizvoda</td>
+                                    <td><span class="badge bg-secondary">Opciono</span></td>
+                                </tr>
+                                <tr>
+                                    <td><code>component_type</code></td>
+                                    <td>Tip PC komponente (za PC Konfigurator)</td>
+                                    <td><span class="badge bg-secondary">Opciono</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h4 class="mt-4 mb-3">Primer CSV Formata</h4>
+                    <div class="bg-dark p-3 rounded">
+                        <pre class="mb-0"><code>{{ sample_csv }}</code></pre>
+                    </div>
+
+                    <h4 class="mt-4 mb-3">Dostupne Kategorije</h4>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Naziv Kategorije</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for category in category_query %}
+                                <tr>
+                                    <td>{{ category.id }}</td>
+                                    <td>{{ category.name }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center">Nema pronađenih kategorija. Molimo prvo kreirajte kategorije.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

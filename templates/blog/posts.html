@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+
+{% block title %}Tech Magazin - Sajborg Shop{% endblock %}
+
+{% block content %}
+<!-- Hero Section for Tech Magazin -->
+<section class="hero-section text-center text-white mb-4">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content">
+        <h1 class="display-4 fw-bold">Tech Magazin</h1>
+        <p class="lead mb-0">Najnovije vesti iz sveta tehnologije, vodiči i preporuke našeg tima.</p>
+    </div>
+</section>
+
+<div class="container py-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for post in posts %}
+        <div class="col">
+            <div class="card h-100 blog-post-card">
+                <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="blog-image-link">
+                    <img src="{{ url_for('static', filename=post.featured_image) if post.featured_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="{{ post.title }}" style="height: 220px; object-fit: cover;">
+                </a>
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title mb-3">
+                        <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="text-decoration-none blog-title-link">{{ post.title }}</a>
+                    </h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-user-circle me-2" style="color: var(--accent-blue);"></i>
+                        <p class="card-text text-muted small mb-0">
+                            {{ post.author.username }} • {{ post.created_at.strftime('%d.%m.%Y.') }}
+                        </p>
+                    </div>
+                    <p class="card-text text-secondary">{{ post.content|striptags|truncate(120) }}</p>
+                    <div class="mt-auto">
+                        <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="btn btn-primary w-100">
+                            <i class="fas fa-book-open me-2"></i>Pročitaj Više
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-newspaper fa-3x mb-3" style="color: var(--text-light);"></i>
+                <h3>Trenutno nema objavljenih članaka</h3>
+                <p class="text-muted">Uskoro ćemo objaviti nove članke o tehnologiji i gaming opremi.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

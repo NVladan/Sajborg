@@ -1,0 +1,185 @@
+{% extends 'layout.html' %}
+
+{% block title %}Admin Panel - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Admin Panel</h1>
+
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">Dobrodošli nazad, {{ current_user.username }}!</h4>
+        <p>Evo pregleda aktivnosti Vaše prodavnice.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Ukupno Proizvoda</h5>
+                            <h2 class="mb-0">{{ total_products }}</h2>
+                        </div>
+                        <div class="fs-1 text-primary">
+                            <i class="fas fa-box"></i>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.products') }}" class="stretched-link">Pogledaj Proizvode</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Ukupno Porudžbina</h5>
+                            <h2 class="mb-0">{{ total_orders }}</h2>
+                        </div>
+                        <div class="fs-1 text-success">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.orders') }}" class="stretched-link">Pogledaj Porudžbine</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Ukupno Korisnika</h5>
+                            <h2 class="mb-0">{{ total_users }}</h2>
+                        </div>
+                        <div class="fs-1 text-warning">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.users') }}" class="stretched-link">Pogledaj Korisnike</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mb-3">Brze Akcije</h3>
+    <div class="row mb-4">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('admin.add_product') }}" class="text-decoration-none">
+                <div class="card h-100 text-center quick-action-card">
+                    <div class="card-body">
+                        <i class="fas fa-box-open fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Dodaj Proizvod</h5>
+                        <p class="card-text text-muted small">Kreiraj novi proizvod u prodavnici.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('admin.add_category') }}" class="text-decoration-none">
+                <div class="card h-100 text-center quick-action-card">
+                    <div class="card-body">
+                        <i class="fas fa-folder-plus fa-3x text-info mb-3"></i>
+                        <h5 class="card-title">Dodaj Kategoriju</h5>
+                        <p class="card-text text-muted small">Kreiraj novu kategoriju ili podkategoriju.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('admin.categories') }}" class="text-decoration-none">
+                <div class="card h-100 text-center quick-action-card">
+                    <div class="card-body">
+                        <i class="fas fa-sitemap fa-3x text-secondary mb-3"></i>
+                        <h5 class="card-title">Upravljaj Kategorijama</h5>
+                        <p class="card-text text-muted small">Izmeni postojeće kategorije.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('admin.posts') }}" class="text-decoration-none">
+                <div class="card h-100 text-center quick-action-card">
+                    <div class="card-body">
+                        <i class="fas fa-pen-alt fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Upravljaj Člancima</h5>
+                        <p class="card-text text-muted small">Piši i izmeni članke za Tech Magazin.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <a href="{{ url_for('admin.users') }}" class="text-decoration-none">
+                <div class="card h-100 text-center quick-action-card">
+                    <div class="card-body">
+                        <i class="fas fa-user-cog fa-3x text-warning mb-3"></i>
+                        <h5 class="card-title">Upravljaj Korisnicima</h5>
+                        <p class="card-text text-muted small">Pregledaj i izmeni korisničke uloge.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="mb-0">Nedavne Porudžbine</h3>
+        </div>
+        <div class="card-body">
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Porudžbina #</th>
+                            <th>Kupac</th>
+                            <th>Datum</th>
+                            <th>Ukupno</th>
+                            <th>Status</th>
+                            <th>Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.user.username }}</td>
+                            <td>{{ order.created_at.strftime('%d.%m.%Y. %H:%M') }}</td>
+                            <td>{{ order.total_amount|round(2) }} KM</td>
+                            <td>
+                                {% if order.status == 'pending' %}
+                                    <span class="badge bg-warning">Na čekanju</span>
+                                {% elif order.status == 'preparing' %}
+                                    <span class="badge bg-info">U pripremi</span>
+                                {% elif order.status == 'shipped' %}
+                                    <span class="badge bg-primary">Poslato</span>
+                                {% elif order.status == 'delivered' or order.status == 'dostavljeno' %}
+                                    <span class="badge bg-success">Dostavljeno</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Otkazano</span>
+                                {% elif order.status == 'paid' %}
+                                    <span class="badge bg-success">Plaćeno</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                    Pogledaj
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-3">
+                <p class="mb-0">Nema nedavnih porudžbina.</p>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-footer text-center">
+            <a href="{{ url_for('admin.orders') }}">Pogledaj Sve Porudžbine</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

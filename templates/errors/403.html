@@ -1,0 +1,112 @@
+{% extends 'layout.html' %}
+
+{% block title %}Greška 403 - Pristup Zabranjen{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-page-container">
+        <div class="error-content text-center">
+            <div class="error-icon mb-4">
+                <i class="fas fa-ban"></i>
+            </div>
+            <h1 class="error-code">403</h1>
+            <h2 class="error-title mb-3">Pristup Zabranjen</h2>
+            <p class="error-message mb-4">
+                Nemate dozvolu za pristup ovoj stranici. Molimo prijavite se sa odgovarajućim korisničkim nalogom.
+            </p>
+            <div class="error-actions">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-home me-2"></i>Početna Stranica
+                </a>
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Prijavi Se
+                </a>
+                {% else %}
+                <a href="javascript:history.back()" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Nazad
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.error-page-container {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 0;
+}
+
+.error-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.error-icon {
+    font-size: 5rem;
+    color: var(--danger);
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.error-code {
+    font-size: 8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--danger), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1;
+}
+
+.error-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.error-message {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.error-actions {
+    margin: 2rem 0;
+}
+
+@media (max-width: 768px) {
+    .error-code {
+        font-size: 5rem;
+    }
+    
+    .error-title {
+        font-size: 1.5rem;
+    }
+    
+    .error-icon {
+        font-size: 3rem;
+    }
+    
+    .error-actions .btn {
+        display: block;
+        width: 100%;
+        margin: 0.5rem 0 !important;
+    }
+}
+</style>
+{% endblock %}

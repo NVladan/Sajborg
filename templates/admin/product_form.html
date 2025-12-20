@@ -1,0 +1,260 @@
+{% extends 'layout.html' %}
+
+{% block title %}{% if product %}Izmeni Proizvod{% else %}Dodaj Novi Proizvod{% endif %} - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if product %}Izmeni Proizvod{% else %}Dodaj Novi Proizvod{% endif %}</h1>
+        <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Nazad na Proizvode
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Informacije o Proizvodu</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" id="product-form" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}">
+                {{ form.hidden_tag() }}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control", placeholder="Unesite naziv proizvoda") }}
+                        {% for error in form.name.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.category_id.label(class="form-label") }}
+                        {{ form.category_id(class="form-select") }}
+                        {% for error in form.category_id.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.price.label(class="form-label") }}
+                        {{ form.price(class="form-control", placeholder="Unesite cenu u BAM (konvertibilnim markama).") }}
+                        {% for error in form.price.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.stock.label(class="form-label") }}
+                        {{ form.stock(class="form-control", placeholder="Unesite količinu na stanju") }}
+                        {% for error in form.stock.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.condition.label(class="form-label") }}
+                        {{ form.condition(class="form-select") }}
+                        {% for error in form.condition.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.availability.label(class="form-label") }}
+                        {{ form.availability(class="form-select") }}
+                        {% for error in form.availability.errors %}
+                            <span class="text-danger">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows=5, placeholder="Detaljan opis proizvoda...") }}
+                    {% for error in form.description.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.specs.label(class="form-label") }}
+                    {{ form.specs(class="form-control", rows=3, placeholder="Ključne specifikacije (npr. u JSON formatu ili jednostavnom tekstu)...") }}
+                    {% for error in form.specs.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.images.label(class="form-label") }}
+                    {{ form.images(class="form-control", multiple=True) }}
+                    <div class="form-text">Možete izabrati više slika. Prva slika će biti postavljena kao glavna.</div>
+                    {% for error in form.images.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div id="dynamic-attributes-container" class="mt-4 p-3 border rounded">
+                    {# Atributi će biti dinamički ubačeni ovde putem JavaScript-a #}
+                </div>
+
+                <div class="mb-3 form-check mt-3">
+                    {{ form.featured(class="form-check-input") }}
+                    {{ form.featured.label(class="form-check-label") }}
+                    {% for error in form.featured.errors %}
+                        <span class="text-danger">{{ error }}</span>
+                    {% endfor %}
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> {% if product %}Sačuvaj Izmene{% else %}Dodaj Proizvod{% endif %}
+                    </button>
+                    <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Otkaži
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if product and images_sorted %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">Trenutne Slike</h3>
+        </div>
+        <div class="card-body">
+            <div id="product-images-container" class="d-flex flex-wrap gap-3">
+                {% for image in images_sorted %}
+                <div class="image-item text-center p-2 border bg-light rounded shadow-sm" data-image-id="{{ image.id }}">
+                    <img src="{{ url_for('static', filename=image.image_path) }}" alt="Slika proizvoda za izmjenu" class="img-thumbnail mb-2" style="width: 100px; height: 100px; object-fit: contain;">
+                    <div class="d-flex justify-content-center gap-1">
+                        {% if image.is_primary %}
+                        <span class="badge bg-primary d-flex align-items-center"><i class="fas fa-star"></i>&nbsp;Glavna</span>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('admin.set_primary_image', image_id=image.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-info" title="Postavi za Glavnu">
+                                <i class="fas fa-star"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('admin.delete_product_image', image_id=image.id) }}" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite obrisati ovu sliku?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Obriši">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% elif product %}
+    <div class="alert alert-info">Nema slika za ovaj proizvod.</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.getElementById('category_id');
+        const dynamicAttributesContainer = document.getElementById('dynamic-attributes-container');
+        const allCategoryAttributes = {{ all_category_attributes | tojson }};
+        const existingAttributeValues = {{ attribute_values | tojson }};
+
+        function updateDynamicAttributes() {
+            const selectedCategoryId = categorySelect.value;
+            const attributes = allCategoryAttributes[selectedCategoryId] || [];
+            dynamicAttributesContainer.innerHTML = '<h4>Atributi Kategorije</h4>';
+
+            if (attributes.length === 0) {
+                dynamicAttributesContainer.innerHTML += '<p>Nema definisanih atributa za ovu kategoriju.</p>';
+                return;
+            }
+
+            attributes.forEach(attr => {
+                const attrValue = existingAttributeValues[attr.id] || '';
+                const div = document.createElement('div');
+                div.classList.add('mb-3');
+
+                const label = document.createElement('label');
+                label.setAttribute('for', `attribute_${attr.id}`);
+                label.classList.add('form-label');
+                label.textContent = attr.name;
+                div.appendChild(label);
+
+                // GLAVNA IZMENA JE OVDE
+                if (attr.type === 'select') {
+                    const select = document.createElement('select');
+                    select.setAttribute('name', `attribute_${attr.id}`);
+                    select.setAttribute('id', `attribute_${attr.id}`);
+                    select.classList.add('form-select');
+                    select.setAttribute('form', 'product-form'); // Povezivanje s glavnom formom
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = "";
+                    defaultOption.textContent = "-- Izaberite --";
+                    select.appendChild(defaultOption);
+
+                    if (attr.options) {
+                        attr.options.forEach(optValue => {
+                            const option = document.createElement('option');
+                            option.value = optValue;
+                            option.textContent = optValue;
+                            if (attrValue === optValue) {
+                                option.selected = true;
+                            }
+                            select.appendChild(option);
+                        });
+                    }
+                    div.appendChild(select);
+
+                } else if (attr.type === 'bool') {
+                    const select = document.createElement('select');
+                    select.setAttribute('name', `attribute_${attr.id}`);
+                    select.setAttribute('id', `attribute_${attr.id}`);
+                    select.classList.add('form-select');
+                    select.setAttribute('form', 'product-form'); // Povezivanje s glavnom formom
+
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = "";
+                    defaultOption.textContent = "-- Izaberite --";
+                    select.appendChild(defaultOption);
+
+                    const trueOption = document.createElement('option');
+                    trueOption.value = "True";
+                    trueOption.textContent = "Da";
+                    if (attrValue.toLowerCase() === 'true' || attrValue === '1') trueOption.selected = true;
+                    select.appendChild(trueOption);
+
+                    const falseOption = document.createElement('option');
+                    falseOption.value = "False";
+                    falseOption.textContent = "Ne";
+                    if (attrValue.toLowerCase() === 'false' || attrValue === '0') falseOption.selected = true;
+                    select.appendChild(falseOption);
+
+                    div.appendChild(select);
+                } else {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'text');
+                    input.setAttribute('name', `attribute_${attr.id}`);
+                    input.setAttribute('id', `attribute_${attr.id}`);
+                    input.classList.add('form-control');
+                    input.value = attrValue;
+                    input.setAttribute('form', 'product-form'); // Povezivanje s glavnom formom
+                    div.appendChild(input);
+                }
+                dynamicAttributesContainer.appendChild(div);
+            });
+        }
+
+        categorySelect.addEventListener('change', updateDynamicAttributes);
+        // Pozovi funkciju odmah da se prikažu atributi za trenutno izabranu kategoriju
+        updateDynamicAttributes();
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+{% endblock %}

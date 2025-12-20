@@ -1,0 +1,280 @@
+{% extends 'layout.html' %}
+
+{% block title %}Moj profil - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Profil Meni</h4>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#profile-info" class="list-group-item list-group-item-action active" data-bs-toggle="list">Informacije o profilu</a>
+                    <a href="#order-history" class="list-group-item list-group-item-action" data-bs-toggle="list">Istorija porudžbina</a>
+                    <a href="#saved-builds" class="list-group-item list-group-item-action" data-bs-toggle="list">Sačuvane PC konfiguracije</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="profile-info">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Informacije o profilu</h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('auth.profile') }}">
+                                {{ form.hidden_tag() }}
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.first_name.label(class="form-label") }}
+                                        {{ form.first_name(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.last_name.label(class="form-label") }}
+                                        {{ form.last_name(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.address.label(class="form-label") }}
+                                    {{ form.address(class="form-control") }}
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.city.label(class="form-label") }}
+                                        {{ form.city(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.postal_code.label(class="form-label") }}
+                                        {{ form.postal_code(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.country.label(class="form-label") }}
+                                        {{ form.country(class="form-control") }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.phone_number.label(class="form-label") }}
+                                        {{ form.phone_number(class="form-control") }}
+                                    </div>
+                                </div>
+
+                                <div class="mb-3 form-check">
+                                    {{ form.is_subscribed(class="form-check-input") }}
+                                    {{ form.is_subscribed.label(class="form-check-label") }}
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    {{ form.submit(class="btn btn-primary") }}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h3 class="mb-0">Informacije o nalogu</h3>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <tr>
+                                    <th style="width: 200px;">Korisničko ime:</th>
+                                    <td>{{ current_user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ current_user.email }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Nalog kreiran:</th>
+                                    <td>{{ current_user.created_at.strftime('%d.%m.%Y.') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="order-history">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="mb-0">Istorija porudžbina</h3>
+                        </div>
+                        <div class="card-body">
+                            {% if orders %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Porudžbina #</th>
+                                                <th>Datum</th>
+                                                <th>Ukupno</th>
+                                                <th>Status</th>
+                                                <th>Plaćanje</th>
+                                                <th>Akcije</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for order in orders %}
+                                            <tr>
+                                                <td>{{ order.id }}</td>
+                                                <td>{{ order.created_at.strftime('%d.%m.%Y.') }}</td>
+                                                <td>{{ order.total_amount|round(2) }} KM</td>
+                                                <td>
+                                                    {% if order.status == 'pending' %}
+                                                        <span class="badge bg-warning">Na čekanju</span>
+                                                    {% elif order.status == 'preparing' %}
+                                                        <span class="badge bg-info">U pripremi</span>
+                                                    {% elif order.status == 'shipped' %}
+                                                        <span class="badge bg-primary">Poslato</span>
+                                                    {% elif order.status in ['delivered', 'dostavljeno'] %}
+                                                        <span class="badge bg-success">Dostavljeno</span>
+                                                    {% elif order.status == 'cancelled' %}
+                                                        <span class="badge bg-danger">Otkazano</span>
+                                                    {% elif order.status == 'paid' %}
+                                                        <span class="badge bg-success">Plaćeno</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>Plaćanje pouzećem</td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
+                                                        Pogledaj detalje
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {% for order in orders %}
+                                <div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ order.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="orderModalLabel{{ order.id }}">Detalji porudžbine #{{ order.id }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6">
+                                                        <h6>Informacije o porudžbini</h6>
+                                                        <p class="mb-1"><strong>Datum:</strong> {{ order.created_at.strftime('%d.%m.%Y, %H:%M') }}</p>
+                                                        <p class="mb-1"><strong>Status:</strong> {{ order.status.capitalize() }}</p>
+                                                        <p class="mb-1"><strong>Ukupno:</strong> {{ order.total_amount|round(2) }} KM</p>
+                                                        <p class="mb-1"><strong>Način plaćanja:</strong> Plaćanje pouzećem</p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Adresa za dostavu</h6>
+                                                        <address>{{ order.full_shipping_address|nl2br }}</address>
+                                                    </div>
+                                                </div>
+
+                                                <h6>Proizvodi</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Proizvod</th>
+                                                                <th>Cena</th>
+                                                                <th>Količina</th>
+                                                                <th class="text-end">Ukupno</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for product in order.products %}
+                                                            <tr>
+                                                                <td>{{ product.name }}</td>
+                                                                <td>{{ product.price|round(2) }} KM</td>
+                                                                <td>1</td>
+                                                                <td class="text-end">{{ product.price|round(2) }} KM</td>
+                                                            </tr>
+                                                            {% endfor %}
+                                                            <tr>
+                                                                <td colspan="3" class="text-end"><strong>Ukupan iznos:</strong></td>
+                                                                <td class="text-end"><strong>{{ order.total_amount|round(2) }} KM</strong></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-shopping-bag fa-3x mb-3 text-muted"></i>
+                                    <h4>Još uvek nema porudžbina</h4>
+                                    <p>Još uvek niste napravili nijednu porudžbinu.</p>
+                                    <a href="{{ url_for('product.products') }}" class="btn btn-primary">Započnite kupovinu</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="saved-builds">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h3 class="mb-0">Sačuvane PC konfiguracije</h3>
+                            <a href="{{ url_for('builder.builder') }}" class="btn btn-primary">Kreiraj novu konfiguraciju</a>
+                        </div>
+                        <div class="card-body">
+                            {% if current_user.pc_builds %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Naziv</th>
+                                                <th>Kreirano</th>
+                                                <th>Komponente</th>
+                                                <th>Javno</th>
+                                                <th>Akcije</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for build in current_user.pc_builds %}
+                                            <tr>
+                                                <td>{{ build.name }}</td>
+                                                <td>{{ build.created_at.strftime('%d.%m.%Y.') }}</td>
+                                                <td>{{ build.components|length }}</td>
+                                                <td>{{ 'Da' if build.is_public else 'Ne' }}</td>
+                                                <td>
+                                                    <a href="{{ url_for('builder.view_build', build_id=build.id) }}" class="btn btn-sm btn-outline-secondary">Pogledaj</a>
+                                                    <form method="POST" action="{{ url_for('builder.delete_build', build_id=build.id) }}" class="d-inline">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Da li ste sigurni da želite da obrišete ovu konfiguraciju?')">Obriši</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-desktop fa-3x mb-3 text-muted"></i>
+                                    <h4>Nema sačuvanih konfiguracija</h4>
+                                    <p>Još uvek niste sačuvali nijednu PC konfiguraciju.</p>
+                                    <a href="{{ url_for('builder.builder') }}" class="btn btn-primary">Započnite sa sklapanjem</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

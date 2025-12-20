@@ -1,0 +1,69 @@
+/* static/css/admin.css */
+
+/* Admin dashboard */
+.admin-stat-card {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.admin-stat-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.admin-stat-label {
+  font-size: 1rem;
+  color: var(--secondary-dark);
+}
+
+.quick-action-card {
+    transition: all 0.2s ease-in-out;
+}
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-color: var(--bs-primary);
+}
+
+/* Admin Category List */
+.category-list-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* Responsive adjustments for admin */
+@media (max-width: 576px) {
+  .admin-stat-card {
+    margin-bottom: 1rem;
+  }
+}
+
+/* NOVI KOD: Ispravka za pozadinu Summernote editora na tamnoj temi */
+.note-editor .note-editable {
+    background-color: #FFFFFF !important;
+    color: #000000 !important; /* Osigurava da je i tekst crn */
+}
+
+/* Ispravka za vidljivost tabova u admin/products */
+body .nav-tabs .nav-link {
+    color: #495057 !important;  /* Tamno siva boja za neaktivne tabove */
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+body .nav-tabs .nav-link:hover {
+    color: #212529 !important;  /* Još tamnija boja na hover */
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+body .nav-tabs .nav-link.active {
+    color: #0d6efd !important;  /* Plava boja za aktivni tab */
+    background-color: #ffffff;
+    font-weight: 600;
+}

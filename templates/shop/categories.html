@@ -1,0 +1,52 @@
+{% extends 'layout.html' %}
+
+{% block title %}Kategorije - PC Delovi Shop{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4 text-center">Kategorije Proizvoda</h1>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for category in categories %}
+        <div class="col">
+            <a href="{{ url_for('product.products', category_slug=category.slug) }}" class="text-decoration-none">
+                <div class="category-box">
+                    {% if category.image_path %}
+                        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+                    {% else %}
+                    {% set images = [
+                        "https://pixabay.com/get/gcf1f572aae19b3af101505bcc788e47d93cf35e14fd12430b795d0f5e7b14b01edb83cf15c0717ababaa798846dd15a2d8a5ad251a3dd50fad7738e96e1d4c49_1280.jpg",
+                        "https://pixabay.com/get/g1eb5ff13a3f7fa9ace0090297e2563ae3a061705d689142fc86689f18604c6d15e98445d28670f4eb36ffea5fa0bdb8ed1b6288613bdd459627da154a7cfeda6_1280.jpg",
+                        "https://pixabay.com/get/g7d9c605af8956ec6b786c1da6ec0fc3795435a9f5b53f63074063416206eb32d4837413af75b94637f75e8af6bb4c3a34933567842766aae3f458e42329457fb_1280.jpg",
+                        "https://pixabay.com/get/g434950c70ebee0be18c526a5856d7c2bfd9df2ee73b9d5ee531d513d58a9d50a37c916a423169e9cda57251a693775cd955608b4e422be53d81c66a0a2f98b44_1280.jpg",
+                        "https://pixabay.com/get/g932c53110fc8cca640ef36c830ad47cfa4edff7ca97d582614811377d3d61e7503d648071df221312fb09b80fe4dcc959d85987a8af04f1997ee56973189ff80_1280.jpg",
+                        "https://pixabay.com/get/gcfa5105ca32b9fc223839333b1823b41716e2f77e2fc546cfda7789caf64d7f782aa01e82e0a9df409ab05ad80d9764f69fdb43b76719f5b870ee0425b43d01d_1280.jpg"
+                    ] %}
+                    {% set image_index = category.id % images|length %}
+                    <img src="{{ images[image_index] }}" alt="Slika kategorije {{ category.name }}">
+                    {% endif %}
+                    <div class="category-overlay">
+                        <h3 class="category-name">{{ category.name }}</h3>
+                    </div>
+                </div>
+            </a>
+
+            <div class="card mt-2">
+                <div class="card-body">
+                    <p class="card-text">
+                        {{ category.description or 'Pregledajte našu ponudu za ' + category.name }}
+                    </p>
+                    <a href="{{ url_for('product.products', category_slug=category.slug) }}" class="btn btn-primary">
+                        Pogledaj proizvode
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">Nema pronađenih kategorija.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+.rating-stars .fa-star,
+.rating-stars .fas.fa-star {
+    color: #f8ce0b;
+}
+.rating-stars .fa-star-o,
+.rating-stars .far.fa-star {
+    color: #ccc;
+}
+
+/* MODERN REVIEW SECTION REDESIGN */
+
+.review-section {
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.03) 0%, rgba(109, 213, 176, 0.03) 100%);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    border: 2px solid #E8ECF0;
+}
+
+.review-section h3 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.review-summary {
+    text-align: center;
+    padding: 1.5rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.review-summary .average-rating {
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: var(--gradient-bg);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.review-summary > div:last-child {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.rating-distribution {
+    padding: 1rem;
+}
+
+.rating-distribution .rating-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.rating-distribution .rating-bar-label {
+    min-width: 70px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.review-header {
+    margin-bottom: 0.5rem;
+}
+
+.review-footer {
+    text-align: right;
+    margin-top: 1rem;
+    font-size: 0.875em;
+}
+
+.review-footer .text-muted {
+    color: var(--text-light) !important;
+}
+
+.review-avatar img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #E8ECF0;
+}
+
+.review-content {
+    flex-grow: 1;
+}
+
+.review-content p {
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.review-author {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+#star-rating-input .fa-star,
+#star-rating-input .fa-star-o,
+#star-rating-input .fas,
+#star-rating-input .far {
+    font-size: 1.8rem;
+    margin-right: 5px;
+}
+
+/* IZMENA: Povećanje širine kontrole za količinu samo na desktopu */
+@media (min-width: 768px) {
+    /* Koristimo !important da bi pregladali inline style "width: 120px;" */
+    .quantity-control {
+        width: 150px !important;
+    }
+}
+
+/* MOBILNI UREDJAJI - Popravke za product details */
+@media (max-width: 767px) {
+    /* Badges - bolje raspoređeni na mobilnim uređajima */
+    .product-price + .badge,
+    .product-price ~ .badge {
+        margin-bottom: 0.5rem !important;
+        margin-right: 0.25rem !important;
+        display: inline-block !important;
+    }
+    
+    /* Forma za dodavanje u korpu - custom layout */
+    form.mb-4 .row.align-items-center {
+        display: block !important;
+        margin: 0 !important;
+    }
+    
+    /* Label "Količina:" - iznad brojača */
+    form.mb-4 .row.align-items-center .col-auto:first-child {
+        width: 100% !important;
+        padding: 0 !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    form.mb-4 .col-auto label.form-label {
+        display: block !important;
+        margin-bottom: 0 !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+    
+    /* Brojač i dugme u istom redu */
+    form.mb-4 .row.align-items-center .col-auto:nth-child(2),
+    form.mb-4 .row.align-items-center .col-auto:nth-child(3) {
+        display: inline-block !important;
+        width: auto !important;
+        padding: 0 !important;
+        vertical-align: middle !important;
+    }
+    
+    /* Brojač - levo */
+    form.mb-4 .row.align-items-center .col-auto:nth-child(2) {
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Količina kontrola */
+    form.mb-4 .quantity-control {
+        width: 130px !important;
+        max-width: 130px !important;
+    }
+    
+    form.mb-4 .quantity-control .input-group {
+        width: 100% !important;
+    }
+    
+    form.mb-4 .quantity-control .input-group .btn {
+        flex: 0 0 35px !important;
+        padding: 0.375rem 0 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    form.mb-4 .quantity-control .input-group .form-control {
+        flex: 1 !important;
+        text-align: center !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        padding: 0.375rem 0.25rem !important;
+    }
+    
+    /* Dugme Dodaj u korpu - desno od brojača - width: auto */
+    form.mb-4 .col-auto .btn-primary {
+        width: auto !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+    }
+    
+    form.mb-4 .col-auto .btn-primary i {
+        font-size: 1rem !important;
+        margin-right: 0.35rem !important;
+    }
+    
+    /* Produžena garancija checkbox - bolje formatiranje */
+    form.mb-4 .form-check.mt-3 {
+        padding-left: 1.5rem !important;
+        margin-top: 1rem !important;
+        clear: both !important;
+    }
+    
+    form.mb-4 .form-check-label {
+        font-size: 0.9rem !important;
+        line-height: 1.6 !important;
+    }
+}

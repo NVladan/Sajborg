@@ -1,0 +1,177 @@
+{% extends 'layout.html' %}
+
+{% block title %}Upravljanje Porudžbinama - PC Delovi Shop Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Upravljanje Porudžbinama</h1>
+        <div>
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Nazad na Panel
+            </a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Filteri</h4>
+        </div>
+        <div class="card-body">
+            <form id="order-filter-form" action="{{ url_for('admin.orders') }}" method="GET" class="row align-items-end">
+                <div class="col-md-3 mb-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Svi Statusi</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>Na čekanju</option>
+                        <option value="preparing" {% if status == 'preparing' %}selected{% endif %}>U pripremi</option>
+                        <option value="shipped" {% if status == 'shipped' %}selected{% endif %}>Poslato</option>
+                        <option value="delivered" {% if status == 'delivered' %}selected{% endif %}>Dostavljeno</option>
+                        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Otkazano</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label for="search" class="form-label">Pretraga</label>
+                    <input type="text" class="form-control" id="search" name="q" value="{{ search_query or '' }}" placeholder="ID porudžbine ili email kupca">
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label for="sort" class="form-label">Sortiraj po</label>
+                    <select class="form-select" id="sort" name="sort">
+                        <option value="created_desc" {% if sort_by == 'created_desc' %}selected{% endif %}>Datumu (najnovije)</option>
+                        <option value="created_asc" {% if sort_by == 'created_asc' %}selected{% endif %}>Datumu (najstarije)</option>
+                        <option value="id_asc" {% if sort_by == 'id_asc' %}selected{% endif %}>ID porudžbine (rastuće)</option>
+                        <option value="id_desc" {% if sort_by == 'id_desc' %}selected{% endif %}>ID porudžbine (opadajuće)</option>
+                        <option value="total_asc" {% if sort_by == 'total_asc' %}selected{% endif %}>Ukupno (rastuće)</option>
+                        <option value="total_desc" {% if sort_by == 'total_desc' %}selected{% endif %}>Ukupno (opadajuće)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 mb-3">
+                    <button type="submit" class="btn btn-primary w-100">Primeni Filtere</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Porudžbine</h4>
+                <span class="text-muted">{{ orders.total }} porudžbina pronađeno</span>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if orders.items %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Porudžbina #</th>
+                            <th>Datum</th>
+                            <th>Kupac</th>
+                            <th>Ukupno</th>
+                            <th>Način Plaćanja</th>
+                            <th>Status</th>
+                            <th>Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders.items %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ order.user.username }}<br><small>{{ order.user.email }}</small></td>
+                            <td>{{ order.total_amount|round(2) }} KM</td>
+                            <td>{{ 'Kartica (Stripe)' if order.payment_method == 'stripe' else 'Plaćanje pouzećem' }}</td>
+                            <td>
+                                {% if order.status == 'pending' %}
+                                    <span class="badge bg-warning">Na čekanju</span>
+                                {% elif order.status == 'preparing' %}
+                                    <span class="badge bg-info">U pripremi</span>
+                                {% elif order.status == 'shipped' %}
+                                    <span class="badge bg-primary">Poslato</span>
+                                {% elif order.status == 'delivered' or order.status == 'dostavljeno' %}
+                                    <span class="badge bg-success">Dostavljeno</span>
+                                {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Otkazano</span>
+                                {% elif order.status == 'paid' %}
+                                    <span class="badge bg-success">Plaćeno</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Pregled
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if orders.pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.orders', page=orders.prev_num, status=status, q=search_query, sort=sort_by) }}">
+                            <i class="fas fa-chevron-left"></i> Prethodna
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-chevron-left"></i> Prethodna</span>
+                    </li>
+                    {% endif %}
+
+                    {% for page_num in orders.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                        {% if page_num %}
+                            {% if page_num == orders.page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('admin.orders', page=page_num, status=status, q=search_query, sort=sort_by) }}">{{ page_num }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if orders.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('admin.orders', page=orders.next_num, status=status, q=search_query, sort=sort_by) }}">
+                            Sledeća <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Sledeća <i class="fas fa-chevron-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
+                <h3>Nema pronađenih porudžbina</h3>
+                {% if search_query %}
+                <p>Nismo mogli pronaći porudžbine koje odgovaraju pretrazi "{{ search_query }}".</p>
+                <a href="{{ url_for('admin.orders') }}" class="btn btn-primary">Prikaži sve porudžbine</a>
+                {% else %}
+                <p>Još uvek nema porudžbina u bazi podataka.</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

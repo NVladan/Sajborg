@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ post.title }} - Tech Magazin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb" style="background-color: transparent; padding: 0;">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" style="color: var(--accent-blue);">Početna</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('blog.posts') }}" style="color: var(--accent-blue);">Tech Magazin</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
+                </ol>
+            </nav>
+
+            <article class="card border-0 shadow-sm">
+                <div class="card-body p-4 p-md-5">
+                    <header class="mb-4">
+                        <h1 class="fw-bold mb-3" style="color: var(--text-primary);">{{ post.title }}</h1>
+                        <div class="d-flex align-items-center text-muted mb-3">
+                            <i class="fas fa-calendar-alt me-2" style="color: var(--accent-blue);"></i>
+                            <span class="me-3">{{ post.created_at.strftime('%d.%m.%Y.') }}</span>
+                            <i class="fas fa-user-circle me-2" style="color: var(--accent-blue);"></i>
+                            <span>{{ post.author.username }}</span>
+                        </div>
+                    </header>
+
+                    {% if post.featured_image %}
+                    <figure class="mb-4">
+                        <img class="img-fluid" src="{{ url_for('static', filename=post.featured_image) }}" alt="{{ post.title }}" style="border-radius: var(--border-radius); width: 100%; max-height: 500px; object-fit: cover;">
+                    </figure>
+                    {% endif %}
+
+                    <section class="mb-4 blog-content">
+                        {{ post.content | sanitize_html }}
+                    </section>
+
+                    <div class="mt-5 pt-4" style="border-top: 2px solid #E8ECF0;">
+                        <a href="{{ url_for('blog.posts') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>Nazad na Tech Magazin
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+{% endblock %}
