@@ -2,7 +2,8 @@ import os
 import logging
 import json
 from datetime import timedelta
-import time # NOVI IMPORT
+import time  # NOVI IMPORT
+import hashlib
 import bleach
 
 from flask import Flask
@@ -27,7 +28,7 @@ def create_app(config_name='default'):
     app.config.from_object(config[config_name])
 
     # Session and security configuration
-    app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+    app.secret_key = app.config['SECRET_KEY']
     app.config.update(
         SESSION_COOKIE_SECURE=False,  # Set to True in production with HTTPS
         SESSION_COOKIE_HTTPONLY=True,
@@ -112,8 +113,11 @@ def create_app(config_name='default'):
         return dict(
             all_categories=all_categories,
             timedelta=timedelta,
-            cache_buster=int(time.time()) # NOVI RED za cache busting
+            cache_buster=app.config.get('_CACHE_BUSTER', '0')
         )
+
+    # Generate cache buster once at app startup (not per-request)
+    app.config['_CACHE_BUSTER'] = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
 
     # Initialize extensions
     init_extensions(app)
@@ -170,6 +174,13 @@ def create_app(config_name='default'):
         def page_not_found(e):
             from flask import render_template
             return render_template('errors/404.html'), 404
+
+        @app.errorhandler(429)
+        def too_many_requests(e):
+            from flask import render_template, request
+            if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+                return {'error': 'Previše zahteva. Molimo pokušajte kasnije.'}, 429
+            return render_template('errors/429.html'), 429
 
         @app.errorhandler(500)
         def internal_server_error(e):

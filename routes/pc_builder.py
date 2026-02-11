@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 from extensions import db, csrf
-from models import Product, PCBuild, build_components
+from models import Product, PCBuild, build_components, ProductAttributeValue
 from forms.builder_forms import PCBuildForm, AddToCartForm
 from utils import check_pc_build_compatibility
 
@@ -36,8 +37,15 @@ def builder():
 def get_components(component_type):
     """AJAX endpoint to get components by type"""
     try:
-        # Get components of specified type and in stock
-        components = Product.query.filter_by(component_type=component_type).filter(Product.stock > 0).all()
+        # Get components of specified type and in stock, eager load images to avoid N+1
+        components = Product.query.filter_by(
+            component_type=component_type
+        ).filter(
+            Product.stock > 0
+        ).options(
+            joinedload(Product.images),
+            joinedload(Product.attribute_values).joinedload(ProductAttributeValue.attribute)
+        ).all()
 
         # Filter out RAM components with Namena = "Laptop"
         if component_type == "RAM":

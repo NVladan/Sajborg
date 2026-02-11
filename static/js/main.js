@@ -246,6 +246,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('resize', positionSuggestionBox);
   }
+
+
+  // --- Back to Top button ---
+  const backToTopBtn = document.getElementById('back-to-top');
+  if (backToTopBtn) {
+    window.addEventListener('scroll', function() {
+      if (window.scrollY > 400) {
+        backToTopBtn.classList.add('visible');
+      } else {
+        backToTopBtn.classList.remove('visible');
+      }
+    });
+    backToTopBtn.addEventListener('click', function() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // --- Search keyboard shortcut (/ to focus search) ---
+  document.addEventListener('keydown', function(e) {
+    // Only trigger if not already in an input/textarea/contenteditable
+    const tag = document.activeElement.tagName.toLowerCase();
+    const isEditable = document.activeElement.isContentEditable;
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || isEditable) return;
+
+    if (e.key === '/') {
+      e.preventDefault();
+      const searchInput = document.querySelector('#search-form input[type="search"]');
+      if (searchInput) searchInput.focus();
+    }
+  });
 });
 
 /**

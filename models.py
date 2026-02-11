@@ -1,4 +1,5 @@
 from datetime import datetime
+from sqlalchemy import CheckConstraint
 from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -9,7 +10,9 @@ order_items = db.Table('order_items',
                        db.Column('product_id', db.Integer, db.ForeignKey('product.id'), primary_key=True),
                        db.Column('quantity', db.Integer, nullable=False, default=1),
                        db.Column('price', db.Float, nullable=False),
-                       db.Column('extended_warranty', db.Boolean, default=False, server_default='0')
+                       db.Column('extended_warranty', db.Boolean, default=False, server_default='0'),
+                       CheckConstraint('quantity >= 1', name='ck_order_items_quantity'),
+                       CheckConstraint('price > 0', name='ck_order_items_price'),
                        )
 
 # Association table for PC builds
@@ -35,6 +38,8 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default='musterija')
     is_subscribed = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False, nullable=False) # NOVO POLJE
+    failed_login_count = db.Column(db.Integer, default=0, nullable=False, server_default='0')
+    locked_until = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     orders = db.relationship('Order', backref='user', lazy=True)
     cart_items = db.relationship('CartItem', backref='user', lazy=True, cascade="all, delete-orphan")
@@ -120,12 +125,15 @@ class Product(db.Model):
     reviews = db.relationship('Review', backref='product', lazy='dynamic',
                               cascade='all, delete-orphan')
 
-    # Performance indexes for frequently queried columns
+    # Performance indexes and CHECK constraints
     __table_args__ = (
         db.Index('idx_product_category_stock', 'category_id', 'stock'),
         db.Index('idx_product_visibility', 'is_publicly_visible'),
         db.Index('idx_product_featured', 'featured'),
         db.Index('idx_product_component_type', 'component_type'),
+        db.Index('idx_product_name', 'name'),
+        CheckConstraint('price > 0', name='ck_product_price_positive'),
+        CheckConstraint('stock >= 0', name='ck_product_stock_non_negative'),
     )
 
     def __repr__(self):
@@ -145,11 +153,13 @@ class CartItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, default=1)
     added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     extended_warranty = db.Column(db.Boolean, default=False)
 
-    # Performance index for cart lookups
+    # Performance index and CHECK constraints for cart lookups
     __table_args__ = (
         db.Index('idx_cartitem_user_product', 'user_id', 'product_id'),
+        CheckConstraint('quantity >= 1', name='ck_cartitem_quantity_positive'),
     )
 
     def __repr__(self):
@@ -206,6 +216,7 @@ class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f'<Subscription {self.email}>'
@@ -283,6 +294,7 @@ class Message(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
@@ -307,13 +319,19 @@ class Post(db.Model):
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    rating = db.Column(db.Integer, nullable=False)
+    rating = db.Column(db.Integer, CheckConstraint('rating >= 1 AND rating <= 5', name='ck_review_rating_range'), nullable=False)
     text = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     # Veza sa narudžbom osigurava da je korisnik zaista kupio proizvod
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=True)
+
+    # Prevent duplicate reviews: one review per user per product per order
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'product_id', 'order_id', name='uq_review_user_product_order'),
+    )
 
     order = db.relationship('Order', backref=db.backref('reviews', lazy=True, cascade="all, delete-orphan"))
 

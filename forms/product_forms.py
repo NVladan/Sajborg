@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, FloatField, IntegerField, SubmitField, SelectField, FileField, \
     BooleanField
 # IZMJENA: Uvozimo InputRequired umjesto DataRequired za polje zaliha
-from wtforms.validators import DataRequired, NumberRange, InputRequired
+from wtforms.validators import DataRequired, NumberRange, InputRequired, Length
 
 
 class ProductForm(FlaskForm):
@@ -40,7 +40,7 @@ class ImportForm(FlaskForm):
 
 class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
-    content = TextAreaField('Content', validators=[DataRequired()])
+    content = TextAreaField('Content', validators=[DataRequired(), Length(max=100000, message='Sadržaj članka je predugačak (max 100.000 karaktera).')])
     featured_image = FileField('Featured Image')
     is_published = BooleanField('Published')
     submit = SubmitField('Submit')

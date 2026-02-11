@@ -1,9 +1,13 @@
 from flask import Blueprint, redirect, url_for, flash
 from flask_login import current_user
 from functools import wraps
+from extensions import limiter
 
 # Define the admin blueprint
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+
+# Apply rate limits to all admin POST endpoints (prevents brute-force/abuse)
+limiter.limit("60 per minute", methods=["POST"])(admin_bp)
 
 # Decorator to check for admin privileges
 def admin_required(f):
