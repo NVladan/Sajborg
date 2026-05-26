@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlparse
@@ -6,6 +7,9 @@ from flask_wtf.csrf import generate_csrf
 from flask import session
 from models import User
 from forms.auth_forms import LoginForm, RegistrationForm, ProfileForm
+
+MAX_FAILED_LOGINS = 5
+LOCKOUT_DURATION = timedelta(minutes=15)
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -21,16 +25,35 @@ def login():
     if request.method == 'POST':
         if form.validate_on_submit():
             user = User.query.filter_by(email=form.email.data).first()
+
+            # Check account lockout
+            if user and user.locked_until and user.locked_until > datetime.utcnow():
+                remaining = int((user.locked_until - datetime.utcnow()).total_seconds() / 60) + 1
+                flash(f'Nalog je privremeno zaključan. Pokušajte ponovo za {remaining} minuta.', 'danger')
+                return redirect(url_for('auth.login'))
+
             if user is None or not user.check_password(form.password.data):
+                # Track failed login attempts
+                if user:
+                    user.failed_login_count = (user.failed_login_count or 0) + 1
+                    if user.failed_login_count >= MAX_FAILED_LOGINS:
+                        user.locked_until = datetime.utcnow() + LOCKOUT_DURATION
+                        db.session.commit()
+                        flash(f'Previše neuspješnih pokušaja. Nalog je zaključan na 15 minuta.', 'danger')
+                        return redirect(url_for('auth.login'))
+                    db.session.commit()
                 flash('Nevažeći email ili lozinka', 'danger')
                 return redirect(url_for('auth.login'))
 
-            # --- POČETAK IZMENE ---
             # Provera da li je korisnik banovan
             if user.is_banned:
                 flash('Vaš nalog je suspendovan. Molimo kontaktirajte administratora.', 'danger')
                 return redirect(url_for('auth.login'))
-            # --- KRAJ IZMENE ---
+
+            # Reset failed login counter on successful login
+            user.failed_login_count = 0
+            user.locked_until = None
+            db.session.commit()
 
             login_user(user, remember=form.remember.data)
             next_page = request.args.get('next')

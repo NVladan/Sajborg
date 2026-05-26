@@ -45,12 +45,12 @@ class RegistrationForm(FlaskForm):
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user:
-            raise ValidationError('To korisničko ime je zauzeto. Molimo izaberite drugo.')
+            raise ValidationError('Registracija nije moguća sa unesenim podacima.')
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user:
-            raise ValidationError('Taj email je već iskorišćen. Molimo izaberite drugi.')
+            raise ValidationError('Registracija nije moguća sa unesenim podacima.')
 
 class LoginForm(FlaskForm):
     # Koristimo EmailField umjesto StringField

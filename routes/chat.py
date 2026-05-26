@@ -60,13 +60,22 @@ def widget_data():
 @login_required
 def get_chat_history(other_user_id):
     """Dohvata istoriju razgovora sa određenim korisnikom i označava poruke kao pročitane."""
-    admin = User.query.filter_by(role='admin').first()
-    if not admin:
-        return jsonify({'error': 'Admin nalog nije pronađen.'}), 500
+    # Prevent users from reading their own messages endpoint with wrong ID
+    if other_user_id == current_user.id:
+        return jsonify({'error': 'Neispravan zahtjev'}), 400
 
-    if current_user.role != 'admin' and other_user_id != admin.id:
-        return jsonify({'error': 'Nemate dozvolu'}), 403
+    # Authorization: regular users can only chat with admin
+    if current_user.role != 'admin':
+        admin = User.query.filter_by(role='admin').first()
+        if not admin or other_user_id != admin.id:
+            return jsonify({'error': 'Nemate dozvolu'}), 403
+    else:
+        # Admin can only view chats where they are a participant
+        other_user = User.query.get(other_user_id)
+        if not other_user:
+            return jsonify({'error': 'Korisnik nije pronađen'}), 404
 
+    # Only fetch messages where current_user is a participant
     messages = Message.query.filter(
         or_(
             (Message.sender_id == current_user.id) & (Message.recipient_id == other_user_id),

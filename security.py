@@ -5,7 +5,7 @@ This module provides security headers and utilities to protect
 the application against common web vulnerabilities.
 """
 
-from flask import make_response
+from flask import make_response, request
 
 
 def add_security_headers(response):
@@ -95,6 +95,15 @@ def configure_security(app):
     @app.after_request
     def apply_security_headers(response):
         return add_security_headers(response)
+
+    # Add Content-Disposition header for uploaded files to prevent stored XSS
+    @app.after_request
+    def add_content_disposition(response):
+        if response.content_type and response.content_type.startswith('image/'):
+            if '/uploads/' in (request.path or ''):
+                response.headers['Content-Disposition'] = 'inline'
+                response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
 
     # Optionally: Add security logging
     @app.after_request

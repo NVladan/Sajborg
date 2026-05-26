@@ -223,6 +223,7 @@ def get_file_extension(filename):
 def validate_image_upload(file):
     """
     Validate uploaded image file for security and size constraints.
+    Checks both file extension and magic bytes (content-type).
 
     Args:
         file: FileStorage object from Flask request.files
@@ -253,7 +254,49 @@ def validate_image_upload(file):
     if size == 0:
         return False, "Fajl je prazan"
 
+    # Validate magic bytes to prevent disguised file uploads
+    header = file.read(12)
+    file.seek(0)  # Reset to beginning
+
+    if not _validate_image_magic_bytes(header, ext):
+        return False, "Sadržaj fajla ne odgovara ekstenziji. Fajl možda nije validan."
+
     return True, None
+
+
+# Magic byte signatures for image formats
+_IMAGE_SIGNATURES = {
+    'jpg': [b'\xff\xd8\xff'],
+    'jpeg': [b'\xff\xd8\xff'],
+    'png': [b'\x89PNG\r\n\x1a\n'],
+    'gif': [b'GIF87a', b'GIF89a'],
+    'webp': [b'RIFF'],  # Full check: RIFF....WEBP
+}
+
+
+def _validate_image_magic_bytes(header, ext):
+    """
+    Validate that file header bytes match expected image format.
+
+    Args:
+        header: First 12 bytes of the file
+        ext: File extension (lowercase, no dot)
+
+    Returns:
+        bool: True if magic bytes match the extension
+    """
+    if len(header) < 4:
+        return False
+
+    signatures = _IMAGE_SIGNATURES.get(ext, [])
+    for sig in signatures:
+        if header[:len(sig)] == sig:
+            # Additional check for WebP: bytes 8-12 should be 'WEBP'
+            if ext == 'webp' and len(header) >= 12:
+                return header[8:12] == b'WEBP'
+            return True
+
+    return False
 
 
 def validate_document_upload(file):

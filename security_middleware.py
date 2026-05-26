@@ -21,52 +21,27 @@ def add_security_headers(app: Flask):
     - Referrer-Policy: Controls referrer information
     """
 
+    # Security headers are handled by security.py (configure_security).
+    # This module only handles cookie flags and HSTS to avoid duplicate headers.
+
     @app.after_request
-    def set_security_headers(response):
-        """Add security headers to every response."""
-
-        # Prevent clickjacking - don't allow site to be framed
-        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-
-        # Prevent MIME sniffing
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-
-        # Enable XSS filter in browsers
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-
-        # Control referrer information
-        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-
-        # Content Security Policy - allows inline styles/scripts for now
-        # TODO: Move to external CSS/JS files and tighten CSP
-        csp = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-            "img-src 'self' data: https:; "
-            "connect-src 'self';"
-        )
-        response.headers['Content-Security-Policy'] = csp
+    def set_cookie_security(response):
+        """Set secure cookie flags and HSTS (headers set by security.py)."""
 
         # Force HTTPS in production (only if not in development/testing)
         if not app.config.get('TESTING') and not app.debug:
-            # HSTS: Force HTTPS for 1 year, include subdomains
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
 
-        # Set secure cookie flags
-        if not app.config.get('TESTING'):
-            # Ensure session cookies are secure
-            app.config['SESSION_COOKIE_SECURE'] = not app.debug  # Only in production
-            app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access
-            app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
-
-            # Ensure remember me cookies are secure
-            app.config['REMEMBER_COOKIE_SECURE'] = not app.debug
-            app.config['REMEMBER_COOKIE_HTTPONLY'] = True
-            app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
-
         return response
+
+    # Set cookie flags once at init, not on every request
+    if not app.config.get('TESTING'):
+        app.config['SESSION_COOKIE_SECURE'] = not app.debug
+        app.config['SESSION_COOKIE_HTTPONLY'] = True
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        app.config['REMEMBER_COOKIE_SECURE'] = not app.debug
+        app.config['REMEMBER_COOKIE_HTTPONLY'] = True
+        app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 
     return app
 
@@ -83,7 +58,7 @@ def configure_security_settings(app: Flask):
 
     # Set secure session configuration
     app.config['SESSION_COOKIE_NAME'] = 'sajborg_session'
-    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+    # PERMANENT_SESSION_LIFETIME is set in app.py (7 days) - do not override here
 
     # Prevent session fixation attacks
     app.config['SESSION_REFRESH_EACH_REQUEST'] = True
