@@ -242,6 +242,22 @@
 
     {% block extra_js %}{% endblock %}
 
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-consent-banner" class="cc-banner" aria-live="polite">
+        <div class="cc-glow"></div>
+        <div class="cc-inner">
+            <div class="cc-icon-wrap">
+                <i class="fas fa-cookie-bite"></i>
+            </div>
+            <div class="cc-body">
+                <strong class="cc-heading">Koristimo kolačiće</strong>
+                <p class="cc-desc">Kolačići pomažu da sajt radi ispravno i pružaju bolje korisničko iskustvo. Vaše podatke koristimo isključivo za dostavu narudžbi i dijelimo ih samo sa kurirskom službom.</p>
+                <a href="{{ url_for('main.privacy_policy') }}" class="cc-link">Politika privatnosti <i class="fas fa-arrow-right fa-xs"></i></a>
+            </div>
+            <button id="cookie-accept-btn" class="cc-accept" type="button">Prihvati</button>
+        </div>
+    </div>
+
     <!-- Back to Top button -->
     <button id="back-to-top" class="back-to-top-btn" aria-label="Nazad na vrh" title="Nazad na vrh">
         <i class="fas fa-chevron-up"></i>

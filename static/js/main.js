@@ -276,6 +276,20 @@ document.addEventListener('DOMContentLoaded', function() {
       if (searchInput) searchInput.focus();
     }
   });
+
+  // --- Cookie Consent Banner ---
+  const cookieBanner = document.getElementById('cookie-consent-banner');
+  const cookieAcceptBtn = document.getElementById('cookie-accept-btn');
+  if (cookieBanner && !localStorage.getItem('cookieConsent')) {
+    setTimeout(function() { cookieBanner.classList.add('cc-visible'); }, 800);
+  }
+  if (cookieAcceptBtn) {
+    cookieAcceptBtn.addEventListener('click', function() {
+      localStorage.setItem('cookieConsent', 'accepted');
+      cookieBanner.classList.remove('cc-visible');
+      cookieBanner.classList.add('cc-hiding');
+    });
+  }
 });
 
 /**
