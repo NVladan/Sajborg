@@ -76,8 +76,17 @@ def add_to_cart():
         ).first()
 
         if cart_item:
+            # Validate total quantity against stock
+            new_quantity = cart_item.quantity + quantity
+            if new_quantity > product.stock:
+                message = f'Već imate {cart_item.quantity} u korpi. Dostupno je samo {product.stock} komada.'
+                if is_ajax:
+                    return jsonify({'success': False, 'message': message})
+                flash(message, 'warning')
+                return redirect(request.referrer or url_for('product.products'))
+
             # Update quantity
-            cart_item.quantity += quantity
+            cart_item.quantity = new_quantity
             cart_item.extended_warranty = extended_warranty
             message = f'Ažurirana količina za {product.name} u Vašoj korpi.'
         else:

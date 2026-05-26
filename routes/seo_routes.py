@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, make_response, url_for
+import time
+from flask import Blueprint, render_template, make_response, url_for, current_app
 from models import Product, Category, Post  # Dodan Post model
 from datetime import datetime
 from sqlalchemy import func
@@ -6,10 +7,21 @@ from extensions import db
 
 seo_bp = Blueprint('seo', __name__)
 
+# Simple in-memory sitemap cache (TTL in seconds)
+_sitemap_cache = {'content': None, 'timestamp': 0}
+SITEMAP_CACHE_TTL = 3600  # 1 hour
+
 
 @seo_bp.route('/sitemap.xml')
 def sitemap():
     """Generiše sitemap.xml sa dinamičkim prioritetima i datumima izmjene."""
+    # Return cached sitemap if still fresh
+    now = time.time()
+    if _sitemap_cache['content'] and (now - _sitemap_cache['timestamp']) < SITEMAP_CACHE_TTL:
+        response = make_response(_sitemap_cache['content'])
+        response.headers["Content-Type"] = "application/xml"
+        return response
+
     pages = []
 
     # Dobavljanje današnjeg datuma jednom za efikasnost
@@ -66,6 +78,11 @@ def sitemap():
         })
 
     sitemap_template = render_template('sitemap.xml', pages=pages)
+
+    # Cache the rendered sitemap
+    _sitemap_cache['content'] = sitemap_template
+    _sitemap_cache['timestamp'] = time.time()
+
     response = make_response(sitemap_template)
     response.headers["Content-Type"] = "application/xml"
 
@@ -74,14 +91,31 @@ def sitemap():
 
 @seo_bp.route('/robots.txt')
 def robots():
-    """Generiše robots.txt."""
+    """Generiše robots.txt. Disallows all crawling on non-production environments."""
+    if current_app.debug or current_app.testing:
+        lines = [
+            "User-agent: *",
+            "Disallow: /",
+        ]
+    else:
+        lines = [
+            "User-agent: *",
+            "Disallow: /admin/",
+            "Disallow: /cart/",
+            "Disallow: /checkout/",
+            "Disallow: /profile/",
+            "",
+            f"Sitemap: {url_for('seo.sitemap', _external=True)}"
+        ]
+    return "\n".join(lines), 200, {"Content-Type": "text/plain"}
+
+
+@seo_bp.route('/.well-known/security.txt')
+def security_txt():
+    """Responsible disclosure security.txt (RFC 9116)."""
     lines = [
-        "User-agent: *",
-        "Disallow: /admin/",
-        "Disallow: /cart/",
-        "Disallow: /checkout/",
-        "Disallow: /profile/",
-        "",
-        f"Sitemap: {url_for('seo.sitemap', _external=True)}"
+        f"Contact: mailto:security@sajborg.com",
+        f"Preferred-Languages: sr, en",
+        f"Canonical: {url_for('seo.security_txt', _external=True)}",
     ]
     return "\n".join(lines), 200, {"Content-Type": "text/plain"}

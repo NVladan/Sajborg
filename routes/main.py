@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, jsonify
 from sqlalchemy.orm import joinedload
+from sqlalchemy import text
+from extensions import db
 from models import Product, Category
 from forms.builder_forms import SubscriptionForm
 
@@ -38,3 +40,13 @@ def privacy_policy():
 @main_bp.route('/uslovi-koriscenja')
 def terms_of_use():
     return render_template('terms_of_use.html', title='Uslovi Korišćenja')
+
+
+@main_bp.route('/health')
+def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    try:
+        db.session.execute(text('SELECT 1'))
+        return jsonify({'status': 'healthy', 'database': 'ok'}), 200
+    except Exception:
+        return jsonify({'status': 'unhealthy', 'database': 'error'}), 503

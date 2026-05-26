@@ -77,9 +77,12 @@ def products(category_slug):
     else:  # Default: name_asc
         query = query.order_by(Product.name.asc())
 
-    # Pagination
+    # Pagination - eager load images and category to avoid N+1 queries
     per_page = 12
-    products = query.paginate(page=page, per_page=per_page, error_out=False)
+    products = query.options(
+        joinedload(Product.images),
+        joinedload(Product.category)
+    ).paginate(page=page, per_page=per_page, error_out=False)
 
     # Get all categories for filter
     categories = Category.query.all()

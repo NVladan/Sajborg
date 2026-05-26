@@ -2,6 +2,7 @@ import os
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, jsonify
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
+from sqlalchemy import text
 from extensions import db, limiter
 from models import CartItem, Product, Order, order_items
 from forms.checkout_forms import CheckoutForm
@@ -129,47 +130,87 @@ def checkout():
         form.phone_number.data = current_user.phone_number
 
     if form.validate_on_submit():
-        # Kreiranje porudžbine sa razdvojenim poljima za adresu
-        order = Order(
-            user_id=current_user.id,
-            total_amount=total,
-            payment_method='cash_on_delivery',
-            status='pending',
-            shipping_first_name=form.first_name.data,
-            shipping_last_name=form.last_name.data,
-            shipping_address=form.address.data,
-            shipping_city=form.city.data,
-            shipping_postal_code=form.postal_code.data,
-            shipping_country=form.country.data,
-            shipping_phone_number=form.phone_number.data
-        )
+        try:
+            # Re-fetch cart items inside transaction for consistency
+            cart_items = CartItem.query.filter_by(user_id=current_user.id).options(
+                joinedload(CartItem.product)
+            ).all()
 
-        # Add order items
-        db.session.add(order)
-        db.session.flush()  # Get order ID
+            if not cart_items:
+                flash('Vaša korpa je prazna.', 'info')
+                return redirect(url_for('cart.view_cart'))
 
-        # Add products to order
-        for item in cart_items:
-            # Add to order_items relationship
-            stmt = order_items.insert().values(
-                order_id=order.id,
-                product_id=item.product_id,
-                quantity=item.quantity,
-                price=item.product.price,
-                extended_warranty=item.extended_warranty
+            # Lock products to prevent race conditions on stock
+            product_ids = [item.product_id for item in cart_items]
+            locked_products = Product.query.filter(
+                Product.id.in_(product_ids)
+            ).with_for_update().all()
+            product_map = {p.id: p for p in locked_products}
+
+            # Validate stock availability with locked rows
+            for item in cart_items:
+                product = product_map.get(item.product_id)
+                if not product:
+                    db.session.rollback()
+                    flash(f'Proizvod iz korpe više nije dostupan.', 'danger')
+                    return redirect(url_for('cart.view_cart'))
+                if product.stock < item.quantity:
+                    db.session.rollback()
+                    flash(f'Nedovoljna količina za {product.name}. Dostupno: {product.stock}.', 'danger')
+                    return redirect(url_for('cart.view_cart'))
+
+            # Recalculate total with locked prices
+            subtotal = calculate_order_total(cart_items)
+            shipping_cost = current_app.config.get('SHIPPING_COST', 10.0)
+            total = subtotal + shipping_cost
+
+            # Create order
+            order = Order(
+                user_id=current_user.id,
+                total_amount=total,
+                payment_method='cash_on_delivery',
+                status='pending',
+                shipping_first_name=form.first_name.data,
+                shipping_last_name=form.last_name.data,
+                shipping_address=form.address.data,
+                shipping_city=form.city.data,
+                shipping_postal_code=form.postal_code.data,
+                shipping_country=form.country.data,
+                shipping_phone_number=form.phone_number.data
             )
-            db.session.execute(stmt)
 
-            # Update product stock
-            product = item.product
-            product.stock -= item.quantity
+            db.session.add(order)
+            db.session.flush()  # Get order ID
 
-        # Clear cart
-        CartItem.query.filter_by(user_id=current_user.id).delete()
+            # Add products to order and decrement stock atomically
+            for item in cart_items:
+                product = product_map[item.product_id]
 
-        db.session.commit()
-        flash('Vaša porudžbina je uspešno kreirana! Platićete prilikom isporuke.', 'success')
-        return redirect(url_for('cart.checkout_success', order_id=order.id))
+                stmt = order_items.insert().values(
+                    order_id=order.id,
+                    product_id=item.product_id,
+                    quantity=item.quantity,
+                    price=product.price,
+                    extended_warranty=item.extended_warranty
+                )
+                db.session.execute(stmt)
+
+                # Decrement stock (row is locked via with_for_update)
+                product.stock -= item.quantity
+
+            # Clear cart
+            CartItem.query.filter_by(user_id=current_user.id).delete()
+
+            # Commit entire transaction atomically
+            db.session.commit()
+            flash('Vaša porudžbina je uspešno kreirana! Platićete prilikom isporuke.', 'success')
+            return redirect(url_for('cart.checkout_success', order_id=order.id))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Checkout error: {e}")
+            flash('Došlo je do greške pri kreiranju porudžbine. Pokušajte ponovo.', 'danger')
+            return redirect(url_for('cart.view_cart'))
 
     return render_template('shop/checkout.html',
                            title='Plaćanje',
