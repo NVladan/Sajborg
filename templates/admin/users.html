@@ -113,12 +113,12 @@
 
                                     {% if user.role != 'admin' %}
                                         {% if user.is_banned %}
-                                        <form action="{{ url_for('admin.unban_user', user_id=user.id) }}" method="POST" class="d-inline">
+                                        <form action="{{ url_for('admin.unban_user', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da odblokirate korisnika {{ user.username }}?')">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-success">Odblokiraj</button>
                                         </form>
                                         {% else %}
-                                        <form action="{{ url_for('admin.ban_user', user_id=user.id) }}" method="POST" class="d-inline">
+                                        <form action="{{ url_for('admin.ban_user', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da banujete korisnika {{ user.username }}?')">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <button type="submit" class="btn btn-sm btn-warning">Banuj</button>
                                         </form>
