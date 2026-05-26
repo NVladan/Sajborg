@@ -33,6 +33,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    TEMPLATES_AUTO_RELOAD = True
 
 
 class TestingConfig(Config):

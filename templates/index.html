@@ -5,18 +5,10 @@
 {% block content %}
 <!-- Hero Section -->
 <section class="hero-section text-center text-white">
-    <div class="hero-overlay"></div>
-    <div class="hero-particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
+    <canvas id="hero-fluid-canvas" class="hero-fluid-canvas"></canvas>
     <div class="container hero-content">
-        <span class="hero-badge">Novo u ponudi - RTX 50 serija</span>
-        <h1 class="display-3 fw-bold mb-3">Sklopite Vaš Računar<br><span class="hero-accent">Iz Snova</span></h1>
-        <p class="lead mb-4 mx-auto" style="max-width: 640px;">Najveći izbor PC komponenti i gaming opreme u regionu. Kvalitetne računarske komponente za entuzijaste i profesionalce.</p>
+        <h1 class="display-4 fw-bold mb-2">Sklopite Vaš Računar <span class="hero-accent">Iz Snova</span></h1>
+        <p class="lead mb-3 mx-auto" style="max-width: 600px;">Najveći izbor PC komponenti i gaming opreme u regionu. Kvalitetne računarske komponente za entuzijaste i profesionalce.</p>
         <div class="hero-cta">
             <a href="{{ url_for('product.products') }}" class="btn btn-light btn-lg hero-btn-primary">
                 <i class="fas fa-shopping-bag me-2"></i>Pregled Proizvoda
@@ -124,4 +116,8 @@
         </div>
     </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/fluid.js', v=cache_buster) }}"></script>
 {% endblock %}
