@@ -201,8 +201,10 @@ class TestImageUploadValidation:
 
     def test_validate_valid_png(self):
         """Test validation of valid PNG file."""
+        # Valid PNG magic bytes
+        png_header = b'\x89PNG\r\n\x1a\n' + b'\x00' * 100
         file = FileStorage(
-            stream=BytesIO(b"fake png content"),
+            stream=BytesIO(png_header),
             filename="test.png",
             content_type="image/png"
         )
@@ -249,8 +251,10 @@ class TestImageUploadValidation:
 
     def test_validate_webp(self):
         """Test validation of WebP file."""
+        # Valid WebP: RIFF....WEBP
+        webp_header = b'RIFF' + b'\x00\x00\x00\x00' + b'WEBP' + b'\x00' * 100
         file = FileStorage(
-            stream=BytesIO(b"fake webp content"),
+            stream=BytesIO(webp_header),
             filename="test.webp",
             content_type="image/webp"
         )

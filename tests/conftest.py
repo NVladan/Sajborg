@@ -459,9 +459,11 @@ def sample_order(app, sample_user, sample_products):
 
 @pytest.fixture
 def mock_image_file():
-    """Create a mock image file for upload testing."""
+    """Create a mock image file for upload testing with valid JPEG magic bytes."""
+    # Valid JPEG starts with FF D8 FF
+    jpeg_data = b'\xff\xd8\xff\xe0' + b'\x00' * 100
     return FileStorage(
-        stream=BytesIO(b"fake image content here"),
+        stream=BytesIO(jpeg_data),
         filename="test_image.jpg",
         content_type="image/jpeg"
     )
