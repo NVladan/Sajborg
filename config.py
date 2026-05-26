@@ -8,7 +8,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     DEBUG = False
     TESTING = False
-    SECRET_KEY = os.environ.get('SESSION_SECRET', 'dev-secret-key')
+    SECRET_KEY = os.environ.get('SESSION_SECRET') or os.urandom(32).hex()
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f'sqlite:///{os.path.join(basedir, "instance", "pcshop.db")}')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     EUR_TO_BAM_RATE = 1.95583  # Fixed exchange rate for Bosnia and Herzegovina convertible mark
@@ -29,12 +29,6 @@ class Config:
         'CPU Cooler', 'Case', 'Case Fans', 'Monitor', 'Keyboard', 'Mouse'
     ]
 
-    # Product categories
-    PRODUCT_CATEGORIES = [
-        'CPUs', 'Motherboards', 'Memory', 'Graphics Cards', 'Storage',
-        'Power Supplies', 'Cases', 'Cooling', 'Peripherals', 'Monitors',
-        'Networking', 'Software'
-    ]
 
 
 class DevelopmentConfig(Config):
@@ -49,7 +43,13 @@ class TestingConfig(Config):
 
 
 class ProductionConfig(Config):
-    pass
+    # Database connection pooling for production
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'pool_recycle': 300,
+        'pool_pre_ping': True,
+        'max_overflow': 20,
+    }
 
 
 # Configuration dictionary

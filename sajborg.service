@@ -9,7 +9,7 @@ WorkingDirectory=/var/www/Sajborg
 Environment="PATH=/var/www/Sajborg/venv/bin"
 Environment="FLASK_ENV=production"
 EnvironmentFile=/var/www/Sajborg/.env
-ExecStart=/var/www/Sajborg/venv/bin/gunicorn --workers 4 --bind unix:/var/www/Sajborg/sajborg.sock --timeout 120 --access-logfile /var/log/gunicorn/sajborg_access.log --error-logfile /var/log/gunicorn/sajborg_error.log wsgi:application
+ExecStart=/var/www/Sajborg/venv/bin/gunicorn --workers 4 --worker-class gthread --threads 2 --bind unix:/var/www/Sajborg/sajborg.sock --timeout 120 --preload --access-logfile /var/log/gunicorn/sajborg_access.log --error-logfile /var/log/gunicorn/sajborg_error.log wsgi:application
 
 [Install]
 WantedBy=multi-user.target

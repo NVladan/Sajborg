@@ -87,12 +87,35 @@ def validate_environment(config_name='development'):
         print("Some features may be disabled or use default values.")
         print("=" * 70 + "\n")
 
+    # Guard against running DEBUG mode with production database
+    _check_debug_production_guard(config_name)
+
     # Validate specific variable formats
     _validate_variable_formats(config_name)
 
     # Success message
     if not missing_required and not missing_recommended:
         print(f"[OK] Environment variables validated successfully ({config_name})")
+
+
+def _check_debug_production_guard(config_name):
+    """
+    Prevent running in debug/development mode with a production database.
+
+    Args:
+        config_name (str): Configuration name
+    """
+    if config_name in ('development', 'testing'):
+        db_url = os.environ.get('DATABASE_URL', '')
+        # If a non-SQLite database is configured in dev mode, warn loudly
+        if db_url and not db_url.startswith('sqlite:///'):
+            print("\n" + "=" * 70)
+            print("WARNING: Non-SQLite database detected in development/testing mode!")
+            print("=" * 70)
+            print(f"DATABASE_URL points to: {db_url[:30]}...")
+            print("Make sure you are NOT connecting to a production database.")
+            print("Set FLASK_ENV=production if this is intentional.")
+            print("=" * 70 + "\n")
 
 
 def _validate_variable_formats(config_name):
@@ -109,9 +132,12 @@ def _validate_variable_formats(config_name):
     if session_secret and len(session_secret) < 16:
         errors.append("SESSION_SECRET should be at least 16 characters long")
 
-    # Validate SESSION_SECRET is not default in production
+    # Validate SESSION_SECRET is not default or weak in production
     if config_name == 'production':
-        if session_secret in ['dev-secret-key', 'your-secret-key-here-change-in-production']:
+        weak_secrets = ['dev-secret-key', 'your-secret-key-here-change-in-production', 'secret', 'password']
+        if not session_secret:
+            errors.append("SESSION_SECRET must be set in production (generate with: python -c \"import secrets; print(secrets.token_hex(32))\")")
+        elif session_secret in weak_secrets:
             errors.append("SESSION_SECRET must be changed from default value in production")
 
     # Validate STRIPE_SECRET_KEY format
