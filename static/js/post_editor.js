@@ -63,8 +63,9 @@
                 }
             });
 
-            // Show the textarea (Summernote will replace it)
-            $summernote.show();
+            // NOTE: do NOT show the source textarea — Summernote replaces it with
+            // its own editor and keeps the (hidden) textarea in sync for form submit.
+            // Calling .show() here would render a duplicate empty box above the editor.
 
         } catch (error) {
             console.error('Failed to initialize Summernote:', error);
