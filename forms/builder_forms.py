@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import SelectField, SubmitField, IntegerField, StringField, HiddenField
-from wtforms.validators import DataRequired, Email
+from wtforms import SelectField, SubmitField, IntegerField, HiddenField
+from wtforms.validators import DataRequired
 
 class PCBuildForm(FlaskForm):
     case = SelectField('Case', coerce=int, validators=[DataRequired()])
@@ -16,7 +16,3 @@ class AddToCartForm(FlaskForm):
     product_id = HiddenField('Product ID', validators=[DataRequired()])
     quantity = IntegerField('Quantity', default=1, validators=[DataRequired()])
     submit = SubmitField('Add to Cart')
-
-class SubscriptionForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Subscribe')

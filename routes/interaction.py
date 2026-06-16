@@ -1,41 +1,12 @@
 from flask import Blueprint, redirect, url_for, flash, request, jsonify
 from flask_login import current_user, login_required
 from app import db
-from models import Product, CartItem, Subscription
-from forms.builder_forms import AddToCartForm, SubscriptionForm
+from models import Product, CartItem
+from forms.builder_forms import AddToCartForm
 from forms.checkout_forms import CheckoutForm
 from extensions import limiter
 
 interaction_bp = Blueprint('interaction', __name__, url_prefix='/interaction')
-
-
-@interaction_bp.route('/subscribe', methods=['POST'])
-@limiter.limit("5 per hour", methods=["POST"])
-def subscribe():
-    form = SubscriptionForm()
-
-    if form.validate_on_submit():
-        email = form.email.data
-
-        # Check if already subscribed
-        existing = Subscription.query.filter_by(email=email).first()
-        if existing:
-            flash('Već ste prijavljeni na naš newsletter!', 'info')
-        else:
-            # Create new subscription
-            subscription = Subscription(email=email)
-            db.session.add(subscription)
-
-            # If user is logged in, update their subscription status
-            if current_user.is_authenticated:
-                current_user.is_subscribed = True
-
-            db.session.commit()
-            flash('Hvala Vam što ste se prijavljeni na naš newsletter!', 'success')
-
-    # Redirect back to referring page
-    next_page = request.referrer or url_for('main.index')
-    return redirect(next_page)
 
 
 @interaction_bp.route('/add-to-cart', methods=['POST'])

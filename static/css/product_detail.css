@@ -1,41 +1,41 @@
 .rating-stars .fa-star,
 .rating-stars .fas.fa-star {
-    color: #f8ce0b;
+    color: #f5b50a;
 }
 .rating-stars .fa-star-o,
 .rating-stars .far.fa-star {
-    color: #ccc;
+    color: var(--border-strong);
 }
 
-/* MODERN REVIEW SECTION REDESIGN */
+/* REVIEW SECTION */
 
 .review-section {
-    background: linear-gradient(135deg, rgba(74, 144, 226, 0.03) 0%, rgba(109, 213, 176, 0.03) 100%);
+    background: var(--surface-2);
     padding: 2.5rem;
-    border-radius: var(--border-radius);
-    border: 2px solid #E8ECF0;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
 }
 
 .review-section h3 {
-    color: var(--text-primary);
+    color: var(--ink-strong);
     font-weight: 700;
 }
 
 .review-summary {
     text-align: center;
     padding: 1.5rem;
-    background: white;
-    border-radius: var(--border-radius);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
 }
 
 .review-summary .average-rating {
+    font-family: var(--font-display);
     font-size: 3.5rem;
-    font-weight: 700;
-    background: var(--gradient-bg);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--accent);
 }
 
 .review-summary > div:last-child {
@@ -81,7 +81,7 @@
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #E8ECF0;
+    border: 2px solid var(--border);
 }
 
 .review-content {

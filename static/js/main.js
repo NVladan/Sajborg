@@ -160,11 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         suggestionBox.className = 'autocomplete-suggestions';
         suggestionBox.style.position = 'absolute';
         suggestionBox.style.zIndex = '1000';
-        suggestionBox.style.background = '#222';
-        suggestionBox.style.color = '#fff';
         suggestionBox.style.width = searchInput.offsetWidth + 'px';
-        suggestionBox.style.borderRadius = '0 0 0.5rem 0.5rem';
-        suggestionBox.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
         suggestionBox.style.maxHeight = '260px';
         suggestionBox.style.overflowY = 'auto';
         suggestionBox.style.fontSize = '1rem';
@@ -248,6 +244,44 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 
+  // --- Theme toggle (light / dark) ---
+  (function () {
+    const toggle = document.getElementById('theme-toggle');
+    const root = document.documentElement;
+
+    function currentTheme() {
+      return root.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+    }
+    function setTheme(theme) {
+      root.setAttribute('data-bs-theme', theme);
+      try { localStorage.setItem('theme', theme); } catch (e) {}
+      if (toggle) {
+        toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+        toggle.title = theme === 'dark' ? 'Pređi na svijetlu temu' : 'Pređi na tamnu temu';
+      }
+    }
+
+    // sync initial state (the no-flash script already set the attribute)
+    setTheme(currentTheme());
+
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        setTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+      });
+    }
+  })();
+
+  // --- Navbar elevation on scroll ---
+  (function () {
+    const nav = document.querySelector('.navbar');
+    if (!nav) return;
+    const onScroll = function () {
+      nav.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
   // --- Back to Top button ---
   const backToTopBtn = document.getElementById('back-to-top');
   if (backToTopBtn) {
@@ -305,41 +339,6 @@ function formatPrice(price, currency = 'BAM') {
     return '€' + price.toFixed(2);
   }
   return price.toFixed(2);
-}
-
-/**
- * Handle subscription form submission with AJAX
- * @param {HTMLFormElement} form - The subscription form element
- */
-function subscribeNewsletter(form) {
-  // Get form data
-  const formData = new FormData(form);
-
-  // Create request
-  fetch(form.action, {
-    method: 'POST',
-    body: formData,
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest'
-    }
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      // Show success message
-      showAlert('success', data.message);
-      form.reset();
-    } else {
-      // Show error message
-      showAlert('danger', data.message);
-    }
-  })
-  .catch(error => {
-    console.error('Greška:', error);
-    showAlert('danger', 'Došlo je do greške. Molimo pokušajte ponovo.');
-  });
-
-  return false; // Prevent form submission
 }
 
 /**

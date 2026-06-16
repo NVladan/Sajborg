@@ -3,7 +3,6 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import text
 from extensions import db
 from models import Product, Category
-from forms.builder_forms import SubscriptionForm
 
 main_bp = Blueprint('main', __name__)
 
@@ -20,14 +19,10 @@ def index():
     # Get featured categories - IZMENJENO SA 3 NA 6
     featured_categories = Category.query.filter_by(is_featured=True).limit(6).all()
 
-    # Newsletter subscription form
-    form = SubscriptionForm()
-
     return render_template('index.html',
                            title='Sajborg Shop - Prodaja PC Komponenti i Gaming Opreme',
                            featured_products=featured_products,
-                           featured_categories=featured_categories,
-                           form=form)
+                           featured_categories=featured_categories)
 
 @main_bp.route('/o-nama')
 def about():
