@@ -49,7 +49,7 @@ def add_security_headers(response):
     # Restricts what resources can be loaded
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "  # Default: only load from same origin
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net; "  # Scripts
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.jsdelivr.net https://code.jquery.com; "  # Scripts (code.jquery.com: jQuery for Summernote editor)
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "  # Styles
         "img-src 'self' data: https: blob:; "  # Images (allow https and data URLs)
         "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; "  # Fonts
