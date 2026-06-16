@@ -36,7 +36,7 @@ def sitemap():
         'main.terms_of_use': '0.3',
         'product.products': '0.9',
         'builder.builder': '0.8',
-        'blog.all_posts': '0.7'  # Dodana stranica sa svim postovima
+        'blog.posts': '0.7'  # Stranica sa svim postovima
     }
 
     for endpoint, priority in static_pages.items():
@@ -72,7 +72,7 @@ def sitemap():
     posts = Post.query.filter_by(is_published=True).all()
     for post in posts:
         pages.append({
-            'loc': url_for('blog.view_post', slug=post.slug, _external=True),
+            'loc': url_for('blog.post_detail', slug=post.slug, _external=True),
             'lastmod': post.updated_at.strftime('%Y-%m-%d'),
             'priority': '0.7'
         })

@@ -29,6 +29,7 @@ def products(category_slug):
 
     category_id = None
     all_category_ids = []
+    selected_category = None
     # Apply category filter including subcategories
     if category_slug:
         selected_category = Category.query.filter_by(slug=category_slug).first()
@@ -138,6 +139,7 @@ def products(category_slug):
                            title='Proizvodi',
                            products=products,
                            categories=categories,
+                           selected_category=selected_category,
                            category_id=category_id,
                            search_query=search_query,
                            sort_by=sort_by,

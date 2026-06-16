@@ -2,6 +2,8 @@
 
 {% block title %}Kupi {{ product.name }} - {{ product.category.name }} | Sajborg Shop{% endblock %}
 {% block meta_description %}{{ product.description|striptags|truncate(155) }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_image %}{% set _imgs = product.images|sort(attribute='sort_order') %}{% set _pimg = (_imgs|selectattr('is_primary')|first) or (_imgs|first) %}{{ url_for('static', filename=_pimg.image_path, _external=True) if _pimg else url_for('static', filename='img/og-default.png', _external=True) }}{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/product_detail.css', v=cache_buster) }}">
@@ -49,7 +51,7 @@
     "priceCurrency": "BAM",
     "price": "{{ product.price|round(2) }}",
     "priceValidUntil": "{{ (product.updated_at + timedelta(days=30)).strftime('%Y-%m-%d') }}",
-    "itemCondition": "https://schema.org/NewCondition",
+    "itemCondition": "{% if product.condition == 'Novo' %}https://schema.org/NewCondition{% else %}https://schema.org/UsedCondition{% endif %}",
     "availability": "{% if product.stock > 0 %}https://schema.org/InStock{% else %}https://schema.org/OutOfStock{% endif %}"
   }
 }

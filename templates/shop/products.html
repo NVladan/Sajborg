@@ -1,8 +1,32 @@
 {% extends 'layout.html' %}
 
-{% block title %}Proizvodi - PC Delovi Shop{% endblock %}
+{% block title %}{% if search_query %}Pretraga: {{ search_query }}{% elif selected_category %}{{ selected_category.name }}{% else %}Svi proizvodi{% endif %} | Sajborg Shop{% endblock %}
+{% block meta_description %}{% if selected_category and selected_category.description %}{{ selected_category.description|striptags|truncate(155) }}{% elif selected_category %}Kupite {{ selected_category.name }} po najboljim cijenama u Sajborg Shop-u — velik izbor, brza dostava kurirskom službom i provjereni proizvodi.{% elif search_query %}Rezultati pretrage za „{{ search_query }}” u Sajborg Shop-u — PC komponente i gaming oprema.{% else %}Pregledajte sve PC komponente i gaming opremu u Sajborg Shop-u — procesori, grafičke kartice, matične ploče, RAM, SSD, napajanja i još mnogo toga.{% endif %}{% endblock %}
 
 {% block content %}
+{% if selected_category %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+    "@type": "ListItem",
+    "position": 1,
+    "name": "Početna",
+    "item": "{{ url_for('main.index', _external=True) }}"
+  },{
+    "@type": "ListItem",
+    "position": 2,
+    "name": "Proizvodi",
+    "item": "{{ url_for('product.products', _external=True) }}"
+  },{
+    "@type": "ListItem",
+    "position": 3,
+    "name": "{{ selected_category.name }}"
+  }]
+}
+</script>
+{% endif %}
 <div class="container">
     <div class="row">
         <div class="col-lg-3 mb-4 desktop-filter-sidebar">
@@ -111,7 +135,7 @@
                         <a href="{{ url_for('product.product_detail', slug=product.slug) }}">
                             {% set images_sorted = product.images|sort(attribute='sort_order') %}
                             {% set primary_image = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
-                            <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Slika proizvoda {{ product.name }}">
+                            <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Slika proizvoda {{ product.name }}" loading="lazy" decoding="async" width="400" height="220">
                         </a>
 
                         <div class="card-body">

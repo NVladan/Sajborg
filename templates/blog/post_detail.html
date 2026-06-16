@@ -1,8 +1,28 @@
 {% extends 'layout.html' %}
 
-{% block title %}{{ post.title }} - Tech Magazin{% endblock %}
+{% block title %}{{ post.title }} - Tech Magazin | Sajborg Shop{% endblock %}
+{% block meta_description %}{{ post.content|striptags|truncate(155) }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if post.featured_image %}{{ url_for('static', filename=post.featured_image, _external=True) }}{% else %}{{ url_for('static', filename='img/og-default.png', _external=True) }}{% endif %}{% endblock %}
 
 {% block content %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{ post.title }}",
+  "image": "{% if post.featured_image %}{{ url_for('static', filename=post.featured_image, _external=True) }}{% else %}{{ url_for('static', filename='img/og-default.png', _external=True) }}{% endif %}",
+  "datePublished": "{{ post.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}",
+  "dateModified": "{{ post.updated_at.strftime('%Y-%m-%dT%H:%M:%S') }}",
+  "author": { "@type": "Person", "name": "{{ post.author.username }}" },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Sajborg Shop",
+    "logo": { "@type": "ImageObject", "url": "{{ url_for('static', filename='img/favicon.png', _external=True) }}" }
+  },
+  "mainEntityOfPage": "{{ url_for('blog.post_detail', slug=post.slug, _external=True) }}"
+}
+</script>
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -36,7 +56,7 @@
                         {{ post.content | sanitize_html }}
                     </section>
 
-                    <div class="mt-5 pt-4" style="border-top: 2px solid #E8ECF0;">
+                    <div class="mt-5 pt-4" style="border-top: 1px solid var(--border);">
                         <a href="{{ url_for('blog.posts') }}" class="btn btn-outline-primary">
                             <i class="fas fa-arrow-left me-2"></i>Nazad na Tech Magazin
                         </a>
