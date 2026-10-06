@@ -33,8 +33,24 @@ def normalize_name(name):
     return ' '.join((name or '').lower().split())
 
 
+REVISION_RE = re.compile(r'\(?\brev\.?\s*[\d.]+\)?')
+
+
 def _tokens(name):
-    return set(re.findall(r'[a-z0-9]+(?:[.\-/][a-z0-9]+)*', normalize_name(name)))
+    # Revizija ploče (rev. 1.2 / 1.3) ne mijenja proizvod
+    text = REVISION_RE.sub(' ', normalize_name(name))
+    return set(re.findall(r'[a-z0-9]+(?:[.\-/][a-z0-9]+)*', text))
+
+
+def _spec_tokens(tokens):
+    """Riječi sa brojevima: model (9700x), kapacitet (16gb), socket (am5)…"""
+    return {t for t in tokens if any(c.isdigit() for c in t)}
+
+
+def specs_compatible(a, b):
+    """Jedan naziv smije imati dodatne oznake (npr. dlss4), ali ne i drugačije (9700x ≠ 7700)."""
+    sa, sb = _spec_tokens(_tokens(a)), _spec_tokens(_tokens(b))
+    return sa <= sb or sb <= sa
 
 
 def name_similarity(a, b):
@@ -49,6 +65,8 @@ def best_name_match(name, candidates, min_score=SUGGESTION_MIN_SCORE):
     """Kandidat (proizvod ili artikal na lageru) najsličnijeg naziva, ili None."""
     best, best_score = None, 0.0
     for item in candidates:
+        if not specs_compatible(name, item.name):
+            continue
         score = name_similarity(name, item.name)
         if score > best_score:
             best, best_score = item, score

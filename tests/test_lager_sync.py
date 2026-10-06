@@ -66,6 +66,19 @@ class TestMatching:
         assert best_name_match('ASUS A31 PLUS TG BIJELO', items).name == 'ASUS A31 PLUS TG ARGB BIJELO'
         assert best_name_match('KINGSTON FURY 32GB', items) is None
 
+    def test_different_model_numbers_never_match(self):
+        site = [Product(name='AMD Ryzen 7 7700 3.80GHz AM5 OEM'),
+                Product(name='G.SKILL 16GB Ripjaws V DDR4 3600MHz CL18 KIT')]
+        assert best_name_match('AMD Ryzen 7 9700X 3.80GHz AM5 OEM', site) is None
+        assert best_name_match('G.SKILL 32GB Ripjaws V DDR4 3600MHz CL18 KIT', site) is None
+
+    def test_extra_tags_and_board_revision_still_match(self):
+        site = [Product(name='ASUS DUAL-RTX5060TI-O16G Dual OC GeForce RTX 5060 Ti 16GB GDDR7'),
+                Product(name='GIGABYTE A520M S2H (rev. 1.3)')]
+        assert best_name_match('ASUS DUAL-RTX5060TI-O16G Dual OC GeForce RTX 5060 Ti 16GB GDDR7 DLSS4',
+                               site, DUPLICATE_MIN_SCORE) is site[0]
+        assert best_name_match('GIGABYTE A520M S2H (rev. 1.2)', site, DUPLICATE_MIN_SCORE) is site[1]
+
     def test_duplicate_threshold(self):
         site = [Product(name='AMD Ryzen 3 4100 3.80GHz AM4 BOX + Wraith Cooler'),
                 Product(name='GIGABYTE A620M GAMING X')]
