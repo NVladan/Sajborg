@@ -1,0 +1,334 @@
+{% extends 'layout.html' %}
+
+{% block title %}Lager ↔ Sajt - Sajborg Shop Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lager_sync.css', v=cache_buster) }}">
+{% endblock %}
+
+{% macro hidden(tab) -%}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="markup" value="{{ markup }}">
+    <input type="hidden" name="tab" value="{{ tab }}">
+{%- endmacro %}
+
+{% macro diff(old, new, unit='') -%}
+    {% if old != new %}
+    <s class="ls-old">{{ '%g'|format(old) }}</s><span class="ls-arrow" aria-hidden="true">→</span><span class="ls-new">{{ '%g'|format(new) }}{{ unit }}</span>
+    {% else %}
+    <span class="ls-same">{{ '%g'|format(old) }}{{ unit }}</span>
+    {% endif %}
+{%- endmacro %}
+
+{% macro category_label(name) -%}
+    {{ name if name|length <= 4 else name|capitalize }}
+{%- endmacro %}
+
+{% block content %}
+{% set publish_count = unpublished.values()|map('length')|sum %}
+{% if mismatched %}{% set default_tab = 'uskladi' %}
+{% elif publish_count %}{% set default_tab = 'objavi' %}
+{% elif unlinked_rows %}{% set default_tab = 'povezi' %}
+{% else %}{% set default_tab = 'uredu' %}{% endif %}
+
+<div class="container py-4 ls">
+    <header class="ls-head">
+        <div>
+            <h1 class="ls-title">Lager ↔ Sajt</h1>
+            <p class="ls-lede">Sajt prati lager: stanje je količina na lageru, cijena je nabavna plus marža, zaokruženo naviše.</p>
+        </div>
+        <div class="ls-head-actions">
+            <form method="GET" action="{{ url_for('admin.lager_sync') }}" class="ls-markup">
+                <label for="markup">Marža</label>
+                <input type="number" id="markup" name="markup" value="{{ '%g'|format(markup) }}" min="0" max="100" step="0.5"
+                       class="form-control form-control-sm">
+                <span aria-hidden="true">%</span>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Primijeni</button>
+            </form>
+            <a href="{{ url_for('lager.view_lager') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-warehouse"></i> Lager
+            </a>
+        </div>
+    </header>
+
+    <nav class="ls-tabs" role="tablist" aria-label="Redovi poslova">
+        {% for key, label, count in [
+            ('uskladi', 'Za uskladiti', mismatched|length),
+            ('objavi', 'Za objaviti', publish_count),
+            ('povezi', 'Bez veze', unlinked_rows|length),
+            ('uredu', 'U redu', in_sync|length)] %}
+        <button class="ls-tab{% if key == default_tab %} active{% endif %}" id="tab-{{ key }}"
+                data-bs-toggle="tab" data-bs-target="#pane-{{ key }}" type="button" role="tab"
+                aria-controls="pane-{{ key }}" aria-selected="{{ 'true' if key == default_tab else 'false' }}"
+                data-tab="{{ key }}">
+            <span class="ls-tab-label">{{ label }}</span>
+            <span class="ls-count{% if not count %} is-zero{% endif %}">{{ count }}</span>
+        </button>
+        {% endfor %}
+    </nav>
+
+    <div class="ls-panel">
+        <div class="ls-toolbar">
+            <div class="ls-search">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input type="search" id="ls-filter" class="form-control" placeholder="Filtriraj po nazivu…"
+                       aria-label="Filtriraj po nazivu" autocomplete="off">
+            </div>
+            <div class="ls-pane-actions" data-for="uskladi">
+                {% if mismatched %}
+                <form method="POST" action="{{ url_for('admin.lager_sync_apply_all') }}"
+                      onsubmit="return confirm('Uskladiti stanje i cijenu za {{ mismatched|length }} proizvoda?');">
+                    {{ hidden('uskladi') }}
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-sync"></i> Uskladi sve ({{ mismatched|length }})</button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="ls-pane-actions" data-for="povezi">
+                {% if unlinked_rows %}
+                <form method="POST" action="{{ url_for('admin.lager_sync_auto_link') }}">
+                    {{ hidden('povezi') }}
+                    <button type="submit" class="btn btn-outline-primary"
+                            title="Poveže proizvode čiji je naziv isti kao naziv artikla na lageru">
+                        <i class="fas fa-link"></i> Poveži iste nazive
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="tab-content">
+            {# ---------------- Za uskladiti ---------------- #}
+            <section class="tab-pane{% if default_tab == 'uskladi' %} show active{% endif %}" id="pane-uskladi"
+                     role="tabpanel" aria-labelledby="tab-uskladi">
+                {% if mismatched %}
+                <div class="ls-colhead ls-grid-sync" aria-hidden="true">
+                    <span>Proizvod</span><span>Stanje</span><span>Cijena</span><span></span>
+                </div>
+                <ul class="ls-list" role="list">
+                    {% for row in mismatched %}
+                    {% set p = row.product %}
+                    <li class="ls-row ls-grid-sync" data-q="{{ (p.name ~ ' ' ~ p.lager_product.name)|lower }}">
+                        <div class="ls-name">
+                            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}">{{ p.name }}</a>
+                            <div class="ls-meta">
+                                {{ p.category.name }}
+                                {% if p.lager_product.name|lower != p.name|lower %}
+                                <span class="ls-meta-sep">na lageru kao</span> {{ p.lager_product.name }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="ls-cell" data-label="Stanje">
+                            {{ diff(p.stock, row.want_stock) }}
+                            {% if p.stock > 0 and row.want_stock == 0 %}<span class="ls-chip ls-chip-hide">skriva se</span>
+                            {% elif p.stock == 0 and row.want_stock > 0 %}<span class="ls-chip ls-chip-show">vraća se</span>{% endif %}
+                        </div>
+                        <div class="ls-cell" data-label="Cijena">
+                            {% if row.want_price is not none %}{{ diff(p.price, row.want_price, ' KM') }}
+                            {% else %}<span class="ls-same">{{ '%g'|format(p.price) }} KM</span>
+                            <span class="ls-note">nema nabavne cijene</span>{% endif %}
+                        </div>
+                        <div class="ls-actions">
+                            <form method="POST" action="{{ url_for('admin.lager_sync_apply', product_id=p.id) }}">
+                                {{ hidden('uskladi') }}
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Uskladi</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('admin.lager_sync_link', product_id=p.id) }}">
+                                {{ hidden('uskladi') }}
+                                <input type="hidden" name="lager_ref" value="">
+                                <button type="submit" class="ls-unlink" title="Pogrešna veza? Odveži proizvod od lagera.">Odveži</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="ls-empty">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                    <p>Svi povezani proizvodi imaju isto stanje i cijenu kao na lageru.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            {# ---------------- Za objaviti ---------------- #}
+            <section class="tab-pane{% if default_tab == 'objavi' %} show active{% endif %}" id="pane-objavi"
+                     role="tabpanel" aria-labelledby="tab-objavi">
+                {% if not filtered_by_links %}
+                <p class="ls-hint">Još nijedan proizvod nije povezan, pa su prikazane sve kategorije lagera.
+                    Kad povežete proizvode, ostaće samo kategorije koje postoje na sajtu.</p>
+                {% endif %}
+                {% if unpublished %}
+                <div class="ls-colhead ls-grid-pub" aria-hidden="true">
+                    <span>Artikal na lageru</span><span>Kol.</span><span>Cijena</span><span></span>
+                </div>
+                {% for category_name, rows in unpublished|dictsort %}
+                <div class="ls-group">
+                    <h2 class="ls-group-title">{{ category_label(category_name) }} <span class="ls-group-count">{{ rows|length }}</span></h2>
+                    <ul class="ls-list" role="list">
+                        {% for row in rows %}
+                        <li class="ls-row ls-grid-pub" data-q="{{ row.item.name|lower }}">
+                            <div class="ls-name">
+                                <span class="ls-name-text">{{ row.item.name }}</span>
+                                {% if row.similar_product %}
+                                {% set s = row.similar_product %}
+                                <div class="ls-dupe">
+                                    <span>Možda već postoji kao
+                                        <a href="{{ url_for('admin.edit_product', product_id=s.id) }}">{{ s.name }}</a>
+                                        (stanje {{ s.stock }}).</span>
+                                    <form method="POST" action="{{ url_for('admin.lager_sync_link', product_id=s.id) }}">
+                                        {{ hidden('objavi') }}
+                                        <input type="hidden" name="lager_ref" value="#{{ row.item.id }}">
+                                        <button type="submit" class="ls-link-btn">Poveži s njim</button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="ls-cell ls-num" data-label="Kol.">{{ row.item.stock }}</div>
+                            <div class="ls-cell ls-num" data-label="Cijena">
+                                {% if row.sale_price is not none %}{{ '%g'|format(row.sale_price) }} KM{% else %}<span class="ls-note">nema cijene</span>{% endif %}
+                            </div>
+                            <div class="ls-actions">
+                                <a href="{{ url_for('admin.add_product', lager_id=row.item.id, markup=markup) }}"
+                                   class="btn btn-sm {{ 'btn-outline-secondary' if row.similar_product else 'btn-outline-success' }}">
+                                    <i class="fas fa-plus"></i> Objavi
+                                </a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="ls-empty">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                    <p>Sva roba sa lagera je objavljena na sajtu.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            {# ---------------- Bez veze ---------------- #}
+            <section class="tab-pane{% if default_tab == 'povezi' %} show active{% endif %}" id="pane-povezi"
+                     role="tabpanel" aria-labelledby="tab-povezi">
+                {% if unlinked_rows %}
+                <p class="ls-hint">Ovi proizvodi ne prate lager. Predložen je artikal najsličnijeg naziva — provjerite ga prije povezivanja.</p>
+                <div class="ls-colhead ls-grid-link" aria-hidden="true">
+                    <span>Proizvod na sajtu</span><span>Stanje</span><span>Artikal na lageru</span>
+                </div>
+                <ul class="ls-list" role="list">
+                    {% for row in unlinked_rows %}
+                    {% set p = row.product %}
+                    <li class="ls-row ls-grid-link{% if p.stock <= 0 %} is-muted{% endif %}" data-q="{{ p.name|lower }}">
+                        <div class="ls-name">
+                            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}">{{ p.name }}</a>
+                            <div class="ls-meta">{{ p.category.name }}, {{ '%g'|format(p.price) }} KM</div>
+                        </div>
+                        <div class="ls-cell ls-num" data-label="Stanje">{{ p.stock }}</div>
+                        <form method="POST" action="{{ url_for('admin.lager_sync_link', product_id=p.id) }}" class="ls-link-form">
+                            {{ hidden('povezi') }}
+                            <input type="text" name="lager_ref" list="lager-items" class="form-control form-control-sm"
+                                   placeholder="Počnite kucati naziv sa lagera…" aria-label="Artikal na lageru za {{ p.name }}"
+                                   value="{{ lager_label(row.suggestion) if row.suggestion else '' }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Poveži</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                <datalist id="lager-items">
+                    {% for item in lager_items %}
+                    <option value="{{ lager_label(item) }}"></option>
+                    {% endfor %}
+                </datalist>
+                {% else %}
+                <div class="ls-empty">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                    <p>Svi proizvodi na sajtu su povezani sa lagerom.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            {# ---------------- U redu ---------------- #}
+            <section class="tab-pane{% if default_tab == 'uredu' %} show active{% endif %}" id="pane-uredu"
+                     role="tabpanel" aria-labelledby="tab-uredu">
+                {% if in_sync %}
+                <div class="ls-colhead ls-grid-ok" aria-hidden="true">
+                    <span>Proizvod</span><span>Stanje</span><span>Cijena</span><span></span>
+                </div>
+                <ul class="ls-list" role="list">
+                    {% for p in in_sync %}
+                    <li class="ls-row ls-grid-ok" data-q="{{ (p.name ~ ' ' ~ p.lager_product.name)|lower }}">
+                        <div class="ls-name">
+                            <a href="{{ url_for('admin.edit_product', product_id=p.id) }}">{{ p.name }}</a>
+                            {% if p.lager_product.name|lower != p.name|lower %}
+                            <div class="ls-meta"><span class="ls-meta-sep">na lageru kao</span> {{ p.lager_product.name }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="ls-cell ls-num" data-label="Stanje">{{ p.stock }}</div>
+                        <div class="ls-cell ls-num" data-label="Cijena">{{ '%g'|format(p.price) }} KM</div>
+                        <div class="ls-actions">
+                            <form method="POST" action="{{ url_for('admin.lager_sync_link', product_id=p.id) }}">
+                                {{ hidden('uredu') }}
+                                <input type="hidden" name="lager_ref" value="">
+                                <button type="submit" class="ls-unlink" title="Odveži proizvod od lagera">Odveži</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="ls-empty">
+                    <p>Ovdje će biti proizvodi koji su povezani i usklađeni sa lagerom.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <p class="ls-no-results" hidden>Nijedan red ne odgovara filteru.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const tabs = document.querySelectorAll('.ls-tab');
+    const filter = document.getElementById('ls-filter');
+    const noResults = document.querySelector('.ls-no-results');
+
+    function activePane() { return document.querySelector('.ls .tab-pane.active'); }
+
+    function syncActions(key) {
+        document.querySelectorAll('.ls-pane-actions').forEach(el => { el.hidden = el.dataset.for !== key; });
+    }
+
+    function applyFilter() {
+        const q = filter.value.trim().toLowerCase();
+        const pane = activePane();
+        if (!pane) return;
+        let visible = 0;
+        pane.querySelectorAll('.ls-row').forEach(row => {
+            const show = !q || row.dataset.q.includes(q);
+            row.hidden = !show;
+            if (show) visible++;
+        });
+        pane.querySelectorAll('.ls-group').forEach(group => {
+            const shown = group.querySelectorAll('.ls-row:not([hidden])').length;
+            group.hidden = shown === 0;
+            group.querySelector('.ls-group-count').textContent = shown;
+        });
+        noResults.hidden = !(q && visible === 0 && pane.querySelector('.ls-row'));
+    }
+
+    tabs.forEach(tab => tab.addEventListener('shown.bs.tab', () => {
+        history.replaceState(null, '', '#' + tab.dataset.tab);
+        syncActions(tab.dataset.tab);
+        applyFilter();
+    }));
+
+    const fromHash = document.querySelector('.ls-tab[data-tab="' + location.hash.slice(1) + '"]');
+    if (fromHash && window.bootstrap) {
+        bootstrap.Tab.getOrCreateInstance(fromHash).show();
+    }
+    syncActions((document.querySelector('.ls-tab.active') || tabs[0]).dataset.tab);
+    filter.addEventListener('input', applyFilter);
+})();
+</script>
+{% endblock %}

@@ -118,6 +118,10 @@ class Product(db.Model):
     slug = db.Column(db.String(128), unique=True, nullable=False)
     condition = db.Column(db.String(20), nullable=False, default='Novo')
     availability = db.Column(db.String(50), nullable=False, default='Dostupno odmah')
+    # Veza sa artiklom na lageru (izvor stanja i cijene, vidi /admin/lager-sync)
+    lager_product_id = db.Column(db.Integer, db.ForeignKey('lager_product.id', ondelete='SET NULL'),
+                                 nullable=True, index=True)
+    lager_product = db.relationship('LagerProduct', backref=db.backref('site_products', lazy=True))
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
     images = db.relationship('ProductImage', backref='product', lazy=True, cascade='all, delete-orphan')
     attribute_values = db.relationship('ProductAttributeValue', backref='product', lazy=True,

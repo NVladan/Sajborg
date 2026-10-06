@@ -4,7 +4,7 @@ from flask import redirect, url_for, flash, request, current_app, jsonify
 from extensions import db
 from models import ProductImage
 from utils import validate_image_upload, secure_filename_custom
-from . import admin_bp, admin_required
+from . import admin_bp, admin_required, safe_products_next
 
 def save_product_images(product, files):
     """
@@ -70,7 +70,7 @@ def delete_product_image(image_id):
 
     if len(image.product.images) == 1:
         flash('Ne možete obrisati jedinu sliku proizvoda. Dodajte novu primarnu sliku pre brisanja.', 'danger')
-        return redirect(url_for('admin.edit_product', product_id=product_id))
+        return redirect(url_for('admin.edit_product', product_id=product_id, next=safe_products_next(request.form.get('next'))))
 
     if image.is_primary:
         next_primary_image = ProductImage.query.filter(
@@ -95,7 +95,7 @@ def delete_product_image(image_id):
     db.session.commit()
 
     flash('Product image deleted successfully.', 'success')
-    return redirect(url_for('admin.edit_product', product_id=product_id))
+    return redirect(url_for('admin.edit_product', product_id=product_id, next=safe_products_next(request.form.get('next'))))
 
 
 @admin_bp.route('/products/set-primary-image/<int:image_id>', methods=['POST'])
@@ -111,7 +111,7 @@ def set_primary_image(image_id):
     db.session.commit()
 
     flash('Glavna slika je uspešno ažurirana.', 'success')
-    return redirect(url_for('admin.edit_product', product_id=product.id))
+    return redirect(url_for('admin.edit_product', product_id=product.id, next=safe_products_next(request.form.get('next'))))
 
 
 @admin_bp.route('/products/update-image-order', methods=['POST'])

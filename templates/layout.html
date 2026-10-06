@@ -185,6 +185,9 @@
         </div>
     </div>
 
+    <!-- Uspjeh/informacija: kratka obavještenja koja sama nestanu (main.js) -->
+    <div class="toast-container flash-toasts" id="flash-toasts" aria-live="polite" aria-atomic="false"></div>
+
     <div id="flash-messages-data" style="display: none;">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

@@ -6,17 +6,27 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>{% if product %}Izmeni Proizvod{% else %}Dodaj Novi Proizvod{% endif %}</h1>
-        <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">
+        <a href="{{ next_url or url_for('admin.products') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Nazad na Proizvode
         </a>
     </div>
+
+    {% if lager_item %}
+    <div class="alert alert-info">
+        <i class="fas fa-warehouse"></i>
+        Objavljujete artikal sa lagera: <strong>{{ lager_item.name }}</strong>
+        (kol. {{ lager_item.stock }}{% if lager_item.purchase_price %}, nabavna {{ '%.2f'|format(lager_item.purchase_price) }} KM{% endif %}).
+        Naziv, cijena, stanje i kategorija su popunjeni — dodajte slike, opis i atribute, pa sačuvajte.
+        Proizvod će biti povezan sa lagerom.
+    </div>
+    {% endif %}
 
     <div class="card mb-4">
         <div class="card-header">
             <h3 class="mb-0">Informacije o Proizvodu</h3>
         </div>
         <div class="card-body">
-            <form method="POST" enctype="multipart/form-data" id="product-form" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id) }}{% else %}{{ url_for('admin.add_product') }}{% endif %}">
+            <form method="POST" enctype="multipart/form-data" id="product-form" action="{% if product %}{{ url_for('admin.edit_product', product_id=product.id, next=next_url) }}{% else %}{{ url_for('admin.add_product', next=next_url) }}{% endif %}">
                 {{ form.hidden_tag() }}
                 <div class="row">
                     <div class="col-md-6 mb-3">
@@ -110,7 +120,7 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> {% if product %}Sačuvaj Izmene{% else %}Dodaj Proizvod{% endif %}
                     </button>
-                    <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">
+                    <a href="{{ next_url or url_for('admin.products') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-times"></i> Otkaži
                     </a>
                 </div>
@@ -134,6 +144,7 @@
                         {% else %}
                         <form method="POST" action="{{ url_for('admin.set_primary_image', image_id=image.id) }}" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="next" value="{{ next_url or '' }}">
                             <button type="submit" class="btn btn-sm btn-outline-info" title="Postavi za Glavnu">
                                 <i class="fas fa-star"></i>
                             </button>
@@ -141,6 +152,7 @@
                         {% endif %}
                         <form method="POST" action="{{ url_for('admin.delete_product_image', image_id=image.id) }}" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite obrisati ovu sliku?');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="next" value="{{ next_url or '' }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Obriši">
                                 <i class="fas fa-trash"></i>
                             </button>

@@ -1,0 +1,299 @@
+/*
+    Lager ↔ Sajt (/admin/lager-sync)
+    Radni prostor za usklađivanje: redovi poslova kao tabovi, kompaktni redovi,
+    a jedini naglašeni element je prikaz razlike (staro → novo).
+    Koristi tokene iz main.css, pa radi i u svijetloj i u tamnoj temi.
+*/
+
+.ls { max-width: 1240px; }
+
+/* ---------- Zaglavlje ---------- */
+.ls-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 1.75rem;
+}
+.ls-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.4rem);
+    letter-spacing: -0.02em;
+    color: var(--ink-strong);
+    margin: 0 0 0.35rem;
+}
+.ls-lede {
+    color: var(--ink-muted);
+    margin: 0;
+    max-width: 62ch;
+}
+.ls-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.ls-markup {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+}
+.ls-markup label { margin: 0; font-weight: 600; color: var(--ink); }
+.ls-markup input { width: 4.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Tabovi (redovi poslova) ---------- */
+.ls-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.ls-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem 1rem 0.8rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--ink-muted);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .15s ease, border-color .15s ease;
+}
+.ls-tab:hover { color: var(--ink); }
+.ls-tab.active { color: var(--ink-strong); border-bottom-color: var(--accent); }
+.ls-tab:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: -2px; border-radius: 6px 6px 0 0; }
+.ls-count {
+    min-width: 1.75rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: var(--radius-pill);
+    background: var(--surface-3, var(--border));
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+.ls-tab.active .ls-count { background: var(--accent); color: var(--on-accent); }
+.ls-count.is-zero { background: transparent; color: var(--ink-faint); }
+
+/* ---------- Panel ---------- */
+.ls-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 1rem 1.25rem 1.25rem;
+}
+.ls-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.ls-search {
+    position: relative;
+    flex: 1 1 280px;
+    max-width: 420px;
+}
+.ls-search i {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-faint);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+.ls-search input { padding-left: 2.25rem; }
+.ls-hint {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    margin: 0 0 1rem;
+    max-width: 75ch;
+}
+
+/* ---------- Redovi ---------- */
+.ls-list { list-style: none; margin: 0; padding: 0; }
+
+.ls-grid-sync { grid-template-columns: minmax(0, 1fr) 11rem 14rem 9.5rem; }
+.ls-grid-pub  { grid-template-columns: minmax(0, 1fr) 4rem 7rem 7.5rem; }
+.ls-grid-link { grid-template-columns: minmax(0, 0.85fr) 4.5rem minmax(0, 1.15fr); }
+.ls-grid-ok   { grid-template-columns: minmax(0, 1fr) 5rem 7rem 5rem; }
+
+.ls-colhead,
+.ls-row {
+    display: grid;
+    align-items: center;
+    column-gap: 1rem;
+}
+.ls-colhead {
+    padding: 0 0.75rem 0.5rem;
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+}
+.ls-row {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+.ls-row:last-child { border-bottom: 0; }
+.ls-row:hover { background: var(--accent-soft); }
+.ls-row.is-muted .ls-name a,
+.ls-row.is-muted .ls-num { color: var(--ink-muted); }
+
+.ls-name { min-width: 0; }
+.ls-name a,
+.ls-name-text {
+    color: var(--ink-strong);
+    font-weight: 600;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+.ls-name a:hover { color: var(--accent); text-decoration: underline; }
+.ls-meta {
+    color: var(--ink-muted);
+    font-size: 0.83rem;
+    margin-top: 0.15rem;
+    overflow-wrap: anywhere;
+}
+.ls-meta-sep { color: var(--ink-faint); }
+.ls-meta-sep::before { content: "· "; }
+
+.ls-cell, .ls-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ls-num { color: var(--ink); }
+.ls-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+/* ---------- Razlika: staro → novo ---------- */
+.ls-old { color: var(--ink-faint); text-decoration-thickness: 1px; }
+.ls-arrow { color: var(--ink-faint); margin: 0 0.35rem; }
+.ls-new {
+    display: inline-block;
+    padding: 0.05rem 0.45rem;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--ink-strong);
+    font-weight: 700;
+}
+.ls-same { color: var(--ink-muted); }
+.ls-note { display: block; color: var(--ink-faint); font-size: 0.78rem; white-space: normal; }
+
+.ls-chip {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0 0.45rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    vertical-align: 1px;
+}
+.ls-chip-hide { color: var(--danger);  background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.ls-chip-show { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
+
+/* ---------- Grupe (kategorije lagera) ---------- */
+.ls-group + .ls-group { margin-top: 1.25rem; }
+.ls-group-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 1rem 0 0.25rem;
+    padding: 0 0.75rem;
+}
+.ls-group-title span { color: var(--ink-faint); font-weight: 600; margin-left: 0.35rem; }
+
+/* ---------- Možda duplikat ---------- */
+.ls-dupe {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin-top: 0.25rem;
+    font-size: 0.83rem;
+    color: var(--ink-muted);
+}
+.ls-dupe::before {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--warning);
+    align-self: center;
+}
+.ls-dupe a { color: var(--ink); }
+.ls-dupe form { display: inline; }
+
+.ls-link-btn,
+.ls-unlink {
+    border: 0;
+    background: none;
+    padding: 0.25rem 0.4rem;
+    font-size: 0.83rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+.ls-link-btn { color: var(--accent); padding: 0; }
+.ls-link-btn:hover { text-decoration: underline; }
+.ls-unlink { color: var(--ink-faint); }
+.ls-unlink:hover { color: var(--danger); }
+.ls-link-btn:focus-visible,
+.ls-unlink:focus-visible { outline: 2px solid var(--accent-ring); }
+
+/* ---------- Povezivanje ---------- */
+.ls-link-form { display: flex; gap: 0.5rem; min-width: 0; }
+.ls-link-form input { min-width: 0; }
+
+/* ---------- Prazno / bez rezultata ---------- */
+.ls-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem 0.75rem;
+    color: var(--ink-muted);
+}
+.ls-empty p { margin: 0; }
+.ls-empty i {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+.ls-no-results { color: var(--ink-muted); padding: 1.5rem 0.75rem 0.5rem; margin: 0; }
+
+/* ---------- Mobilni ---------- */
+@media (max-width: 767.98px) {
+    .ls-panel { padding: 0.75rem; }
+    .ls-colhead { display: none; }
+    .ls-row {
+        grid-template-columns: 1fr auto;
+        row-gap: 0.4rem;
+    }
+    .ls-row .ls-name { grid-column: 1 / -1; }
+    .ls-row .ls-cell::before {
+        content: attr(data-label) " ";
+        color: var(--ink-faint);
+        font-size: 0.8rem;
+    }
+    .ls-row .ls-link-form { grid-column: 1 / -1; }
+    .ls-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ls-tab { transition: none; }
+}

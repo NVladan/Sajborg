@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, FloatField, IntegerField, SubmitField, SelectField, FileField, \
-    BooleanField
+    BooleanField, HiddenField
 # IZMJENA: Uvozimo InputRequired umjesto DataRequired za polje zaliha
 from wtforms.validators import DataRequired, NumberRange, InputRequired, Length
 
@@ -19,6 +19,8 @@ class ProductForm(FlaskForm):
     specs = TextAreaField('Specifications')
     featured = BooleanField('Featured Product')
     images = FileField('Product Images', render_kw={'multiple': True})
+    # Artikal na lageru iz kojeg se proizvod objavljuje (vidi /admin/lager-sync)
+    lager_product_id = HiddenField()
     submit = SubmitField('Add Product')
 
 

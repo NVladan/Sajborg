@@ -20,5 +20,11 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def safe_products_next(value):
+    """Povratna adresa na listu proizvoda (tab, pretraga, strana) — samo lokalni /admin/products URL."""
+    if value and value.startswith('/admin/products') and not value.startswith('//'):
+        return value
+    return None
+
 # Import routes to register them with the blueprint
-from . import dashboard, product_routes, category_routes, order_routes, user_routes, product_image_routes, product_import_routes, blog_routes
+from . import dashboard, product_routes, category_routes, order_routes, user_routes, product_image_routes, product_import_routes, blog_routes, lager_sync_routes

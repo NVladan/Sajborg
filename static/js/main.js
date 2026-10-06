@@ -8,10 +8,44 @@
  * No inline alerts are rendered in the HTML.
  */
 
+/**
+ * Kratko obavještenje (toast) za uspjeh/informaciju — ne blokira rad i samo nestane.
+ * Poruka se postavlja kao tekst, ne kao HTML.
+ */
+function showFlashToast(type, message) {
+    const container = document.getElementById('flash-toasts');
+    if (!container || !window.bootstrap) return false;
+
+    const toast = document.createElement('div');
+    toast.className = `toast flash-toast flash-toast-${type}`;
+    toast.setAttribute('role', 'status');
+    toast.innerHTML = `
+        <div class="d-flex align-items-start">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-info-circle'} flash-toast-icon" aria-hidden="true"></i>
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Zatvori"></button>
+        </div>`;
+    toast.querySelector('.toast-body').textContent = message;
+    container.appendChild(toast);
+    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    bootstrap.Toast.getOrCreateInstance(toast, { delay: 4500 }).show();
+    return true;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Show flash messages in a modal
+    // Uspjeh i informacija idu u toast; greške i upozorenja ostaju u modalu jer traže pažnju
     const flashMessagesData = document.getElementById('flash-messages-data');
-    if (flashMessagesData && flashMessagesData.children.length > 0) {
+    const modalMessages = [];
+    if (flashMessagesData) {
+        for (const child of flashMessagesData.children) {
+            const type = child.dataset.category;
+            const isQuiet = type === 'success' || type === 'info' || type === 'message';
+            if (!(isQuiet && showFlashToast(type === 'success' ? 'success' : 'info', child.dataset.message))) {
+                modalMessages.push(child);
+            }
+        }
+    }
+    if (modalMessages.length > 0) {
         const modal = new bootstrap.Modal(document.getElementById('flash-message-modal'));
         const modalTitle = document.getElementById('flashMessageModalLabel');
         const modalBody = document.getElementById('flash-message-content');
@@ -19,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let messagesHtml = '';
         let category = 'info'; // Default category
 
-        for (const child of flashMessagesData.children) {
+        for (const child of modalMessages) {
             messagesHtml += `<p>${child.dataset.message}</p>`;
             category = child.dataset.category; // Use the last category for title
         }

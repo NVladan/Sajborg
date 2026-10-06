@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Upravljanje Proizvodima</h1>
         <div>
-            <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">
+            <a href="{{ url_for('admin.add_product', next=request.full_path) }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Dodaj Novi Proizvod
             </a>
             <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
@@ -100,10 +100,11 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{{ url_for('admin.edit_product', product_id=product.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ url_for('admin.edit_product', product_id=product.id, next=request.full_path) }}" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-edit"></i> Izmeni
                                 </a>
                                 <form action="{{ url_for('admin.delete_product', product_id=product.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')">
+                                    <input type="hidden" name="next" value="{{ request.full_path }}">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i> Obriši

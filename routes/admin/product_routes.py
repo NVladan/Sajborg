@@ -1,9 +1,10 @@
 from flask import render_template, redirect, url_for, flash, request, current_app
 from extensions import db
-from models import Product, Category, ProductImage, ProductAttributeValue
+from models import Product, Category, ProductImage, ProductAttributeValue, LagerProduct
 from forms.product_forms import ProductForm
-from . import admin_bp, admin_required
+from . import admin_bp, admin_required, safe_products_next
 from .product_image_routes import save_product_images
+from .lager_sync_routes import prefill_product_form, DEFAULT_MARKUP
 import os
 from slugify import slugify
 
@@ -52,8 +53,19 @@ def products():
 @admin_required
 def add_product():
     form = ProductForm()
+    next_url = safe_products_next(request.args.get('next'))
 
     form.category_id.choices = [(c.id, c.name) for c in Category.query.order_by('name').all()]
+
+    # Objavljivanje artikla sa lagera: /admin/products/add?lager_id=<id>
+    lager_item = None
+    lager_id = request.args.get('lager_id', type=int) if request.method == 'GET' else None
+    if not lager_id and (form.lager_product_id.data or '').isdigit():
+        lager_id = int(form.lager_product_id.data)
+    if lager_id:
+        lager_item = db.session.get(LagerProduct, lager_id)
+        if lager_item and request.method == 'GET':
+            prefill_product_form(form, lager_item, request.args.get('markup', DEFAULT_MARKUP, type=float))
 
     if form.validate_on_submit():
         category = Category.query.get(form.category_id.data)
@@ -79,7 +91,8 @@ def add_product():
             featured=form.featured.data,
             condition=form.condition.data,
             availability=form.availability.data,  # Dodajemo dostupnost
-            is_publicly_visible=form.stock.data > 0
+            is_publicly_visible=form.stock.data > 0,
+            lager_product_id=lager_item.id if lager_item else None
         )
         db.session.add(product)
         db.session.commit()
@@ -95,7 +108,9 @@ def add_product():
                 flash(f'{success_count} slika(e) su uspešno uploadovane.', 'info')
 
         flash('Proizvod je uspešno kreiran!', 'success')
-        return redirect(url_for('admin.products'))
+        if lager_item:
+            return redirect(url_for('admin.lager_sync', _anchor='objavi'))
+        return redirect(next_url or url_for('admin.products'))
 
     all_category_attributes = {}
     for category in Category.query.all():
@@ -111,6 +126,8 @@ def add_product():
                            title='Dodaj Novi Proizvod',
                            form=form,
                            product=None,
+                           lager_item=lager_item,
+                           next_url=next_url,
                            all_category_attributes=all_category_attributes,
                            attribute_values={})
 
@@ -119,6 +136,7 @@ def add_product():
 @admin_required
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
+    next_url = safe_products_next(request.args.get('next'))
     form = ProductForm(obj=product)
 
     form.category_id.choices = [(c.id, c.name) for c in Category.query.order_by('name').all()]
@@ -164,7 +182,7 @@ def edit_product(product_id):
                 flash(f'{success_count} slika(e) su uspešno uploadovane.', 'info')
 
         flash('Proizvod je uspešno ažuriran!', 'success')
-        return redirect(url_for('admin.products'))
+        return redirect(next_url or url_for('admin.products'))
 
     if request.method == 'GET':
         form.category_id.data = product.category_id
@@ -191,6 +209,7 @@ def edit_product(product_id):
                            all_category_attributes=all_category_attributes,
                            attribute_values=attribute_values,
                            images_sorted=images_sorted,
+                           next_url=next_url,
                            is_edit=True)
 
 
@@ -208,7 +227,7 @@ def delete_product(product_id):
     db.session.delete(product)
     db.session.commit()
     flash('Proizvod je uspešno obrisan.', 'success')
-    return redirect(url_for('admin.products'))
+    return redirect(safe_products_next(request.form.get('next')) or url_for('admin.products'))
 
 
 def update_product_attributes(product, form_data):
