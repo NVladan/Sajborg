@@ -77,6 +77,11 @@ def lager_label(item):
     return f'{item.name} (kol. {item.stock or 0}) #{item.id}'
 
 
+def linkable(lager_items):
+    """Za povezivanje se nude samo artikli koji imaju stanje na lageru."""
+    return [item for item in lager_items if (item.stock or 0) > 0]
+
+
 def main_category(category):
     return category.parent if category and category.parent else category
 
@@ -182,7 +187,8 @@ def lager_sync():
     linked_lager_ids = {p.lager_product_id for p in linked}
     unlinked = sorted((p for p in products if not p.lager_product),
                       key=lambda p: (p.stock <= 0, p.name.lower()))
-    unlinked_rows = [{'product': p, 'suggestion': best_name_match(p.name, lager_items)} for p in unlinked]
+    linkable_items = linkable(lager_items)
+    unlinked_rows = [{'product': p, 'suggestion': best_name_match(p.name, linkable_items)} for p in unlinked]
 
     # Nepovezana roba sa lagera, samo iz glavnih kategorija koje već imaju bar jedan povezan artikal
     relevant_main_ids = {main_category(p.lager_product.category).id for p in linked}
@@ -208,7 +214,7 @@ def lager_sync():
                            unlinked_rows=unlinked_rows,
                            unpublished=unpublished,
                            filtered_by_links=bool(relevant_main_ids),
-                           lager_items=lager_items,
+                           lager_items=linkable_items,
                            lager_label=lager_label)
 
 
@@ -256,6 +262,9 @@ def lager_sync_link(product_id):
     if not lager_item:
         flash('Izaberite artikal sa lagera iz liste.', 'danger')
         return _back(markup)
+    if (lager_item.stock or 0) <= 0:
+        flash(f'{lager_item.name} nema stanja na lageru — ne može se povezati.', 'warning')
+        return _back(markup)
 
     product.lager_product_id = lager_item.id
     db.session.commit()
@@ -266,10 +275,10 @@ def lager_sync_link(product_id):
 @admin_bp.route('/lager-sync/auto-link', methods=['POST'])
 @admin_required
 def lager_sync_auto_link():
-    """Povezuje nepovezane proizvode čiji naziv je identičan tačno jednom artiklu na lageru."""
+    """Povezuje nepovezane proizvode čiji naziv je identičan tačno jednom artiklu na lageru sa stanjem."""
     markup = _parse_markup(request.form.get('markup'))
     by_name = {}
-    for item in LagerProduct.query.all():
+    for item in LagerProduct.query.filter(LagerProduct.stock > 0).all():
         by_name.setdefault(normalize_name(item.name), []).append(item)
 
     linked = 0

@@ -182,9 +182,9 @@ class TestLinking:
 
     def test_auto_link_only_unique_exact_names(self, admin_client, site_category):
         _, sub, _ = make_lager_tree()
-        unique = LagerProduct(name='DEEPCOOL PF750 750W', stock=0, category_id=sub.id)
-        dup_a = LagerProduct(name='AMD Ryzen 7 5700X BOX', stock=0, category_id=sub.id)
-        dup_b = LagerProduct(name='AMD Ryzen 7 5700X BOX', stock=0, category_id=sub.id)
+        unique = LagerProduct(name='DEEPCOOL PF750 750W', stock=1, category_id=sub.id)
+        dup_a = LagerProduct(name='AMD Ryzen 7 5700X BOX', stock=1, category_id=sub.id)
+        dup_b = LagerProduct(name='AMD Ryzen 7 5700X BOX', stock=2, category_id=sub.id)
         db.session.add_all([unique, dup_a, dup_b])
         db.session.flush()
         exact = make_product('deepcool  PF750 750W', 'sync-pf750', 109, 0, site_category)
@@ -201,6 +201,24 @@ class TestLinking:
         assert exact.lager_product_id == unique_id
         assert ambiguous.lager_product_id is None
         assert fuzzy.lager_product_id is None
+
+    def test_out_of_stock_lager_items_are_not_offered(self, admin_client, site_category):
+        _, sub, _ = make_lager_tree()
+        sold_out = LagerProduct(name='ASROCK Radeon RX 6600', stock=0, category_id=sub.id)
+        db.session.add(sold_out)
+        db.session.flush()
+        product = make_product('ASROCK Radeon RX 6600', 'sync-rx6600', 475, 0, site_category)
+        db.session.commit()
+        product_id, item_id = product.id, sold_out.id
+
+        html = admin_client.get('/admin/lager-sync').get_data(as_text=True)
+        assert f'(kol. 0) #{item_id}' not in html  # neither suggested nor in the datalist
+
+        admin_client.post('/admin/lager-sync/auto-link')
+        admin_client.post(f'/admin/lager-sync/link/{product_id}',
+                          data={'lager_ref': f'ASROCK Radeon RX 6600 (kol. 0) #{item_id}'})
+        db.session.expire_all()
+        assert db.session.get(Product, product_id).lager_product_id is None
 
 
 class TestPublishFromLager:
