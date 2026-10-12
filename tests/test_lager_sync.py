@@ -207,7 +207,7 @@ class TestLinking:
         sold_out = LagerProduct(name='ASROCK Radeon RX 6600', stock=0, category_id=sub.id)
         db.session.add(sold_out)
         db.session.flush()
-        product = make_product('ASROCK Radeon RX 6600', 'sync-rx6600', 475, 0, site_category)
+        product = make_product('ASROCK Radeon RX 6600', 'sync-rx6600', 475, 1, site_category)
         db.session.commit()
         product_id, item_id = product.id, sold_out.id
 
@@ -219,6 +219,16 @@ class TestLinking:
                           data={'lager_ref': f'ASROCK Radeon RX 6600 (kol. 0) #{item_id}'})
         db.session.expire_all()
         assert db.session.get(Product, product_id).lager_product_id is None
+
+    def test_out_of_stock_products_are_not_listed_for_linking(self, admin_client, site_category):
+        make_product('ASUS PRIME RX 9060 XT', 'sync-sold-out', 809, 0, site_category)
+        make_product('ASUS DUAL RTX 5070', 'sync-in-stock', 1250, 2, site_category)
+        db.session.commit()
+
+        html = admin_client.get('/admin/lager-sync').get_data(as_text=True)
+
+        assert 'ASUS DUAL RTX 5070' in html
+        assert 'ASUS PRIME RX 9060 XT' not in html
 
 
 class TestPublishFromLager:

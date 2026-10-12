@@ -147,8 +147,6 @@
 }
 .ls-row:last-child { border-bottom: 0; }
 .ls-row:hover { background: var(--accent-soft); }
-.ls-row.is-muted .ls-name a,
-.ls-row.is-muted .ls-num { color: var(--ink-muted); }
 
 .ls-name { min-width: 0; }
 .ls-name a,

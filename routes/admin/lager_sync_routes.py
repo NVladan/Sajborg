@@ -185,10 +185,11 @@ def lager_sync():
             mismatched.append({'product': p, 'want_stock': diff[0], 'want_price': diff[1]})
 
     linked_lager_ids = {p.lager_product_id for p in linked}
-    unlinked = sorted((p for p in products if not p.lager_product),
-                      key=lambda p: (p.stock <= 0, p.name.lower()))
+    unlinked = [p for p in products if not p.lager_product]
+    # Proizvodi bez stanja se ne nude za povezivanje; ostaju samo za upozorenje o duplikatu ispod
     linkable_items = linkable(lager_items)
-    unlinked_rows = [{'product': p, 'suggestion': best_name_match(p.name, linkable_items)} for p in unlinked]
+    unlinked_rows = [{'product': p, 'suggestion': best_name_match(p.name, linkable_items)}
+                     for p in sorted(unlinked, key=lambda p: p.name.lower()) if p.stock > 0]
 
     # Nepovezana roba sa lagera, samo iz glavnih kategorija koje već imaju bar jedan povezan artikal
     relevant_main_ids = {main_category(p.lager_product.category).id for p in linked}

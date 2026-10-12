@@ -216,7 +216,7 @@
                 <ul class="ls-list" role="list">
                     {% for row in unlinked_rows %}
                     {% set p = row.product %}
-                    <li class="ls-row ls-grid-link{% if p.stock <= 0 %} is-muted{% endif %}" data-q="{{ p.name|lower }}">
+                    <li class="ls-row ls-grid-link" data-q="{{ p.name|lower }}">
                         <div class="ls-name">
                             <a href="{{ url_for('admin.edit_product', product_id=p.id) }}">{{ p.name }}</a>
                             <div class="ls-meta">{{ p.category.name }}, {{ '%g'|format(p.price) }} KM</div>
@@ -240,7 +240,7 @@
                 {% else %}
                 <div class="ls-empty">
                     <i class="fas fa-check" aria-hidden="true"></i>
-                    <p>Svi proizvodi na sajtu su povezani sa lagerom.</p>
+                    <p>Svi proizvodi sa stanjem su povezani sa lagerom.</p>
                 </div>
                 {% endif %}
             </section>
