@@ -1,630 +1,435 @@
-/**
- * PC Builder JavaScript functionality
- */
+/* PC konfigurator: slotovi, izbor kompatibilnih komponenti, potrošnja i provjere. */
+(function () {
+    'use strict';
 
-// Global state for the PC builder
-const builderState = {
-  components: {}, // Selected components by type
-  totalPrice: 0,
-  isCompatible: true,
-  compatibilityMessages: []
-};
+    const cfg = window.PB || {};
+    const root = document.getElementById('pb');
+    if (!root) return;
 
-// Get CSRF token from meta tag
-function getCsrfToken() {
-  const metaTag = document.querySelector('meta[name="csrf-token"]');
-  if (!metaTag) {
-    console.error('CSRF token meta tag not found');
-    return null;
-  }
-  const token = metaTag.getAttribute('content');
-  if (!token) {
-    console.error('CSRF token is empty');
-    return null;
-  }
-  return token;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize PC Builder interface
-  initializeBuilder();
-
-  // Save build button
-  const saveBuildBtn = document.getElementById('save-build-btn');
-  if (saveBuildBtn) {
-    saveBuildBtn.addEventListener('click', function() {
-      saveBuild();
-    });
-  }
-
-  // Add all to cart button
-  const addAllToCartBtn = document.getElementById('add-all-to-cart-btn');
-  if (addAllToCartBtn) {
-    addAllToCartBtn.addEventListener('click', function() {
-      addAllToCart();
-    });
-  }
-
-  // Load saved build
-  const loadBuildSelect = document.getElementById('load-build-select');
-  if (loadBuildSelect) {
-    loadBuildSelect.addEventListener('change', function() {
-      const buildId = this.value;
-      if (buildId) {
-        loadBuild(buildId);
-      }
-    });
-  }
-});
-
-/**
- * Initialize the PC Builder interface
- */
-function initializeBuilder() {
-  // Get component type tabs
-  const componentTypes = document.querySelectorAll('.component-type-tab');
-
-  // Add click event to component type tabs
-  componentTypes.forEach(tab => {
-    tab.addEventListener('click', function() {
-      const componentType = this.dataset.componentType;
-      loadComponentOptions(componentType);
-    });
-  });
-
-  // Initially load the first component type
-  if (componentTypes.length > 0) {
-    componentTypes[0].click();
-  }
-
-  // Update price display
-  updateTotalPrice();
-}
-
-/**
- * Load component options for a specific type
- * @param {string} componentType - Type of component to load
- */
-function loadComponentOptions(componentType) {
-  // Show loading state
-  const componentsList = document.getElementById('components-list');
-  componentsList.innerHTML = `
-    <div class="text-center p-5">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Učitavanje...</span>
-      </div>
-      <p class="mt-2">Učitavanje komponenti...</p>
-    </div>
-  `;
-
-  // Highlight active tab
-  document.querySelectorAll('.component-type-tab').forEach(tab => {
-    if (tab.dataset.componentType === componentType) {
-      tab.classList.add('active');
-    } else {
-      tab.classList.remove('active');
-    }
-  });
-
-  // Fetch components via AJAX
-  fetch(`/pc-builder/components/${componentType}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success && data.components) {
-        renderComponentOptions(componentType, data.components);
-      } else {
-        componentsList.innerHTML = `
-          <div class="alert alert-warning" role="alert">
-            Neuspešno učitavanje komponenti. ${data.message || ''}
-          </div>
-        `;
-      }
-    })
-    .catch(error => {
-      console.error('Greška:', error);
-      componentsList.innerHTML = `
-        <div class="alert alert-danger" role="alert">
-          Greška pri učitavanju komponenti. Molimo pokušajte ponovo.
-        </div>
-      `;
-    });
-}
-
-/**
- * Render component options in the list
- * @param {string} componentType - Type of components
- * @param {Array} components - Array of component objects
- */
-function renderComponentOptions(componentType, components) {
-  const componentsList = document.getElementById('components-list');
-
-  // Clear previous content
-  componentsList.innerHTML = '';
-
-  if (components.length === 0) {
-    componentsList.innerHTML = `
-      <div class="alert alert-info" role="alert">
-        Nema pronađenih ${componentType} komponenti.
-      </div>
-    `;
-    return;
-  }
-
-  // Create component cards
-  components.forEach(component => {
-    const isSelected = builderState.components[componentType] &&
-                      builderState.components[componentType].id === component.id;
-
-    const isOutOfStock = component.stock <= 0;
-
-    const componentCard = document.createElement('div');
-    componentCard.className = `card mb-3 ${isSelected ? 'border-primary' : ''}`;
-    componentCard.innerHTML = `
-      <div class="row g-0">
-        <div class="col-md-2 text-center">
-          <img src="${component.image_url || '/static/img/no-image.svg'}"
-               class="img-fluid rounded-start p-2" alt="Komponenta za PC Konfigurator: ${component.name}"
-               style="max-height: 100px; object-fit: contain;">
-        </div>
-        <div class="col-md-8">
-          <div class="card-body">
-            <h5 class="card-title">${component.name}</h5>
-            <p class="card-text">
-              ${formatPrice(component.price)}
-              ${isOutOfStock ? '<span class="badge bg-danger ms-2">Nema na stanju</span>' : ''}
-            </p>
-            <p class="card-text"><small class="text-muted">
-              ${formatSpecsPreview(component.specs)}
-            </small></p>
-          </div>
-        </div>
-        <div class="col-md-2 d-flex align-items-center justify-content-center">
-          <button class="btn ${isSelected ? 'btn-danger' : 'btn-primary'} component-select-btn"
-                  data-component-id="${component.id}"
-                  data-component-type="${componentType}"
-                  data-component-name="${component.name}"
-                  data-component-price="${component.price}"
-                  ${isOutOfStock ? 'disabled' : ''}>
-            ${isSelected ? 'Ukloni' : 'Izaberi'}
-          </button>
-        </div>
-      </div>
-    `;
-
-    componentsList.appendChild(componentCard);
-
-    // Add click event to select button
-    const selectBtn = componentCard.querySelector('.component-select-btn');
-    selectBtn.addEventListener('click', function() {
-      toggleComponentSelection(this);
-    });
-  });
-}
-
-/**
- * Toggle component selection
- * @param {HTMLElement} button - The select/remove button
- */
-function toggleComponentSelection(button) {
-  const componentId = parseInt(button.dataset.componentId);
-  const componentType = button.dataset.componentType;
-  const componentName = button.dataset.componentName;
-  const componentPrice = parseFloat(button.dataset.componentPrice);
-
-  if (builderState.components[componentType] &&
-      builderState.components[componentType].id === componentId) {
-    // Deselect the component
-    delete builderState.components[componentType];
-    button.textContent = 'Izaberi';
-    button.classList.replace('btn-danger', 'btn-primary');
-    button.closest('.card').classList.remove('border-primary');
-  } else {
-    // Select the component
-    builderState.components[componentType] = {
-      id: componentId,
-      name: componentName,
-      price: componentPrice
-    };
-    button.textContent = 'Ukloni';
-    button.classList.replace('btn-primary', 'btn-danger');
-    button.closest('.card').classList.add('border-primary');
-
-    // Change other selected components of the same type
-    document.querySelectorAll(`.component-select-btn[data-component-type="${componentType}"]`).forEach(btn => {
-      if (btn !== button && btn.textContent === 'Ukloni') {
-        btn.textContent = 'Izaberi';
-        btn.classList.replace('btn-danger', 'btn-primary');
-        btn.closest('.card').classList.remove('border-primary');
-      }
-    });
-  }
-
-  // Update the build summary
-  updateBuildSummary();
-
-  // Check compatibility
-  checkCompatibility();
-
-  // Update total price
-  updateTotalPrice();
-}
-
-/**
- * Update the build summary display
- */
-function updateBuildSummary() {
-  const summaryList = document.getElementById('build-summary-list');
-  if (!summaryList) return;
-
-  // Clear previous content
-  summaryList.innerHTML = '';
-
-  // Create list items for each selected component
-  for (const componentType in builderState.components) {
-    const component = builderState.components[componentType];
-
-    const listItem = document.createElement('li');
-    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
-    listItem.innerHTML = `
-      <span>
-        <strong>${componentType}:</strong> ${component.name}
-      </span>
-      <span>${formatPrice(component.price)}</span>
-    `;
-
-    summaryList.appendChild(listItem);
-  }
-
-  // Show empty state if no components selected
-  if (Object.keys(builderState.components).length === 0) {
-    const emptyItem = document.createElement('li');
-    emptyItem.className = 'list-group-item text-center text-muted';
-    emptyItem.textContent = 'Nema izabranih komponenti';
-    summaryList.appendChild(emptyItem);
-  }
-}
-
-/**
- * Update the total price display
- */
-function updateTotalPrice() {
-  // Calculate total price
-  let total = 0;
-  for (const componentType in builderState.components) {
-    total += builderState.components[componentType].price;
-  }
-
-  builderState.totalPrice = total;
-
-  // Update display
-  const totalElement = document.getElementById('build-total-price');
-  if (totalElement) {
-    totalElement.textContent = formatPrice(total);
-  }
-}
-
-/**
- * Check component compatibility
- */
-function checkCompatibility() {
-  // Get component IDs
-  const componentIds = [];
-  for (const componentType in builderState.components) {
-    componentIds.push(builderState.components[componentType].id);
-  }
-
-  // If fewer than 2 components, just show info message and return
-  if (componentIds.length < 2) {
-    builderState.isCompatible = true;
-    builderState.compatibilityMessages = [];
-    updateCompatibilityDisplay();
-    return;
-  }
-
-  // Show loading state (but don't call updateCompatibilityDisplay here)
-  const compatibilityAlert = document.getElementById('compatibility-alert');
-  if (compatibilityAlert) {
-    compatibilityAlert.innerHTML = `
-      <div class="alert alert-info">
-        <i class="fas fa-sync fa-spin"></i> Provera kompatibilnosti...
-      </div>
-    `;
-  }
-
-  // Send request to check compatibility
-  fetch('/pc-builder/check-compatibility', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest'
-    },
-    beforeSend: function(xhr) {
-      const token = getCsrfToken();
-      if (token) {
-        xhr.setRequestHeader('X-CSRFToken', token);
-      }
-    },
-    body: JSON.stringify({ components: componentIds })
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      builderState.isCompatible = data.is_compatible;
-      builderState.compatibilityMessages = data.messages || [];
-    } else {
-      console.error('Greška pri proveri kompatibilnosti:', data.message);
-      builderState.isCompatible = false;
-      builderState.compatibilityMessages = data.messages || [`Greška pri proveri kompatibilnosti: ${data.message || 'Nepoznata greška'}`];
-    }
-    updateCompatibilityDisplay();
-  })
-  .catch(error => {
-    console.error('Mrežna greška pri proveri kompatibilnosti:', error);
-    builderState.isCompatible = false;
-    builderState.compatibilityMessages = ['Greška pri proveri kompatibilnosti: Mrežna ili serverska greška'];
-    updateCompatibilityDisplay();
-  });
-}
-
-/**
- * Update compatibility display
- */
-function updateCompatibilityDisplay() {
-  const compatibilityAlert = document.getElementById('compatibility-alert');
-  if (!compatibilityAlert) return;
-  console.log('updateCompatibilityDisplay called', JSON.stringify(builderState));
-
-  let html = '';
-  if (Object.keys(builderState.components).length < 2) {
-    html = `
-      <div class="alert alert-info compatibility-alert-box alert-permanent">
-        <i class="fas fa-info-circle"></i> Dodajte još komponenti da biste proverili kompatibilnost.
-      </div>
-    `;
-  } else if (builderState.isCompatible) {
-    html = `
-      <div class="alert alert-success compatibility-alert-box alert-permanent">
-        <i class="fas fa-check-circle"></i> Sve komponente su kompatibilne!
-      </div>
-    `;
-  } else if (builderState.compatibilityMessages && builderState.compatibilityMessages.length > 0) {
-    let messageHtml = '';
-    builderState.compatibilityMessages.forEach(message => {
-      messageHtml += `<li>${message}</li>`;
-    });
-    html = `
-      <div class="alert alert-warning compatibility-alert-box alert-permanent">
-        <i class="fas fa-exclamation-triangle"></i> <strong>Problemi sa kompatibilnošću:</strong>
-        <ul class="mb-0 mt-2">
-          ${messageHtml}
-        </ul>
-      </div>
-    `;
-  } else {
-    // Fallback: always show something
-    html = `
-      <div class="alert alert-info compatibility-alert-box alert-permanent">
-        <i class="fas fa-info-circle"></i> Dodajte još komponenti da biste proverili kompatibilnost.
-      </div>
-    `;
-  }
-  compatibilityAlert.innerHTML = html;
-}
-
-/**
- * Format specs preview from JSON string
- * @param {string} specsJson - JSON string of specifications
- * @returns {string} HTML string with key specs
- */
-function formatSpecsPreview(specsJson) {
-  if (!specsJson) return '';
-
-  try {
-    const specs = JSON.parse(specsJson);
-    const previewItems = [];
-
-    // Add common specs based on what's available
-    if (specs.cores) previewItems.push(`${specs.cores} jezgara`);
-    if (specs.threads) previewItems.push(`${specs.threads} niti`);
-    if (specs.base_clock) previewItems.push(`${specs.base_clock}`);
-    if (specs.memory) previewItems.push(`${specs.memory}`);
-    if (specs.capacity) previewItems.push(`${specs.capacity}`);
-    if (specs.wattage) previewItems.push(`${specs.wattage}W`);
-    if (specs.speed) previewItems.push(`${specs.speed}`);
-    if (specs.socket) previewItems.push(`Podnožje: ${specs.socket}`);
-
-    // Limit to 3 items
-    return previewItems.slice(0, 3).join(' • ');
-  } catch (e) {
-    return '';
-  }
-}
-
-/**
- * Save the current build
- */
-function saveBuild() {
-  // Check if we have at least one component
-  if (Object.keys(builderState.components).length === 0) {
-    showAlert('warning', 'Molimo izaberite bar jednu komponentu pre čuvanja');
-    return;
-  }
-
-  // Open save build modal
-  const modal = new bootstrap.Modal(document.getElementById('save-build-modal'));
-  modal.show();
-
-  // Handle save form submission
-  document.getElementById('save-build-form').onsubmit = function(e) {
-    e.preventDefault();
-
-    const buildName = document.getElementById('build-name').value;
-    const buildDescription = document.getElementById('build-description').value;
-    const isPublic = document.getElementById('build-is-public').checked;
-
-    if (!buildName) {
-      showModalAlert('Molimo unesite naziv za Vašu konfiguraciju', 'Upozorenje', 'warning');
-      return;
-    }
-
-    // Get component IDs
-    const componentIds = [];
-    for (const componentType in builderState.components) {
-      componentIds.push(builderState.components[componentType].id);
-    }
-
-    // Create build data
-    const buildData = {
-      name: buildName,
-      description: buildDescription,
-      is_public: isPublic,
-      components: componentIds
+    const $ = (sel, el) => (el || document).querySelector(sel);
+    const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const km = (n) => (Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' KM';
+    const csrf = () => (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    const store = {
+        get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
+        set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* privatni prozor */ } },
     };
 
-    // Show loading state
-    const saveBtn = document.getElementById('save-build-submit');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Čuvanje...';
+    const slots = cfg.slots || [];
+    const slotLabel = Object.fromEntries(slots.map((s) => [s.type, s.label]));
+    const required = slots.filter((s) => s.required && s.available).map((s) => s.type);
 
-    // CSRF token
-    const csrfToken = document.querySelector('meta[name="csrf-token"]');
-
-    // Send request to save build
-    fetch('/pc-builder/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRFToken': csrfToken ? csrfToken.content : ''
-      },
-      body: JSON.stringify(buildData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Close modal
-        modal.hide();
-
-        // Show success message
-        showAlert('success', data.message || 'Konfiguracija je uspešno sačuvana!');
-
-        // Refresh page to show the new build (alternative: add to saved builds dropdown)
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        // Show error message
-        showModalAlert(data.message || 'Greška pri čuvanju konfiguracije', 'Greška', 'danger');
-      }
-
-      // Reset button state
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = 'Sačuvaj Konfiguraciju';
-    })
-    .catch(error => {
-      console.error('Greška:', error);
-      showModalAlert('Došlo je do greške. Molimo pokušajte ponovo.', 'Greška', 'danger');
-
-      // Reset button state
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = 'Sačuvaj Konfiguraciju';
-    });
-  };
-}
-
-/**
- * Load a saved build
- * @param {number} buildId - ID of the build to load
- */
-function loadBuild(buildId) {
-  // Fetch build data
-  fetch(`/pc-builder/load/${buildId}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success && data.build) {
-        // Clear current selection
-        builderState.components = {};
-
-        // Load components into builder state
-        data.build.components.forEach(component => {
-          builderState.components[component.component_type] = {
-            id: component.id,
-            name: component.name,
-            price: component.price
-          };
-        });
-
-        // Update UI
-        updateBuildSummary();
-        updateTotalPrice();
-        checkCompatibility();
-
-        // Show success message
-        showFlashModal('success', `Konfiguracija "${data.build.name}" je učitana!`);
-
-        // Reload the current component list to show selections
-        const activeTab = document.querySelector('.component-type-tab.active');
-        if (activeTab) {
-          loadComponentOptions(activeTab.dataset.componentType);
+    /* ---------- Atributi ---------- */
+    const norm = (s) => String(s).replace(/\s+/g, '').toLowerCase();
+    function attr(part, ...names) {
+        if (!part || !part.attrs) return null;
+        const wanted = names.map(norm);
+        for (const [k, v] of Object.entries(part.attrs)) {
+            if (wanted.includes(norm(k)) && v !== null && String(v).trim() !== '') return String(v).trim();
         }
-      } else {
-        showFlashModal('danger', data.message || 'Greška pri učitavanju konfiguracije');
-      }
-    })
-    .catch(error => {
-      console.error('Greška:', error);
-      showFlashModal('danger', 'Došlo je do greške pri učitavanju konfiguracije');
-    });
-}
-
-/**
- * Add all components to cart
- */
-function addAllToCart() {
-  // Check if we have at least one component
-  if (Object.keys(builderState.components).length === 0) {
-    showAlert('warning', 'Molimo prvo izaberite bar jednu komponentu');
-    return;
-  }
-
-  // Confirm with modal
-  showModalConfirm(
-    'Dodaj sve izabrane komponente u korpu?',
-    function() {
-      // Execute add to cart on confirm
-      executeAddAllToCart();
-    },
-    null,
-    'Potvrda',
-    'Dodaj u korpu',
-    'Otkaži'
-  );
-}
-
-// Separate function to execute the add to cart logic
-function executeAddAllToCart() {
-  // Collect all add-to-cart promises
-  const addToCartPromises = [];
-  const csrfToken = document.querySelector('meta[name="csrf-token"]');
-
-  for (const componentType in builderState.components) {
-    const component = builderState.components[componentType];
-    const formData = new FormData();
-    formData.append('product_id', component.id);
-    formData.append('quantity', 1);
-    if (csrfToken) {
-      formData.append('csrf_token', csrfToken.content);
+        return null;
     }
-    addToCartPromises.push(
-      fetch('/interaction/add-to-cart', {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin'
-      })
-    );
-  }
+    const num = (v) => { const m = String(v || '').match(/\d+(?:[.,]\d+)?/); return m ? parseFloat(m[0].replace(',', '.')) : null; };
+    const yes = (v) => ['true', '1', 'da', 'yes'].includes(String(v).trim().toLowerCase());
 
-  Promise.all(addToCartPromises).then(() => {
-    window.location.href = '/cart';
-  });
-}
+    // Najvažnije osobine po tipu, za kratki opis u listi
+    const CHIPS = {
+        'CPU': [['socket'], ['Broj jezgara', (v) => v + ' jezgara'], ['Broj Threadova', (v) => v + ' niti'], ['TDP (W)', (v) => v + ' W TDP']],
+        'Motherboard': [['socket'], ['chipset'], ['RAM'], ['RAM Slotovi', (v) => v + ' slota za RAM']],
+        'RAM': [['Kapacitet(GB)', (v) => v + ' GB'], ['RAM'], ['Brzina(MHz)', (v) => v + ' MHz']],
+        'GPU': [['VRAM (GB)', (v) => v + ' GB'], ['Tip Memorije'], ['TDP(W)', (v) => v + ' W']],
+        'Storage': [['Kapacitet'], ['Tip'], ['Interfejs']],
+        'Power Supply': [['Snaga(W)', (v) => v + ' W'], ['Efikasnost'], ['Modularno', (v) => (yes(v) ? 'modularno' : null)]],
+        'Case': [['Tip'], ['Ventilatori', (v) => 'ventilatori: ' + v]],
+        'CPU Cooler': [['TDP (W)', (v) => 'hladi do ' + v + ' W'], ['Veličina ventilatora (mm)', (v) => v + ' mm']],
+    };
+    function chips(type, part) {
+        return (CHIPS[type] || []).map(([name, fmt]) => {
+            const v = attr(part, name);
+            if (!v) return null;
+            return fmt ? fmt(v) : v;
+        }).filter(Boolean);
+    }
+
+    /* ---------- Stanje ---------- */
+    let build = store.get('pb-build') || {};   // tip -> komponenta {id, name, price, image_url, url, attrs}
+    const cache = {};                          // tip -> lista komponenti
+    let checkResult = null;
+
+    function save() { store.set('pb-build', build); }
+
+    /* ---------- Potrošnja (ista formula kao na serveru) ---------- */
+    function power() {
+        const p = cfg.power;
+        const cpuTdp = num(attr(build['CPU'], 'TDP (W)', 'TDP'));
+        const gpuTdp = num(attr(build['GPU'], 'TDP (W)', 'TDP', 'TBP'));
+        const cpuW = Math.round((cpuTdp || 0) * p.cpuFactor);
+        const gpuW = Math.round(gpuTdp || 0);
+        const load = cpuW + gpuW + p.other;
+        const recommended = Math.ceil(load * p.headroom / p.step) * p.step;
+        const psu = num(attr(build['Power Supply'], 'Snaga (W)', 'Snaga', 'Wattage'));
+        return { cpuW, gpuW, load, recommended, psu, known: !!(build['CPU'] || build['GPU']) };
+    }
+
+    /* ---------- Kompatibilnost (za filter u listi; server daje konačne poruke) ---------- */
+    function conflicts(type, part) {
+        const why = [];
+        const cpu = build['CPU'], mb = build['Motherboard'], ram = build['RAM'], cooler = build['CPU Cooler'];
+        const sock = (p) => (attr(p, 'socket') || '').toLowerCase();
+        if (type === 'CPU') {
+            if (mb && sock(mb) && sock(part) && sock(mb) !== sock(part)) why.push(`ploča je ${attr(mb, 'socket')}`);
+            if (cooler && sock(part)) { const s = attr(cooler, attr(part, 'socket')); if (s !== null && !yes(s)) why.push(`kuler nema nosač za ${attr(part, 'socket')}`); }
+        }
+        if (type === 'Motherboard') {
+            if (cpu && sock(cpu) && sock(part) && sock(cpu) !== sock(part)) why.push(`procesor je ${attr(cpu, 'socket')}`);
+            const rt = attr(ram, 'RAM'), mt = attr(part, 'RAM');
+            if (rt && mt && !mt.toLowerCase().includes(rt.toLowerCase())) why.push(`RAM je ${rt}`);
+        }
+        if (type === 'RAM') {
+            const rt = attr(part, 'RAM'), mt = attr(mb, 'RAM');
+            if (rt && mt && !mt.toLowerCase().includes(rt.toLowerCase())) why.push(`ploča podržava ${mt}`);
+        }
+        if (type === 'CPU Cooler' && cpu && attr(cpu, 'socket')) {
+            const s = attr(part, attr(cpu, 'socket'));
+            if (s !== null && !yes(s)) why.push(`nema nosač za ${attr(cpu, 'socket')}`);
+        }
+        if (type === 'Power Supply') {
+            const pw = power(), w = num(attr(part, 'Snaga (W)', 'Snaga'));
+            if (pw.known && w && w < pw.load) why.push(`preslabo za ~${pw.load} W`);
+        }
+        return why;
+    }
+
+    function hint(type, part) {
+        if (type === 'Power Supply') {
+            const pw = power(), w = num(attr(part, 'Snaga (W)', 'Snaga'));
+            if (pw.known && w && w >= pw.recommended) return 'preporučeno';
+        }
+        if (type === 'CPU Cooler' && build['CPU']) {
+            const c = num(attr(part, 'TDP (W)')), t = num(attr(build['CPU'], 'TDP (W)'));
+            if (c && t && c < t) return 'slab za ovaj procesor';
+        }
+        return null;
+    }
+
+    /* ---------- Prikaz slotova i sažetka ---------- */
+    function renderSlots() {
+        // Sljedeći korak: prvi neizabrani obavezni slot dobija istaknuto dugme
+        const next = slots.find((s) => s.available && s.required && !build[s.type]);
+        $$('.pb-slot').forEach((el) => {
+            const type = el.dataset.slot;
+            const part = build[type];
+            const partEl = $('[data-part]', el), empty = $('[data-empty]', el);
+            const removeBtn = $('[data-remove]', el), pickLabel = $('[data-pick-label]', el);
+            el.classList.toggle('is-filled', !!part);
+            if (part) {
+                const ch = chips(type, part);
+                partEl.innerHTML = `
+                    <img src="${esc(part.image_url)}" alt="" class="pb-thumb" loading="lazy">
+                    <div class="pb-part-text">
+                        <a href="${esc(part.url || '#')}" target="_blank" rel="noopener" class="pb-part-name">${esc(part.name)}</a>
+                        ${ch.length ? `<span class="pb-chips">${ch.map((c) => `<span>${esc(c)}</span>`).join('')}</span>` : ''}
+                    </div>
+                    <span class="pb-part-price">${km(part.price)}</span>`;
+            } else {
+                partEl.innerHTML = '';
+            }
+            partEl.hidden = !part;
+            empty.hidden = !!part;
+            if (removeBtn) removeBtn.hidden = !part;
+            if (pickLabel) pickLabel.textContent = part ? 'Promijeni' : 'Izaberi';
+            const pickBtn = $('[data-pick]', el);
+            if (pickBtn) {
+                const isNext = next && next.type === type;
+                pickBtn.classList.toggle('btn-primary', isNext);
+                pickBtn.classList.toggle('btn-outline-primary', !part && !isNext);
+                pickBtn.classList.toggle('btn-outline-secondary', !!part);
+            }
+            el.classList.toggle('is-next', !!(next && next.type === type));
+        });
+    }
+
+    function renderSummary() {
+        const parts = Object.values(build);
+        $('#pb-total').textContent = km(parts.reduce((s, p) => s + (p.price || 0), 0));
+        const done = required.filter((t) => build[t]).length;
+        $('#pb-progress-fill').style.width = (required.length ? (done / required.length) * 100 : 0) + '%';
+        $('#pb-progress-text').textContent = done === required.length
+            ? 'Sve osnovne komponente su izabrane'
+            : `${done} od ${required.length} osnovnih komponenti`;
+        $('#pb-reset').hidden = parts.length === 0;
+        $('#pb-cart').disabled = parts.length === 0;
+        const saveBtn = $('#pb-save'); if (saveBtn) saveBtn.disabled = parts.length === 0;
+
+        // Potrošnja
+        const pw = power();
+        const loadEl = $('#pb-power-load'), text = $('#pb-power-text');
+        const meter = $('#pb-meter-load'), rec = $('#pb-meter-rec'), box = $('#pb-power');
+        box.classList.remove('is-ok', 'is-warn', 'is-error');
+        if (!pw.known) {
+            loadEl.textContent = '—';
+            meter.style.width = '0'; rec.style.left = '0'; rec.hidden = true;
+            text.textContent = 'Izaberite procesor i grafičku da procijenimo potrošnju.';
+            return;
+        }
+        loadEl.textContent = `~${pw.load} W`;
+        const scale = Math.max(pw.psu || 0, pw.recommended) * 1.1;
+        meter.style.width = (pw.load / scale * 100) + '%';
+        rec.hidden = false;
+        rec.style.left = (pw.recommended / scale * 100) + '%';
+        if (pw.psu) {
+            const status = pw.psu < pw.load ? 'is-error' : (pw.psu < pw.recommended ? 'is-warn' : 'is-ok');
+            box.classList.add(status);
+            box.style.setProperty('--pb-psu', (pw.psu / scale * 100) + '%');
+            text.innerHTML = `Napajanje <strong>${pw.psu} W</strong>, preporuka <strong>${pw.recommended} W</strong>.`;
+        } else {
+            box.style.removeProperty('--pb-psu');
+            text.innerHTML = `Preporučeno napajanje: <strong>${pw.recommended} W</strong> ili jače.`;
+        }
+    }
+
+    const ICON = { ok: 'fa-circle-check', info: 'fa-circle-info', warn: 'fa-triangle-exclamation', error: 'fa-circle-xmark' };
+    const availableTypes = new Set(slots.filter((s) => s.available).map((s) => s.type));
+    function renderChecks() {
+        const list = $('#pb-checks');
+        const items = [];
+        if (checkResult) {
+            checkResult.checks.forEach((c) => items.push(c));
+            const missing = (checkResult.missing || []).filter((t) => availableTypes.has(t));
+            if (missing.length && Object.keys(build).length) {
+                items.push({ status: 'todo', title: 'Nedostaje', missing });
+            }
+        }
+        if (!Object.keys(build).length) {
+            list.innerHTML = '<li class="pb-check is-todo"><i class="fas fa-circle-info" aria-hidden="true"></i><div>Počnite od procesora. Ponudićemo samo dijelove koji mu odgovaraju.</div></li>';
+            return;
+        }
+        list.innerHTML = items.map((c) => {
+            if (c.status === 'todo') {
+                return `<li class="pb-check is-todo"><i class="fas fa-list-check" aria-hidden="true"></i><div><strong>Još izaberite:</strong>
+                    <span class="pb-missing">${c.missing.map((t) => `<button type="button" data-pick="${esc(t)}">${esc(slotLabel[t] || t)}</button>`).join('')}</span></div></li>`;
+            }
+            return `<li class="pb-check is-${c.status}"><i class="fas ${ICON[c.status]}" aria-hidden="true"></i>
+                <div><strong>${esc(c.title)}</strong>${c.detail ? `<span>${esc(c.detail)}</span>` : ''}</div></li>`;
+        }).join('');
+
+        // Problemi i uz sam slot
+        $$('.pb-slot').forEach((el) => { $('[data-issues]', el).innerHTML = ''; el.classList.remove('has-error', 'has-warn'); });
+        const slotFor = (title) => {
+            if (/ploč/i.test(title) && /Procesor/i.test(title)) return ['CPU', 'Motherboard'];
+            if (/RAM/i.test(title)) return ['RAM'];
+            if (/Kuler/i.test(title)) return ['CPU Cooler'];
+            if (/Napajanje|napajanja/i.test(title)) return ['Power Supply'];
+            return [];
+        };
+        (checkResult ? checkResult.checks : []).filter((c) => c.status === 'warn' || c.status === 'error').forEach((c) => {
+            slotFor(c.title).forEach((type) => {
+                const el = $(`.pb-slot[data-slot="${CSS.escape(type)}"]`);
+                if (!el || !build[type]) return;
+                el.classList.add(c.status === 'error' ? 'has-error' : 'has-warn');
+                $('[data-issues]', el).insertAdjacentHTML('beforeend', `<li class="is-${c.status}"><i class="fas ${ICON[c.status]}" aria-hidden="true"></i> ${esc(c.detail || c.title)}</li>`);
+            });
+        });
+    }
+
+    function renderMobileBar() {
+        const parts = Object.values(build);
+        const bar = $('#pb-mobilebar');
+        bar.hidden = parts.length === 0;
+        if (!parts.length) return;
+        $('#pb-mobile-total').textContent = km(parts.reduce((s, p) => s + (p.price || 0), 0));
+        const status = $('#pb-mobile-status');
+        const checks = checkResult ? checkResult.checks : [];
+        const errors = checks.filter((c) => c.status === 'error').length;
+        const warns = checks.filter((c) => c.status === 'warn').length;
+        const missing = required.filter((t) => !build[t]).length;
+        status.className = 'pb-mobilebar-status' + (errors ? ' is-error' : (warns ? ' is-warn' : ''));
+        status.textContent = errors ? `${errors} ${errors === 1 ? 'problem' : 'problema'} sa kompatibilnošću`
+            : (warns ? 'Provjerite upozorenja' : (missing ? `Još ${missing} ${missing === 1 ? 'osnovna komponenta' : (missing < 5 ? 'osnovne komponente' : 'osnovnih komponenti')}` : 'Sve se slaže'));
+    }
+    $('#pb-mobile-go').addEventListener('click', () => $('.pb-summary').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+
+    let checkTimer, checkSeq = 0;
+    function refresh() {
+        save();
+        renderSlots();
+        renderSummary();
+        clearTimeout(checkTimer);
+        checkTimer = setTimeout(async () => {
+            const seq = ++checkSeq;
+            const ids = Object.values(build).map((p) => p.id);
+            if (!ids.length) { checkResult = null; renderChecks(); return; }
+            try {
+                const res = await fetch('/pc-builder/check-compatibility', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+                    body: JSON.stringify({ components: ids }),
+                });
+                const data = await res.json();
+                if (seq === checkSeq && data.success) { checkResult = data; renderChecks(); renderMobileBar(); }
+            } catch (e) { /* provjera će se ponoviti pri sljedećoj izmjeni */ }
+        }, 120);
+        renderChecks();
+        renderMobileBar();
+    }
+
+    /* ---------- Izbor komponente ---------- */
+    const pickerEl = $('#pb-picker');
+    const picker = bootstrap.Offcanvas.getOrCreateInstance(pickerEl);
+    const list = $('#pb-options'), q = $('#pb-q'), onlyCompat = $('#pb-only-compatible'), sort = $('#pb-sort');
+    let currentType = null;
+
+    async function load(type) {
+        if (cache[type]) return cache[type];
+        const res = await fetch('/pc-builder/components/' + encodeURIComponent(type));
+        const data = await res.json();
+        cache[type] = data.success ? data.components : [];
+        return cache[type];
+    }
+
+    async function openPicker(type) {
+        currentType = type;
+        $('#pb-picker-title').textContent = slotLabel[type] || type;
+        $('#pb-picker-sub').textContent = '';
+        q.value = '';
+        onlyCompat.checked = true;
+        list.innerHTML = '<li class="pb-option-loading"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Učitavanje…</li>';
+        picker.show();
+        await load(type);
+        renderOptions();
+    }
+
+    function renderOptions() {
+        const type = currentType;
+        const all = cache[type] || [];
+        const words = q.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        let items = all.map((p) => ({ p, why: conflicts(type, p) }))
+            .filter(({ p }) => words.every((w) => p.name.toLowerCase().includes(w)));
+        const compatibleCount = items.filter((i) => !i.why.length).length;
+        if (onlyCompat.checked) items = items.filter((i) => !i.why.length);
+        const by = sort.value;
+        items.sort((a, b) => by === 'name' ? a.p.name.localeCompare(b.p.name) : (by === 'price-desc' ? b.p.price - a.p.price : a.p.price - b.p.price));
+
+        const hidden = all.length - compatibleCount;
+        $('#pb-picker-sub').textContent = `${items.length} ${items.length === 1 ? 'artikal' : 'artikala'} na stanju`
+            + (onlyCompat.checked && hidden > 0 ? `, ${hidden} nekompatibilnih skriveno` : '');
+
+        if (!items.length) {
+            list.innerHTML = `<li class="pb-option-empty">${all.length ? (onlyCompat.checked && hidden ? 'Nijedan artikal ne odgovara izabranim dijelovima. Isključite „Samo kompatibilne" da vidite sve.' : 'Ništa ne odgovara pretrazi.') : 'Trenutno nema ovih komponenti na stanju.'}</li>`;
+            return;
+        }
+        const selectedId = build[type] && build[type].id;
+        list.innerHTML = items.map(({ p, why }) => {
+            const ch = chips(type, p), h = hint(type, p), sel = p.id === selectedId;
+            return `<li class="pb-option${sel ? ' is-selected' : ''}${why.length ? ' is-conflict' : ''}">
+                <img src="${esc(p.image_url)}" alt="" class="pb-thumb" loading="lazy">
+                <div class="pb-option-text">
+                    <span class="pb-option-name">${esc(p.name)}</span>
+                    ${ch.length ? `<span class="pb-chips">${ch.map((c) => `<span>${esc(c)}</span>`).join('')}</span>` : ''}
+                    ${why.length ? `<span class="pb-option-why"><i class="fas fa-circle-xmark" aria-hidden="true"></i> Ne odgovara: ${esc(why.join(', '))}</span>` : ''}
+                    ${h ? `<span class="pb-option-hint${h.startsWith('slab') ? ' is-warn' : ''}">${esc(h)}</span>` : ''}
+                </div>
+                <div class="pb-option-side">
+                    <span class="pb-option-price">${km(p.price)}</span>
+                    <button type="button" class="btn btn-sm ${sel ? 'btn-success' : 'btn-outline-primary'}" data-choose="${p.id}">${sel ? '<i class="fas fa-check" aria-hidden="true"></i> Izabrano' : 'Izaberi'}</button>
+                </div>
+            </li>`;
+        }).join('');
+    }
+
+    list.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-choose]');
+        if (!btn) return;
+        const part = (cache[currentType] || []).find((p) => p.id === parseInt(btn.dataset.choose, 10));
+        if (!part) return;
+        build[currentType] = part;
+        refresh();
+        picker.hide();
+    });
+    q.addEventListener('input', renderOptions);
+    onlyCompat.addEventListener('change', renderOptions);
+    sort.addEventListener('change', renderOptions);
+    pickerEl.addEventListener('shown.bs.offcanvas', () => { if (window.matchMedia('(pointer: fine)').matches) q.focus(); });
+
+    document.addEventListener('click', (e) => {
+        const pick = e.target.closest('[data-pick]');
+        if (pick && !pick.closest('#pb-picker')) { openPicker(pick.dataset.pick); return; }
+        const rm = e.target.closest('[data-remove]');
+        if (rm) { delete build[rm.dataset.remove]; refresh(); }
+    });
+
+    $('#pb-reset').addEventListener('click', () => {
+        if (!confirm('Ukloniti sve izabrane komponente?')) return;
+        build = {}; refresh();
+    });
+
+    /* ---------- Korpa ---------- */
+    $('#pb-cart').addEventListener('click', async () => {
+        if (!cfg.loggedIn) { window.location.href = cfg.loginUrl; return; }
+        const btn = $('#pb-cart');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Dodajem…';
+        for (const part of Object.values(build)) {
+            const form = new FormData();
+            form.append('product_id', part.id);
+            form.append('quantity', 1);
+            form.append('csrf_token', csrf());
+            // eslint-disable-next-line no-await-in-loop
+            await fetch('/interaction/add-to-cart', { method: 'POST', body: form, credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        }
+        window.location.href = '/cart';
+    });
+
+    /* ---------- Čuvanje i učitavanje ---------- */
+    const saveModalEl = $('#pb-save-modal');
+    const saveBtn = $('#pb-save');
+    if (saveBtn) saveBtn.addEventListener('click', () => bootstrap.Modal.getOrCreateInstance(saveModalEl).show());
+    if (saveModalEl) saveModalEl.addEventListener('shown.bs.modal', () => $('#pb-save-name').focus());
+    const saveForm = $('#pb-save-form');
+    if (saveForm) saveForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submit = $('#pb-save-submit');
+        submit.disabled = true;
+        try {
+            const res = await fetch('/pc-builder/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf(), 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({
+                    name: $('#pb-save-name').value.trim(),
+                    description: $('#pb-save-desc').value.trim(),
+                    is_public: $('#pb-save-public').checked,
+                    components: Object.values(build).map((p) => p.id),
+                }),
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message);
+            window.location.reload();
+        } catch (err) {
+            submit.disabled = false;
+            if (window.showModalAlert) window.showModalAlert(err.message || 'Konfiguracija nije sačuvana.', 'Greška', 'danger');
+        }
+    });
+
+    $$('[data-load-build]').forEach((btn) => btn.addEventListener('click', async () => {
+        const res = await fetch('/pc-builder/load/' + btn.dataset.loadBuild);
+        const data = await res.json();
+        if (!data.success) { if (window.showModalAlert) window.showModalAlert(data.message, 'Greška', 'danger'); return; }
+        build = {};
+        data.build.components.forEach((c) => { if (c.component_type) build[c.component_type] = c; });
+        refresh();
+    }));
+
+    // Konfiguracija sačuvana prije izmjena na sajtu: izbaci dijelove kojih više nema u ponudi
+    (async () => {
+        const types = Object.keys(build);
+        for (const type of types) {
+            // eslint-disable-next-line no-await-in-loop
+            const fresh = (await load(type)).find((p) => p.id === build[type].id);
+            if (fresh) build[type] = fresh; else delete build[type];
+        }
+        if (types.length) refresh();
+    })();
+
+    refresh();
+})();

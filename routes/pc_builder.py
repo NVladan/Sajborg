@@ -2,35 +2,37 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 from extensions import db, csrf
-from models import Product, PCBuild, build_components, ProductAttributeValue
+from models import Product, PCBuild, build_components, ProductAttributeValue, Category
 from forms.builder_forms import PCBuildForm, AddToCartForm
 from utils import check_pc_build_compatibility
+from pc_build_check import SLOTS, analyze_build
 
 builder_bp = Blueprint('builder', __name__, url_prefix='/pc-builder')
 
 @builder_bp.route('/')
 def builder():
-    # Get all component types from database
-    component_types = db.session.query(Product.component_type).filter(Product.component_type.isnot(None)).distinct().all()
-    component_types = [c[0] for c in component_types if c[0]]
+    available = {c[0] for c in db.session.query(Product.component_type)
+                 .filter(Product.component_type.isnot(None), Product.stock > 0).distinct().all() if c[0]}
+    # Slika slota = slika kategorije prodavnice sa tim tipom komponente (glavna kategorija ima prednost)
+    images = {}
+    for cat in Category.query.filter(Category.component_type.isnot(None)).order_by(Category.parent_id.isnot(None)).all():
+        if cat.image_path and cat.component_type not in images:
+            images[cat.component_type] = url_for('static', filename=cat.image_path)
+    slots = [{'type': key, 'label': label, 'icon': icon, 'required': required, 'available': key in available,
+              'image': images.get(key)}
+             for key, label, icon, required in SLOTS]
 
-    # Create form for adding to cart
-    add_to_cart_form = AddToCartForm()
-
-    # Get saved builds if user is logged in
     saved_builds = []
     if current_user.is_authenticated:
-        saved_builds = PCBuild.query.filter_by(user_id=current_user.id).all()
-
-    # Get public builds
-    public_builds = PCBuild.query.filter_by(is_public=True).limit(5).all()
+        saved_builds = PCBuild.query.filter_by(user_id=current_user.id).order_by(PCBuild.id.desc()).all()
+    public_builds = PCBuild.query.filter_by(is_public=True).order_by(PCBuild.id.desc()).limit(6).all()
 
     return render_template('pc_builder/builder.html',
-                          title='PC Konfigurator',
-                          component_types=component_types,
-                          saved_builds=saved_builds,
-                          public_builds=public_builds,
-                          add_to_cart_form=add_to_cart_form)
+                           title='PC Konfigurator',
+                           slots=slots,
+                           saved_builds=saved_builds,
+                           public_builds=public_builds,
+                           add_to_cart_form=AddToCartForm())
 
 
 @builder_bp.route('/components/<component_type>')
@@ -76,10 +78,12 @@ def get_components(component_type):
                 'id': component.id,
                 'name': component.name,
                 'price': component.price,
-                'specs': component.specs,
                 'image_url': image_url,
-                'stock': component.stock
+                'stock': component.stock,
+                'url': url_for('product.product_detail', slug=component.slug),
+                'attrs': {av.attribute.name: av.value for av in component.attribute_values if av.value},
             })
+        components_data.sort(key=lambda c: c['price'])
 
         return jsonify({
             'success': True,
@@ -190,7 +194,9 @@ def load_build(build_id):
                 'price': component.price,
                 'component_type': component.component_type,
                 'image_url': image_url,
-                'stock': component.stock
+                'stock': component.stock,
+                'url': url_for('product.product_detail', slug=component.slug),
+                'attrs': {av.attribute.name: av.value for av in component.attribute_values if av.value},
             })
 
         return jsonify({
@@ -328,54 +334,11 @@ def add_build_to_cart(build_id):
 @builder_bp.route('/check-compatibility', methods=['POST'])
 @csrf.exempt
 def check_compatibility():
-    """AJAX endpoint to check component compatibility"""
-    try:
-        print("[DEBUG] /check-compatibility called")
-        print(f"[DEBUG] request.json: {request.json}")
-        # Get component IDs from request
-        if not request.json:
-            print("[DEBUG] No JSON data received")
-            return jsonify({
-                'success': False,
-                'message': 'Nevažeći JSON podaci',
-                'is_compatible': False,
-                'messages': ['Greška pri proveri kompatibilnosti: Nema podataka']
-            }), 400
-        component_ids = request.json.get('components', [])
-        print(f"[DEBUG] component_ids: {component_ids}")
-        if not component_ids:
-            print("[DEBUG] No component IDs provided")
-            return jsonify({
-                'success': True,
-                'is_compatible': True,
-                'messages': ['Još uvek nema izabranih komponenti']
-            })
-        # Get components
-        components = Product.query.filter(Product.id.in_(component_ids)).all()
-        print(f"[DEBUG] Found {len(components)} components in DB for IDs: {component_ids}")
-        # Check if we found all components
-        if len(components) != len(component_ids):
-            print("[DEBUG] Some components not found in DB")
-            return jsonify({
-                'success': True,
-                'is_compatible': False,
-                'messages': ['Neke komponente nisu pronađene u bazi podataka']
-            })
-        # Check compatibility
-        is_compatible, messages = check_pc_build_compatibility(components)
-        print(f"[DEBUG] Compatibility result: {is_compatible}, messages: {messages}")
-        return jsonify({
-            'success': True,
-            'is_compatible': is_compatible,
-            'messages': messages
-        })
-    except Exception as e:
-        import traceback
-        print(f"Error in check_compatibility route: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'message': str(e),
-            'is_compatible': False,
-            'messages': [f'Greška pri proveri kompatibilnosti: {str(e)}']
-        }), 500
+    """AJAX: provjere kompatibilnosti i procjena potrošnje za izabrane komponente."""
+    data = request.get_json(silent=True) or {}
+    ids = [i for i in data.get('components', []) if isinstance(i, int)]
+    components = Product.query.filter(Product.id.in_(ids)).options(
+        joinedload(Product.attribute_values).joinedload(ProductAttributeValue.attribute)).all() if ids else []
+    result = analyze_build(components)
+    is_compatible, messages = check_pc_build_compatibility(components)
+    return jsonify({'success': True, 'is_compatible': result['is_compatible'], 'messages': messages, **result})

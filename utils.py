@@ -106,92 +106,10 @@ def process_import_file(file_path):
 
 
 def check_pc_build_compatibility(components):
-    """
-    Check if selected PC components are compatible.
-    Ova verzija čita podatke iz sistema atributa umesto iz 'specs' polja.
-    Returns a tuple (is_compatible, compatibility_messages)
-    """
+    """(is_compatible, poruke) — logika je u pc_build_check.analyze_build."""
+    from pc_build_check import compatibility_messages
     try:
-        messages = []
-        is_compatible = True
-
-        if not components:
-            messages.append("Nema izabranih komponenti")
-            return True, messages
-
-        # Pomoćna funkcija za lakše dobijanje vrednosti atributa
-        def get_attribute_value(component, attribute_name):
-            for attr_val in component.attribute_values:
-                if attr_val.attribute.name.lower() == attribute_name.lower():
-                    return attr_val.value
-            return 'Nepoznato'
-
-        component_dict = {comp.component_type: comp for comp in components if comp.component_type}
-
-        # 1. Provera kompatibilnosti CPU i matične ploče (preko socketa)
-        if 'CPU' in component_dict and 'Motherboard' in component_dict:
-            cpu = component_dict['CPU']
-            motherboard = component_dict['Motherboard']
-
-            cpu_socket = get_attribute_value(cpu, 'socket')
-            mb_socket = get_attribute_value(motherboard, 'socket')
-
-            if cpu_socket != 'Nepoznato' and mb_socket != 'Nepoznato' and cpu_socket.strip().lower() != mb_socket.strip().lower():
-                messages.append(f"CPU podnožje ({cpu_socket}) se ne podudara sa podnožjem matične ploče ({mb_socket})")
-                is_compatible = False
-
-        # 2. Provera kompatibilnosti RAM-a i matične ploče
-        if 'RAM' in component_dict and 'Motherboard' in component_dict:
-            ram = component_dict['RAM']
-            motherboard = component_dict['Motherboard']
-
-            ram_type = get_attribute_value(ram, 'ram')  # Npr. "DDR4" ili "DDR5"
-            mb_ram_type = get_attribute_value(motherboard, 'ram')  # Pretpostavljamo atribut "RAM"
-
-            if ram_type != 'Nepoznato' and mb_ram_type != 'Nepoznato' and ram_type.strip().lower() not in mb_ram_type.strip().lower():
-                messages.append(f"RAM tip ({ram_type}) nije kompatibilan sa matičnom pločom (podržava {mb_ram_type})")
-                is_compatible = False
-
-        # 3. Provera napajanja (PSU)
-        total_tdp = 0
-        for comp_type, comp in component_dict.items():
-            if comp_type != 'Power Supply':
-                try:
-                    # Pokušava da nađe atribut 'TDP (W)' ili samo 'TDP'
-                    tdp_str = get_attribute_value(comp, 'tdp (w)')
-                    if tdp_str == 'Nepoznato':
-                        tdp_str = get_attribute_value(comp, 'tdp')
-
-                    if tdp_str != 'Nepoznato':
-                        total_tdp += int(tdp_str)
-                except (ValueError, TypeError):
-                    continue  # Ignorišemo komponente bez validnog TDP-a
-
-        if 'Power Supply' in component_dict:
-            psu = component_dict['Power Supply']
-            psu_wattage_str = get_attribute_value(psu, 'wattage')
-            try:
-                psu_wattage = int(psu_wattage_str)
-                # Proveravamo da li je napajanje bar 20% jače od potrošnje
-                if psu_wattage < total_tdp * 1.2:
-                    messages.append(
-                        f"Napajanje od {psu_wattage}W možda neće biti dovoljno. Preporučena snaga je bar {int(total_tdp * 1.2)}W.")
-                    is_compatible = False
-            except (ValueError, TypeError):
-                messages.append("Nije moguće utvrditi snagu napajanja.")
-
-        # 4. Provera kompletnosti
-        essential_components = ['CPU', 'Motherboard', 'RAM', 'Storage', 'Power Supply', 'Case']
-        missing = [comp for comp in essential_components if comp not in component_dict]
-
-        if missing:
-            messages.append(f"Konfiguraciji nedostaju osnovne komponente: {', '.join(missing)}")
-
-        if not messages:
-            messages.append("Konfiguracija je kompatibilna.")
-
-        return is_compatible, messages
-
+        return compatibility_messages(components)
     except Exception as e:
         print(f"Greška pri proveri kompatibilnosti: {str(e)}")
         print(traceback.format_exc())
