@@ -268,6 +268,8 @@ class LagerProduct(db.Model):
     reservation_note = db.Column(db.String(255), nullable=True)
     internal_note = db.Column(db.Text, nullable=True)
     for_company = db.Column(db.Boolean, default=False)
+    # Ne nudi se na tabu "Za objaviti" na /admin/lager-sync
+    sync_ignored = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
     category_id = db.Column(db.Integer, db.ForeignKey('lager_category.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -231,6 +231,33 @@ class TestLinking:
         assert 'ASUS PRIME RX 9060 XT' not in html
 
 
+class TestIgnoreUnpublished:
+    def test_ignore_hides_item_from_publish_list_and_can_be_restored(self, admin_client, site_category):
+        _, sub, _ = make_lager_tree()
+        linked = LagerProduct(name='AMD Ryzen 5 5500', stock=2, purchase_price=161, category_id=sub.id)
+        item = LagerProduct(name='AMD Ryzen 7 7700X', stock=1, purchase_price=477, category_id=sub.id)
+        db.session.add_all([linked, item])
+        db.session.flush()
+        make_product('AMD Ryzen 5 5500', 'sync-ign-5500', 170, 2, site_category, lager=linked)
+        db.session.commit()
+        item_id = item.id
+        add_link = f'lager_id={item_id}'
+
+        assert add_link in admin_client.get('/admin/lager-sync').get_data(as_text=True)
+
+        admin_client.post(f'/admin/lager-sync/ignore/{item_id}', data={'ignored': '1'})
+        db.session.expire_all()
+        assert db.session.get(LagerProduct, item_id).sync_ignored is True
+        html = admin_client.get('/admin/lager-sync').get_data(as_text=True)
+        assert add_link not in html               # no "Objavi" button anymore
+        assert 'Ignorisano' in html and 'AMD Ryzen 7 7700X' in html  # listed under "Ignorisano"
+
+        admin_client.post(f'/admin/lager-sync/ignore/{item_id}', data={'ignored': '0'})
+        db.session.expire_all()
+        assert db.session.get(LagerProduct, item_id).sync_ignored is False
+        assert add_link in admin_client.get('/admin/lager-sync').get_data(as_text=True)
+
+
 class TestPublishFromLager:
     def _setup(self, site_category):
         _, sub, _ = make_lager_tree()

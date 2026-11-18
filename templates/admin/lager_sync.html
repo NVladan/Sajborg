@@ -191,6 +191,11 @@
                                    class="btn btn-sm {{ 'btn-outline-secondary' if row.similar_product else 'btn-outline-success' }}">
                                     <i class="fas fa-plus"></i> Objavi
                                 </a>
+                                <form method="POST" action="{{ url_for('admin.lager_sync_ignore', lager_id=row.item.id) }}">
+                                    {{ hidden('objavi') }}
+                                    <input type="hidden" name="ignored" value="1">
+                                    <button type="submit" class="ls-unlink" title="Ne objavljujem — ne prikazuj više ovaj artikal ovdje">Ignoriši</button>
+                                </form>
                             </div>
                         </li>
                         {% endfor %}
@@ -200,8 +205,32 @@
                 {% else %}
                 <div class="ls-empty">
                     <i class="fas fa-check" aria-hidden="true"></i>
-                    <p>Sva roba sa lagera je objavljena na sajtu.</p>
+                    <p>{{ 'Sva ostala roba sa lagera je objavljena na sajtu.' if ignored else 'Sva roba sa lagera je objavljena na sajtu.' }}</p>
                 </div>
+                {% endif %}
+                {% if ignored %}
+                <details class="ls-ignored">
+                    <summary>Ignorisano <span class="ls-group-count">{{ ignored|length }}</span></summary>
+                    <ul class="ls-list" role="list">
+                        {% for item in ignored %}
+                        <li class="ls-row ls-grid-pub" data-q="{{ item.name|lower }}">
+                            <div class="ls-name">
+                                <span class="ls-name-text">{{ item.name }}</span>
+                                <div class="ls-meta">{{ category_label(item.category.parent.name if item.category.parent else item.category.name) }}</div>
+                            </div>
+                            <div class="ls-cell ls-num" data-label="Kol.">{{ item.stock }}</div>
+                            <div class="ls-cell ls-num" data-label="Cijena"></div>
+                            <div class="ls-actions">
+                                <form method="POST" action="{{ url_for('admin.lager_sync_ignore', lager_id=item.id) }}">
+                                    {{ hidden('objavi') }}
+                                    <input type="hidden" name="ignored" value="0">
+                                    <button type="submit" class="ls-link-btn">Vrati</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </details>
                 {% endif %}
             </section>
 
