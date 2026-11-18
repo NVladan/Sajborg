@@ -1,0 +1,151 @@
+/* Sadržaj: Tech Magazin, članak, O nama, pravne stranice. Koristi shop.css (.sh) i tokene iz main.css */
+
+.ct-head { margin-bottom: 1.5rem; }
+.ct-meta { color: var(--ink-faint); font-size: 0.86rem; }
+.ct-excerpt { color: var(--ink-muted); line-height: 1.6; }
+
+/* ---------- Lista članaka ---------- */
+.ct-lead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    gap: 0;
+    margin-bottom: 1.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.ct-lead:hover { border-color: var(--accent); box-shadow: var(--shadow-md); color: var(--ink); }
+.ct-lead:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 3px; }
+.ct-lead-img { aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface-2); }
+.ct-lead-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.ct-lead:hover .ct-lead-img img { transform: scale(1.03); }
+.ct-lead-body { display: flex; flex-direction: column; gap: 0.75rem; justify-content: center; padding: clamp(1.4rem, 3vw, 2.5rem); }
+.ct-badge { align-self: flex-start; padding: 0.2rem 0.65rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 0.8rem; font-weight: 700; }
+.ct-lead-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1.15; letter-spacing: -0.02em; color: var(--ink-strong); }
+.ct-more { margin-top: 0.4rem; font-weight: 700; color: var(--accent); }
+.ct-more i { font-size: 0.8rem; margin-left: 0.25rem; transition: transform .15s ease; }
+.ct-lead:hover .ct-more i { transform: translateX(3px); }
+
+.ct-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+.ct-card { display: flex; flex-direction: column; gap: 0.5rem; text-decoration: none; color: var(--ink); }
+.ct-card-img { aspect-ratio: 16 / 10; border-radius: var(--radius); overflow: hidden; background: var(--surface-2); margin-bottom: 0.35rem; }
+.ct-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+.ct-card:hover .ct-card-img img { transform: scale(1.04); }
+.ct-card-title { font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; line-height: 1.3; color: var(--ink-strong); }
+.ct-card:hover .ct-card-title { color: var(--accent); }
+.ct-card .ct-excerpt { font-size: 0.93rem; }
+
+/* ---------- Članak ---------- */
+.ct-progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 1040; pointer-events: none; }
+.ct-progress span { display: block; height: 100%; background: var(--accent); transform-origin: left; transform: scaleX(0); }
+.ct-article { max-width: 760px; }
+.ct-article-head { margin-bottom: 1.5rem; }
+.ct-article-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1.08; letter-spacing: -0.025em; color: var(--ink-strong); margin: 0.6rem 0 1.1rem; }
+.ct-byline { display: flex; gap: 0.75rem; align-items: center; line-height: 1.35; }
+.ct-byline strong { color: var(--ink-strong); }
+.ct-hero { margin: 0 0 2rem; border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-2); }
+.ct-hero img { width: 100%; max-height: 460px; object-fit: cover; display: block; }
+.ct-body { font-size: 1.08rem; line-height: 1.8; max-width: 68ch; }
+.ct-body > :first-child { margin-top: 0; }
+.ct-body h2 { font-size: 1.6rem; margin-top: 2.25rem; }
+.ct-body h3 { font-size: 1.3rem; margin-top: 1.75rem; }
+.ct-body img { display: block; }
+.ct-cta {
+    display: flex;
+    gap: 1rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin: 2.75rem 0 1rem;
+    padding: 1.3rem 1.4rem;
+    border-radius: var(--radius);
+    background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.ct-cta strong { display: block; color: var(--ink-strong); font-size: 1.05rem; }
+.ct-cta span { color: var(--ink-muted); font-size: 0.93rem; }
+.ct-more-section { padding-top: 2rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+
+/* ---------- O nama ---------- */
+.ct-about-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: clamp(1.5rem, 5vw, 4rem); align-items: center; margin: 0.75rem 0 3.5rem; }
+.ct-about-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 1.07; letter-spacing: -0.03em; color: var(--ink-strong); margin: 0 0 1rem; max-width: 18ch; }
+.ct-about-lede { font-size: 1.1rem; line-height: 1.65; color: var(--ink-muted); max-width: 56ch; margin: 0 0 1.5rem; }
+.ct-about-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.ct-about-actions .btn { height: 48px; padding: 0 1.4rem; display: inline-flex; align-items: center; font-weight: 700; }
+.ct-about-collage { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; max-width: 420px; justify-self: end; width: 100%; }
+.ct-about-collage span { aspect-ratio: 1; border-radius: var(--radius-lg); overflow: hidden; background: #fff; border: 1px solid var(--border); }
+.ct-about-collage span:nth-child(2) { transform: translateY(1.5rem); }
+.ct-about-collage span:nth-child(4) { transform: translateY(1.5rem); }
+.ct-about-collage img { width: 100%; height: 100%; object-fit: cover; }
+
+.ct-about-section { margin-bottom: 3.25rem; }
+.ct-about-p { color: var(--ink-muted); line-height: 1.7; max-width: 72ch; margin: 0 0 1.5rem; }
+.ct-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.ct-value { padding: 1.4rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+.ct-value i, .ct-service i {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--accent-soft);
+    color: var(--accent);
+    margin-bottom: 0.85rem;
+}
+.ct-value h3, .ct-service h3 { font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; color: var(--ink-strong); margin: 0 0 0.35rem; }
+.ct-value p, .ct-service p { margin: 0; color: var(--ink-muted); font-size: 0.93rem; line-height: 1.6; }
+.ct-services { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.ct-service { display: flex; gap: 1rem; padding: 1.2rem 1.3rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); text-decoration: none; color: var(--ink); }
+.ct-service i { flex: none; margin: 0; }
+a.ct-service:hover { border-color: var(--accent); color: var(--ink); }
+
+.ct-contact { padding: clamp(1.4rem, 3vw, 2.2rem); border-radius: var(--radius-lg); background: #10162A; color: #E8EBF2; margin-bottom: 1rem; }
+.ct-contact-title { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; color: #fff; margin: 0 0 1.2rem; }
+.ct-contact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.ct-contact-grid > div { display: grid; grid-template-columns: 36px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 0.8rem; align-items: center; }
+.ct-contact-grid i { grid-row: span 2; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(110, 140, 255, .18); color: #9DB1FF; }
+.ct-contact-grid span { color: #A9B3C7; font-size: 0.83rem; }
+.ct-contact-grid strong { color: #fff; font-weight: 700; word-break: break-word; }
+.ct-contact-grid a { color: #fff; }
+
+/* ---------- Pravne stranice ---------- */
+.ct-legal { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); align-items: start; }
+.ct-toc { position: sticky; top: calc(var(--sh-nav-h) + 0.75rem); }
+.ct-toc-title { font-family: var(--font-display); font-weight: 700; color: var(--ink-strong); margin: 0 0 0.6rem; }
+.ct-toc ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--border); }
+.ct-toc li a { display: block; padding: 0.35rem 0 0.35rem 0.9rem; margin-left: -2px; border-left: 2px solid transparent; color: var(--ink-muted); text-decoration: none; font-size: 0.92rem; line-height: 1.4; }
+.ct-toc li a:hover { color: var(--ink-strong); }
+.ct-toc li a.is-active { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+.ct-toc-alt { margin: 1.25rem 0 0; font-size: 0.9rem; }
+.ct-legal-head { margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.ct-legal-head .ct-meta { margin: 0.4rem 0 0; }
+.ct-legal-body { max-width: 72ch; color: var(--ink); line-height: 1.75; }
+.ct-legal-body .lead { font-size: 1.12rem; color: var(--ink-muted); }
+.ct-legal-body h2 { font-family: var(--font-display); font-weight: 800; font-size: 1.3rem; color: var(--ink-strong); margin: 2.25rem 0 0.75rem; scroll-margin-top: calc(var(--sh-nav-h) + 1rem); }
+.ct-legal-body ul { padding-left: 1.2rem; }
+.ct-legal-body li { margin-bottom: 0.5rem; }
+.ct-legal-body li::marker { color: var(--accent); }
+
+/* ---------- Tablet / telefon ---------- */
+@media (max-width: 991.98px) {
+    .ct-lead { grid-template-columns: minmax(0, 1fr); }
+    .ct-about-hero { grid-template-columns: minmax(0, 1fr); }
+    .ct-about-collage { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .ct-about-collage span:nth-child(n) { transform: none; border-radius: var(--radius); }
+    .ct-values { grid-template-columns: minmax(0, 1fr); }
+    .ct-contact-grid { grid-template-columns: minmax(0, 1fr); }
+    .ct-legal { grid-template-columns: minmax(0, 1fr); }
+    .ct-toc { position: static; padding: 1rem 1.1rem; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+}
+@media (max-width: 640px) {
+    .ct-services { grid-template-columns: minmax(0, 1fr); }
+    .ct-body { font-size: 1.02rem; }
+    .ct-cta .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ct-lead-img img, .ct-card-img img, .ct-more i { transition: none; }
+}

@@ -5,16 +5,21 @@
 {% block og_type %}article{% endblock %}
 {% block og_image %}{% if post.featured_image %}{{ url_for('static', filename=post.featured_image, _external=True) }}{% else %}{{ url_for('static', filename='img/og-default.png', _external=True) }}{% endif %}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css', v=cache_buster) }}">
+{% endblock %}
+
 {% block content %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "{{ post.title }}",
+  "headline": {{ post.title|tojson }},
   "image": "{% if post.featured_image %}{{ url_for('static', filename=post.featured_image, _external=True) }}{% else %}{{ url_for('static', filename='img/og-default.png', _external=True) }}{% endif %}",
   "datePublished": "{{ post.created_at.strftime('%Y-%m-%dT%H:%M:%S') }}",
   "dateModified": "{{ post.updated_at.strftime('%Y-%m-%dT%H:%M:%S') }}",
-  "author": { "@type": "Person", "name": "{{ post.author.username }}" },
+  "author": { "@type": "Person", "name": {{ post.author.username|tojson }} },
   "publisher": {
     "@type": "Organization",
     "name": "Sajborg Shop",
@@ -23,47 +28,72 @@
   "mainEntityOfPage": "{{ url_for('blog.post_detail', slug=post.slug, _external=True) }}"
 }
 </script>
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb" style="background-color: transparent; padding: 0;">
-                    <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" style="color: var(--accent-blue);">Početna</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('blog.posts') }}" style="color: var(--accent-blue);">Tech Magazin</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ post.title }}</li>
-                </ol>
-            </nav>
 
-            <article class="card border-0 shadow-sm">
-                <div class="card-body p-4 p-md-5">
-                    <header class="mb-4">
-                        <h1 class="fw-bold mb-3" style="color: var(--text-primary);">{{ post.title }}</h1>
-                        <div class="d-flex align-items-center text-muted mb-3">
-                            <i class="fas fa-calendar-alt me-2" style="color: var(--accent-blue);"></i>
-                            <span class="me-3">{{ post.created_at.strftime('%d.%m.%Y.') }}</span>
-                            <i class="fas fa-user-circle me-2" style="color: var(--accent-blue);"></i>
-                            <span>{{ post.author.username }}</span>
-                        </div>
-                    </header>
+<div class="ct-progress" aria-hidden="true"><span id="ct-progress"></span></div>
 
-                    {% if post.featured_image %}
-                    <figure class="mb-4">
-                        <img class="img-fluid" src="{{ url_for('static', filename=post.featured_image) }}" alt="{{ post.title }}" style="border-radius: var(--border-radius); width: 100%; max-height: 500px; object-fit: cover;">
-                    </figure>
-                    {% endif %}
-
-                    <section class="mb-4 blog-content">
-                        {{ post.content | sanitize_html }}
-                    </section>
-
-                    <div class="mt-5 pt-4" style="border-top: 1px solid var(--border);">
-                        <a href="{{ url_for('blog.posts') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>Nazad na Tech Magazin
-                        </a>
-                    </div>
-                </div>
-            </article>
+<article class="sh ct-article">
+    <header class="ct-article-head">
+        <a href="{{ url_for('blog.posts') }}" class="sh-buy-cat"><i class="fas fa-chevron-left" aria-hidden="true"></i> Tech Magazin</a>
+        <h1 class="ct-article-title">{{ post.title }}</h1>
+        <div class="ct-byline">
+            <span class="sh-avatar" aria-hidden="true">{{ post.author.username[:1]|upper }}</span>
+            <span><strong>{{ post.author.username }}</strong><br>
+                <span class="ct-meta">{{ post.created_at.strftime('%d.%m.%Y.') }}, {{ post.content|read_minutes }} min čitanja</span></span>
         </div>
+    </header>
+
+    {% if post.featured_image %}
+    <figure class="ct-hero">
+        <img src="{{ url_for('static', filename=post.featured_image) }}" alt="">
+    </figure>
+    {% endif %}
+
+    <div class="ct-body blog-content" id="ct-body">
+        {{ post.content | sanitize_html }}
     </div>
-</div>
+
+    <aside class="ct-cta" aria-label="Kupovina">
+        <div>
+            <strong>Sklapate računar?</strong>
+            <span>Konfigurator nudi samo dijelove koji se slažu i računa koliko jako napajanje treba.</span>
+        </div>
+        <a href="{{ url_for('builder.builder') }}" class="btn btn-primary">Otvori konfigurator</a>
+    </aside>
+</article>
+
+{% if more %}
+<section class="sh ct-more-section" aria-labelledby="ct-more-title">
+    <h2 class="sh-h2" id="ct-more-title">Još iz Tech Magazina</h2>
+    <div class="ct-grid">
+        {% for p in more %}
+        <a href="{{ url_for('blog.post_detail', slug=p.slug) }}" class="ct-card">
+            <span class="ct-card-img">
+                <img src="{{ url_for('static', filename=p.featured_image) if p.featured_image else url_for('static', filename='img/pc-builds.jpg') }}" alt="" loading="lazy">
+            </span>
+            <span class="ct-card-title">{{ p.title }}</span>
+            <span class="ct-meta">{{ p.created_at.strftime('%d.%m.%Y.') }}, {{ p.content|read_minutes }} min čitanja</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Traka napretka čitanja
+    const bar = document.getElementById('ct-progress');
+    const body = document.getElementById('ct-body');
+    if (!bar || !body) return;
+    const update = () => {
+        const r = body.getBoundingClientRect();
+        const total = r.height - window.innerHeight * 0.6;
+        const done = Math.min(1, Math.max(0, -r.top / (total > 0 ? total : 1)));
+        bar.style.transform = 'scaleX(' + done + ')';
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
+})();
+</script>
 {% endblock %}

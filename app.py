@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import re
 from datetime import timedelta, datetime
 import time  # NOVI IMPORT
 import hashlib
@@ -65,6 +66,12 @@ def create_app(config_name='default'):
         """1234.5 -> '1.234,50 KM' (format za BiH)."""
         s = f'{float(value or 0):,.{decimals}f}'
         return s.replace(',', '_').replace('.', ',').replace('_', '.') + ' KM'
+
+    @app.template_filter('read_minutes')
+    def read_minutes_filter(html):
+        """Procjena vremena čitanja (200 riječi u minuti), najmanje 1 minut."""
+        words = len(re.sub(r'<[^>]+>', ' ', html or '').split())
+        return max(1, round(words / 200))
 
     @app.template_filter('bool_to_da_ne')
     def bool_to_da_ne(value):

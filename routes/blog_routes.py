@@ -17,4 +17,6 @@ def post_detail(slug):
     post = Post.query.filter_by(slug=slug, is_published=True).first()
     if not post:
         abort(404)
-    return render_template('blog/post_detail.html', title=post.title, post=post)
+    more = (Post.query.filter(Post.is_published.is_(True), Post.id != post.id)
+            .order_by(Post.created_at.desc()).limit(3).all())
+    return render_template('blog/post_detail.html', title=post.title, post=post, more=more)
