@@ -137,7 +137,21 @@ def products(category_slug):
     # Add to cart form
     form = AddToCartForm()
 
+    # Trake kategorija: glavne kategorije po važnosti komponente; podkategorije izabrane kategorije
+    from pc_build_check import SLOTS
+    rank = {key: i for i, (key, _, _, _) in enumerate(SLOTS)}
+    top_categories = sorted(
+        [c for c in categories if c.parent_id is None and c.is_public],
+        key=lambda c: (rank.get(c.component_type, len(rank)), c.name.lower()))
+    active_top = selected_category
+    while active_top is not None and active_top.parent is not None:
+        active_top = active_top.parent
+    subcategories = sorted(active_top.subcategories, key=lambda c: c.name.lower()) if active_top else []
+
     return render_template('shop/products.html',
+                           top_categories=top_categories,
+                           active_top=active_top,
+                           subcategories=subcategories,
                            title='Proizvodi',
                            products=products,
                            categories=categories,
@@ -183,7 +197,7 @@ def product_detail(slug):
         # 1. Provjeri da li je korisnik kupio proizvod i da li je narudžba dostavljena
         has_purchased = db.session.query(Order.id).join(order_items).join(Product).filter(
             Order.user_id == current_user.id,
-            Order.status == 'dostavljeno',
+            Order.status.in_(('delivered', 'dostavljeno')),  # admin postavlja 'delivered'
             Product.id == product.id
         ).first() is not None
 
@@ -216,7 +230,7 @@ def add_review(product_id):
         # Pronađi sve dostavljene narudžbe ovog korisnika koje sadrže ovaj proizvod
         eligible_orders = Order.query.join(Order.products).filter(
             Order.user_id == current_user.id,
-            Order.status == 'dostavljeno',
+            Order.status.in_(('delivered', 'dostavljeno')),  # admin postavlja 'delivered'
             Product.id == product.id
         ).all()
 

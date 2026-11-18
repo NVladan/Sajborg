@@ -1,78 +1,40 @@
 {% extends 'layout.html' %}
 
-{% block title %}Porudžbina uspešna - Sajborg Shop{% endblock %}
+{% block title %}Narudžba primljena - Sajborg Shop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
-            <div class="mb-4">
-                <i class="fas fa-check-circle fa-5x text-success"></i>
-            </div>
-            <h1 class="mb-3">Hvala Vam na porudžbini!</h1>
-            <p class="lead mb-5">Vaša porudžbina je uspešno kreirana.</p>
+<div class="sh">
+    <ol class="sh-steps justify-content-center" aria-label="Koraci narudžbe">
+        <li class="is-done"><b><i class="fas fa-check" aria-hidden="true"></i></b> Korpa</li>
+        <li class="is-done"><b><i class="fas fa-check" aria-hidden="true"></i></b> Podaci za dostavu</li>
+        <li class="is-current" aria-current="step"><b>3</b> Potvrda</li>
+    </ol>
+    <div class="sh-done">
+        <span class="sh-done-icon is-ok"><i class="fas fa-check" aria-hidden="true"></i></span>
+        <h1 class="sh-title">Narudžba #{{ order.id }} je primljena</h1>
+        <p class="sh-sub">Hvala na povjerenju. Za plaćanje pripremite {{ order.total_amount|km }} kad stigne kurir.</p>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="mb-0">Detalji porudžbine</h3>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered">
-                        <tbody>
-                            <tr>
-                                <th style="width: 30%;">Broj porudžbine:</th>
-                                <td>{{ order.id }}</td>
-                            </tr>
-                            <tr>
-                                <th>Datum porudžbine:</th>
-                                <td>{{ order.created_at.strftime('%d.%m.%Y, %H:%M') }}</td>
-                            </tr>
-                            <tr>
-                                <th>Ukupan iznos:</th>
-                                <td>{{ order.total_amount|round(2) }} KM</td>
-                            </tr>
-                            <tr>
-                                <th>Način plaćanja:</th>
-                                <td>Plaćanje pouzećem</td>
-                            </tr>
-                            <tr>
-                                <th>Status:</th>
-                                <td>
-                                    {% if order.status == 'pending' %}
-                                        <span class="badge bg-warning">Na čekanju</span>
-                                    {% elif order.status == 'paid' %}
-                                        <span class="badge bg-success">Plaćeno</span>
-                                    {% elif order.status == 'shipped' %}
-                                        <span class="badge bg-info">Poslato</span>
-                                    {% elif order.status == 'delivered' %}
-                                        <span class="badge bg-primary">Dostavljeno</span>
-                                    {% elif order.status == 'cancelled' %}
-                                        <span class="badge bg-danger">Otkazano</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="sh-panel sh-done-card">
+            <h2 class="sh-filter-title">Šta slijedi</h2>
+            <ol class="sh-next">
+                <li><div><strong>Pripremamo paket</strong><span>Provjeravamo i pakujemo naručene artikle.</span></div></li>
+                <li><div><strong>Šaljemo kurirskom službom</strong><span>Kurir vas može pozvati na {{ order.shipping_phone_number }} prije dostave.</span></div></li>
+                <li><div><strong>Plaćate pouzećem</strong><span>Iznos od {{ order.total_amount|km }} plaćate kuriru pri preuzimanju.</span></div></li>
+            </ol>
+            <dl class="sh-dl">
+                <dt>Datum</dt><dd>{{ order.created_at.strftime('%d.%m.%Y. u %H:%M') }}</dd>
+                <dt>Dostava na</dt><dd>{{ order.shipping_first_name }} {{ order.shipping_last_name }}<br>{{ order.shipping_address }}, {{ order.shipping_postal_code }} {{ order.shipping_city }}, {{ order.shipping_country }}</dd>
+                <dt>Za plaćanje</dt><dd><strong>{{ order.total_amount|km }}</strong></dd>
+            </dl>
+        </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="mb-0">Informacije o dostavi</h3>
-                </div>
-                <div class="card-body">
-                    <address class="mb-0">
-                        {{ order.full_shipping_address|nl2br }}
-                    </address>
-                </div>
-            </div>
-
-            <p>Email sa potvrdom je poslat na Vašu email adresu.</p>
-
-            <div class="d-flex justify-content-center gap-3">
-                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Nastavi sa kupovinom</a>
-                <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary">Pogledajte Vaše porudžbine</a>
-            </div>
+        <div class="sh-done-actions">
+            <a href="{{ url_for('auth.profile') }}" class="btn btn-primary">Prati narudžbu u profilu</a>
+            <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary">Nastavi sa kupovinom</a>
         </div>
     </div>
 </div>

@@ -1,0 +1,28 @@
+{# Kartica proizvoda (početna, lista, slični proizvodi). Uvoz: {% from 'shop/_card.html' import product_card %} #}
+
+{% macro product_card(p, cart=false) -%}
+{% set images_sorted = p.images|sort(attribute='sort_order') %}
+{% set img = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
+<article class="sh-card">
+    <span class="sh-card-img">
+        <img src="{{ url_for('static', filename=img.image_path) if img else url_for('static', filename='img/no-image.svg') }}"
+             alt="" loading="lazy" decoding="async" width="300" height="225">
+        {% if p.condition == 'Polovno' %}<span class="sh-tag is-used">Polovno</span>{% endif %}
+    </span>
+    <span class="sh-card-cat">{{ p.category.name }}</span>
+    <h3 class="sh-card-name"><a href="{{ url_for('product.product_detail', slug=p.slug) }}" class="sh-card-link">{{ p.name }}</a></h3>
+    <span class="sh-card-foot">
+        <span class="sh-price">{{ p.price|km }}</span>
+        {% if cart and current_user.is_authenticated and p.stock > 0 %}
+        <form class="sh-quick-add" action="{{ url_for('interaction.add_to_cart') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="product_id" value="{{ p.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="sh-quick-btn" title="Dodaj u korpu" aria-label="Dodaj {{ p.name }} u korpu">
+                <i class="fas fa-cart-plus" aria-hidden="true"></i>
+            </button>
+        </form>
+        {% endif %}
+    </span>
+</article>
+{%- endmacro %}

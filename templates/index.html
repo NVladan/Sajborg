@@ -3,25 +3,11 @@
 {% block title %}Sajborg Shop - Prodaja PC Komponenti i Gaming Opreme{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css', v=cache_buster) }}">
 {% endblock %}
 
-{% macro product_card(p, show_new=false) -%}
-{% set images_sorted = p.images|sort(attribute='sort_order') %}
-{% set img = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
-<a href="{{ url_for('product.product_detail', slug=p.slug) }}" class="hm-card">
-    <span class="hm-card-img">
-        <img src="{{ url_for('static', filename=img.image_path) if img else url_for('static', filename='img/no-image.svg') }}"
-             alt="{{ p.name }}" loading="lazy" decoding="async" width="300" height="300">
-        {% if p.condition == 'Polovno' %}<span class="hm-tag is-used">Polovno</span>{% endif %}
-    </span>
-    <span class="hm-card-cat">{{ p.category.name }}</span>
-    <span class="hm-card-name">{{ p.name }}</span>
-    <span class="hm-card-foot">
-        <span class="hm-price">{{ p.price|km }}</span>
-    </span>
-</a>
-{%- endmacro %}
+{% from 'shop/_card.html' import product_card with context %}
 
 {% block content %}
 <div class="hm">
@@ -100,7 +86,7 @@
             <a href="{{ url_for('product.products', sort='newest') }}" class="hm-more">Pogledaj sve</a>
         </div>
         <div class="hm-grid">
-            {% for p in new_products %}{{ product_card(p) }}{% endfor %}
+            {% for p in new_products %}{{ product_card(p, cart=true) }}{% endfor %}
         </div>
     </section>
     {% endif %}
@@ -113,7 +99,7 @@
             <p class="hm-section-sub">Proizvodi koje sami preporučujemo za cijenu koju imaju.</p>
         </div>
         <div class="hm-grid">
-            {% for p in featured_products %}{{ product_card(p) }}{% endfor %}
+            {% for p in featured_products %}{{ product_card(p, cart=true) }}{% endfor %}
         </div>
     </section>
     {% endif %}
@@ -153,4 +139,8 @@
     </section>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/shop.js', v=cache_buster) }}"></script>
 {% endblock %}

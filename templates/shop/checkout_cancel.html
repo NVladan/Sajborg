@@ -1,47 +1,20 @@
 {% extends 'layout.html' %}
 
-{% block title %}Porudžbina otkazana - Sajborg Shop{% endblock %}
+{% block title %}Narudžba otkazana - Sajborg Shop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
-            <div class="mb-4">
-                <i class="fas fa-times-circle fa-5x text-danger"></i>
-            </div>
-            <h1 class="mb-3">Plaćanje otkazano</h1>
-            <p class="lead mb-5">Vaša porudžbina je otkazana. Plaćanje nije izvršeno.</p>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="mb-0">Informacije o porudžbini</h3>
-                </div>
-                <div class="card-body">
-                    <table class="table table-bordered">
-                        <tbody>
-                            <tr>
-                                <th style="width: 30%;">Broj porudžbine:</th>
-                                <td>{{ order.id }}</td>
-                            </tr>
-                            <tr>
-                                <th>Status:</th>
-                                <td>
-                                    <span class="badge bg-danger">Otkazano</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="alert alert-info">
-                <p class="mb-0">Ako ste imali problema sa procesom plaćanja, molimo Vas da kontaktirate našu korisničku podršku.</p>
-            </div>
-
-            <div class="d-flex justify-content-center gap-3">
-                <a href="{{ url_for('cart.view_cart') }}" class="btn btn-primary">Povratak u korpu</a>
-                <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary">Nastavi sa kupovinom</a>
-            </div>
+<div class="sh">
+    <div class="sh-done">
+        <span class="sh-done-icon is-err"><i class="fas fa-xmark" aria-hidden="true"></i></span>
+        <h1 class="sh-title">Narudžba #{{ order.id }} je otkazana</h1>
+        <p class="sh-sub">Ništa nije naplaćeno. Ako je ovo greška, proizvode možete ponovo naručiti iz korpe.</p>
+        <div class="sh-done-actions mt-4">
+            <a href="{{ url_for('cart.view_cart') }}" class="btn btn-primary">Otvori korpu</a>
+            <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary">Nastavi sa kupovinom</a>
         </div>
     </div>
 </div>

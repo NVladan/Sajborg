@@ -1,442 +1,195 @@
 {% extends 'layout.html' %}
+{% from 'shop/_card.html' import product_card with context %}
 
 {% block title %}{% if search_query %}Pretraga: {{ search_query }}{% elif selected_category %}{{ selected_category.name }}{% else %}Svi proizvodi{% endif %} | Sajborg Shop{% endblock %}
-{% block meta_description %}{% if selected_category and selected_category.description %}{{ selected_category.description|striptags|truncate(155) }}{% elif selected_category %}Kupite {{ selected_category.name }} po najboljim cijenama u Sajborg Shop-u — velik izbor, brza dostava kurirskom službom i provjereni proizvodi.{% elif search_query %}Rezultati pretrage za „{{ search_query }}” u Sajborg Shop-u — PC komponente i gaming oprema.{% else %}Pregledajte sve PC komponente i gaming opremu u Sajborg Shop-u — procesori, grafičke kartice, matične ploče, RAM, SSD, napajanja i još mnogo toga.{% endif %}{% endblock %}
+{% block meta_description %}{% if selected_category and selected_category.description %}{{ selected_category.description|striptags|truncate(155) }}{% elif selected_category %}Kupite {{ selected_category.name }} u Sajborg Shop-u: artikli na stanju, dostava kurirskom službom širom BiH, plaćanje pouzećem.{% elif search_query %}Rezultati pretrage za „{{ search_query }}” u Sajborg Shop-u — PC komponente i gaming oprema.{% else %}Pregledajte PC komponente i gaming opremu na stanju u Sajborg Shop-u — procesori, grafičke kartice, matične ploče, RAM, SSD, napajanja.{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+{% endblock %}
+
+{# URL liste sa izmijenjenim filterom atributa (value=None uklanja filter) #}
+{% macro filter_url(attr_id=None, value=None, clear=false) -%}
+    {%- set f = {} if clear else dict(attr_filters) -%}
+    {%- if attr_id is not none -%}
+        {%- if value is none -%}{%- set _ = f.pop(attr_id|string, None) -%}
+        {%- else -%}{%- set _ = f.update({attr_id|string: value}) -%}{%- endif -%}
+    {%- endif -%}
+    {{ url_for('product.products', category_slug=request.view_args.get('category_slug'), q=search_query or None, sort=sort_by if sort_by != 'name_asc' else None, attr_filters=(f|tojson) if f else None) }}
+{%- endmacro %}
+
+{% macro page_url(num) -%}
+    {{ url_for('product.products', page=num, category_slug=request.view_args.get('category_slug'), q=search_query or None, sort=sort_by if sort_by != 'name_asc' else None, attr_filters=(attr_filters|tojson) if attr_filters else None) }}
+{%- endmacro %}
 
 {% block content %}
+{% set slug = request.view_args.get('category_slug') %}
 {% if selected_category %}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BreadcrumbList",
   "itemListElement": [{
-    "@type": "ListItem",
-    "position": 1,
-    "name": "Početna",
-    "item": "{{ url_for('main.index', _external=True) }}"
+    "@type": "ListItem", "position": 1, "name": "Početna", "item": "{{ url_for('main.index', _external=True) }}"
   },{
-    "@type": "ListItem",
-    "position": 2,
-    "name": "Proizvodi",
-    "item": "{{ url_for('product.products', _external=True) }}"
+    "@type": "ListItem", "position": 2, "name": "Proizvodi", "item": "{{ url_for('product.products', _external=True) }}"
   },{
-    "@type": "ListItem",
-    "position": 3,
-    "name": "{{ selected_category.name }}"
+    "@type": "ListItem", "position": 3, "name": "{{ selected_category.name }}"
   }]
 }
 </script>
 {% endif %}
-<div class="container">
-    <div class="row">
-        <div class="col-lg-3 mb-4 desktop-filter-sidebar">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Filteri</h4>
-                </div>
-                <div class="card-body">
-                    <form id="product-filter-form" action="{{ url_for('product.products', category_slug=request.view_args.get('category_slug')) }}" method="GET">
-                        <div class="mb-3">
-                            <label for="category" class="form-label">Kategorija</label>
-                            <select class="form-select" id="category">
-                                <option value="" data-slug="">Sve kategorije</option>
-                                {% for category in categories %}
-                                <option value="{{ category.slug }}" data-slug="{{ category.slug }}" {% if category.id == category_id %}selected{% endif %}>
-                                    {{ category.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
 
-                        {% if category_attributes %}
-                        <div class="mb-3">
-                            <h5 class="mb-2">Atributi</h5>
-                            {% for attr in category_attributes %}
-                            <div class="mb-2">
-                                <label class="form-label">{{ attr.name }}</label>
-                                {% set options = attribute_options.get(attr.id, []) %}
-                                {% if options %}
-                                    <select name="attr_{{ attr.id }}" class="form-select attribute-dropdown" onchange="this.form.dispatchEvent(new Event('submit', {cancelable: true}))">
-                                        <option value="">--</option>
-                                        {% for option in options %}
-                                            {% if attr.type == 'bool' %}
-                                                {% set filter_value = '1' if option == 'Da' else '0' %}
-                                                <option value="{{ filter_value }}" {% if attr_filters.get(attr.id|string) == filter_value %}selected{% endif %}>{{ option }}</option>
-                                            {% else %}
-                                                <option value="{{ option }}" {% if attr_filters.get(attr.id|string) == option %}selected{% endif %}>{{ option }}</option>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                {% else %}
-                                    <input type="text" name="attr_{{ attr.id }}" class="form-control" value="{{ attr_filters.get(attr.id, '') }}">
-                                {% endif %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
+{% set attr_by_id = {} %}
+{% for attr in category_attributes %}{% set _ = attr_by_id.update({attr.id|string: attr}) %}{% endfor %}
 
-                        <div class="mb-3">
-                            <label for="sort" class="form-label">Sortiraj po</label>
-                            <select class="form-select" id="sort" name="sort" onchange="this.form.submit()">
-                                <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Nazivu (A-Z)</option>
-                                <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Nazivu (Z-A)</option>
-                                <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Ceni (rastuće)</option>
-                                <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Ceni (opadajuće)</option>
-                                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Najnovije</option>
-                            </select>
-                        </div>
+<div class="sh">
+    <ol class="sh-crumbs" aria-label="Putanja">
+        <li><a href="{{ url_for('main.index') }}">Početna</a></li>
+        <li><a href="{{ url_for('product.products') }}">Proizvodi</a></li>
+        {% if selected_category and selected_category.parent %}<li><a href="{{ url_for('product.products', category_slug=selected_category.parent.slug) }}">{{ selected_category.parent.name }}</a></li>{% endif %}
+    </ol>
 
-                        {% if search_query %}
-                        <input type="hidden" name="q" value="{{ search_query }}">
-                        {% endif %}
-                        <input type="hidden" name="attr_filters" id="attr_filters_hidden" value='{{ attr_filters|tojson }}'>
-                        <div class="d-grid d-lg-none mt-3">
-                            <button type="submit" class="btn btn-primary">Primeni filtere</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-9">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="mb-0">
-                    {% if search_query %}
-                    Rezultati pretrage za "{{ search_query }}"
-                    {% elif category_id %}
-                    {{ categories|selectattr('id', 'eq', category_id)|first|attr('name') }}
-                    {% else %}
-                    Svi proizvodi
-                    {% endif %}
-                </h1>
-                <div class="text-muted">
-                    Pronađeno {{ products.total }} proizvoda
-                </div>
-            </div>
-
+    <div class="sh-list-head">
+        <div>
+            <h1 class="sh-title">
+                {% if search_query %}Rezultati za „{{ search_query }}"{% elif selected_category %}{{ selected_category.name }}{% else %}Svi proizvodi{% endif %}
+            </h1>
             {% if search_query %}
-            <div class="mb-3">
-                <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fas fa-times"></i> Obriši pretragu
+            <p class="sh-sub"><a href="{{ url_for('product.products', category_slug=slug) }}" class="sh-buy-cat">Ukloni pretragu</a></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <nav class="sh-cats" aria-label="Kategorije">
+        <a href="{{ url_for('product.products', q=search_query or None) }}" class="{{ 'is-active' if not active_top }}">Sve</a>
+        {% for cat in top_categories %}
+        <a href="{{ url_for('product.products', category_slug=cat.slug, q=search_query or None) }}" class="{{ 'is-active' if active_top and active_top.id == cat.id }}">{{ cat.name }}</a>
+        {% endfor %}
+    </nav>
+
+    <div class="sh-layout">
+        {# ---------- Filteri (na telefonu u bočnom panelu) ---------- #}
+        <aside class="sh-filters offcanvas-lg offcanvas-start" tabindex="-1" id="sh-filters" aria-labelledby="sh-filters-title">
+            <div class="offcanvas-header">
+                <h2 class="sh-h2 mb-0" id="sh-filters-title">Filteri</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#sh-filters" aria-label="Zatvori"></button>
+            </div>
+            <div class="offcanvas-body d-block">
+                {% if subcategories %}
+                <div class="sh-filter-group">
+                    <h3 class="sh-filter-title">Vrsta</h3>
+                    <div class="sh-chips">
+                        <a href="{{ url_for('product.products', category_slug=active_top.slug, q=search_query or None) }}" class="sh-chip{% if selected_category and selected_category.id == active_top.id %} is-current{% endif %}">Sve</a>
+                        {% for sub in subcategories %}
+                        <a href="{{ url_for('product.products', category_slug=sub.slug, q=search_query or None) }}" class="sh-chip{% if selected_category and selected_category.id == sub.id %} is-current{% endif %}">{{ sub.name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% for attr in category_attributes %}
+                {% set options = attribute_options.get(attr.id, []) %}
+                {% if options %}
+                {% set current = attr_filters.get(attr.id|string) %}
+                <div class="sh-filter-group">
+                    <h3 class="sh-filter-title">{{ attr.name[:1]|upper ~ attr.name[1:] }}</h3>
+                    {% set shown = options[:8] %}
+                    {% macro chip(option) -%}
+                        {%- set value = ('1' if option == 'Da' else '0') if attr.type == 'bool' else option -%}
+                        {%- set on = current == value -%}
+                        <a href="{{ filter_url(attr.id, None if on else value) }}" class="sh-chip{{ ' is-active' if on }}" rel="nofollow">{{ option }}</a>
+                    {%- endmacro %}
+                    <div class="sh-chips">{% for option in shown %}{{ chip(option) }}{% endfor %}</div>
+                    {% if options|length > 8 %}
+                    <details class="sh-more"{% if current and current not in shown %} open{% endif %}>
+                        <summary>Još {{ options|length - 8 }}</summary>
+                        <div class="sh-chips">{% for option in options[8:] %}{{ chip(option) }}{% endfor %}</div>
+                    </details>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {% if not category_attributes and not subcategories %}
+                <p class="sh-sub">Izaberite kategoriju da filtrirate po socketu, kapacitetu i drugim osobinama.</p>
+                {% endif %}
+            </div>
+        </aside>
+
+        {# ---------- Rezultati ---------- #}
+        <section aria-label="Proizvodi">
+            <form class="sh-toolbar" method="GET" action="{{ url_for('product.products', category_slug=slug) }}">
+                <span class="sh-count">{{ products.total }} {{ 'proizvod' if products.total % 10 == 1 and products.total % 100 != 11 else 'proizvoda' }} na stanju</span>
+                {% if category_attributes or subcategories %}
+                <button type="button" class="btn btn-outline-secondary sh-filter-btn" data-bs-toggle="offcanvas" data-bs-target="#sh-filters" aria-controls="sh-filters">
+                    <i class="fas fa-sliders" aria-hidden="true"></i> Filteri{% if attr_filters %} ({{ attr_filters|length }}){% endif %}
+                </button>
+                {% endif %}
+                {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+                {% if attr_filters %}<input type="hidden" name="attr_filters" value="{{ attr_filters|tojson }}">{% endif %}
+                <label for="sort" class="visually-hidden">Sortiraj</label>
+                <select class="form-select" id="sort" name="sort" onchange="this.form.submit()">
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Po nazivu</option>
+                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Najjeftinije prvo</option>
+                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Najskuplje prvo</option>
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Najnovije</option>
+                </select>
+                <noscript><button type="submit" class="btn btn-outline-secondary">Primijeni</button></noscript>
+            </form>
+
+            {% if attr_filters %}
+            <div class="sh-active" aria-label="Aktivni filteri">
+                {% for attr_id, value in attr_filters.items() %}
+                {% set attr = attr_by_id.get(attr_id|string) %}
+                {% if attr %}
+                <a href="{{ filter_url(attr_id, None) }}" class="sh-chip is-active" rel="nofollow">
+                    {{ attr.name[:1]|upper ~ attr.name[1:] }}: {{ ('Da' if value == '1' else 'Ne') if attr.type == 'bool' else value }}
                 </a>
+                {% endif %}
+                {% endfor %}
+                <a href="{{ filter_url(clear=true) }}" class="sh-clear" rel="nofollow">Očisti filtere</a>
             </div>
             {% endif %}
 
             {% if products.items %}
-            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
-                {% for product in products.items %}
-                <div class="col">
-                    <div class="card h-100 product-card">
-                        {% if product.stock < 5 and product.stock > 0 %}
-                        <div class="stock-badge badge bg-warning">Na izmaku</div>
-                        {% elif product.stock <= 0 %}
-                        <div class="stock-badge badge bg-danger">Nema na stanju</div>
-                        {% endif %}
-
-                        <a href="{{ url_for('product.product_detail', slug=product.slug) }}">
-                            {% set images_sorted = product.images|sort(attribute='sort_order') %}
-                            {% set primary_image = (images_sorted|selectattr('is_primary')|first) or (images_sorted|first) %}
-                            <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" class="card-img-top" alt="Slika proizvoda {{ product.name }}" loading="lazy" decoding="async" width="400" height="220">
-                        </a>
-
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <a href="{{ url_for('product.product_detail', slug=product.slug) }}" class="text-decoration-none">
-                                    {{ product.name }}
-                                </a>
-                            </h5>
-                            <p class="card-text product-price">{{ product.price|round(2) }} KM</p>
-
-                            {% if product.stock > 0 and current_user.is_authenticated %}
-                            <form class="add-to-cart-form" action="{{ url_for('interaction.add_to_cart') }}" method="POST">
-                                {{ form.csrf_token }}
-                                {{ form.product_id(value=product.id) }}
-                                <div class="quantity-add-wrapper">
-                                    <div class="quantity-control">
-                                        <div class="input-group">
-                                            <button type="button" class="btn btn-outline-secondary quantity-minus">-</button>
-                                            {{ form.quantity(class="form-control text-center quantity-input", min=1, value=1) }}
-                                            <button type="button" class="btn btn-outline-secondary quantity-plus">+</button>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary btn-add-to-cart">
-                                        <i class="fas fa-cart-plus"></i> Dodaj
-                                    </button>
-                                </div>
-                            </form>
-                            {% elif product.stock <= 0 %}
-                            <button class="btn btn-secondary w-100" disabled>Nema na stanju</button>
-                            {% elif not current_user.is_authenticated %}
-                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100">Prijavite se da kupite</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="sh-grid">
+                {% for p in products.items %}{{ product_card(p, cart=true) }}{% endfor %}
             </div>
 
             {% if products.pages > 1 %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if products.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('product.products', page=products.prev_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">
-                            <i class="fas fa-chevron-left"></i> Prethodna
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-chevron-left"></i> Prethodna</span>
-                    </li>
-                    {% endif %}
-
-                    {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                        {% if page_num %}
-                            {% if page_num == products.page %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ page_num }}</span>
-                            </li>
-                            {% else %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('product.products', page=page_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">{{ page_num }}</a>
-                            </li>
-                            {% endif %}
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">…</span>
-                        </li>
-                        {% endif %}
-                    {% endfor %}
-
-                    {% if products.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('product.products', page=products.next_num, category_slug=request.view_args.get('category_slug'), q=search_query, sort=sort_by, attr_filters=attr_filters|tojson) }}">
-                            Sledeća <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">Sledeća <i class="fas fa-chevron-right"></i></span>
-                    </li>
-                    {% endif %}
-                </ul>
+            <nav class="sh-pager" aria-label="Stranice">
+                <a class="sh-page{% if not products.has_prev %} is-disabled{% endif %}" href="{{ page_url(products.prev_num) if products.has_prev else '#' }}" aria-label="Prethodna strana"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+                {% for num in products.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if num is none %}<span class="sh-page is-gap">…</span>
+                    {% elif num == products.page %}<span class="sh-page is-current" aria-current="page">{{ num }}</span>
+                    {% else %}<a class="sh-page" href="{{ page_url(num) }}">{{ num }}</a>{% endif %}
+                {% endfor %}
+                <a class="sh-page{% if not products.has_next %} is-disabled{% endif %}" href="{{ page_url(products.next_num) if products.has_next else '#' }}" aria-label="Sljedeća strana"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
             </nav>
             {% endif %}
 
             {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-search fa-3x mb-3 text-muted"></i>
-                <h3>Nema pronađenih proizvoda</h3>
+            <div class="sh-empty sh-panel">
+                <span class="sh-empty-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span>
                 {% if search_query %}
-                <p>Nismo mogli pronaći proizvode koji odgovaraju pretrazi "{{ search_query }}".</p>
-                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Prikaži sve proizvode</a>
+                <h2 class="sh-empty-title">Ništa za „{{ search_query }}"</h2>
+                <p>Probajte samo model, npr. „5600" ili „B650", ili pogledajte sve proizvode.</p>
+                {% elif attr_filters %}
+                <h2 class="sh-empty-title">Nijedan proizvod ne odgovara filterima</h2>
+                <p>Uklonite neki od filtera da vidite više artikala.</p>
                 {% else %}
-                <p>Još uvek nema proizvoda u ovoj kategoriji.</p>
-                <a href="{{ url_for('product.products') }}" class="btn btn-primary">Prikaži sve proizvode</a>
+                <h2 class="sh-empty-title">Trenutno nema ovih artikala na stanju</h2>
+                <p>Pogledajte druge kategorije ili sklopite računar u konfiguratoru.</p>
                 {% endif %}
+                <a href="{{ filter_url(clear=true) if attr_filters else url_for('product.products') }}" class="btn btn-primary">{{ 'Očisti filtere' if attr_filters else 'Svi proizvodi' }}</a>
             </div>
             {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Mobile Filter Toggle Button -->
-<button class="mobile-filter-toggle" id="mobileFilterToggle" aria-label="Open Filters">
-    <i class="fas fa-filter"></i>
-</button>
-
-<!-- Mobile Filter Drawer -->
-<div class="mobile-filter-drawer" id="mobileFilterDrawer">
-    <div class="mobile-filter-content">
-        <div class="mobile-filter-header">
-            <h4>Filteri</h4>
-            <button class="mobile-filter-close" id="mobileFilterClose" aria-label="Close Filters">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <form id="mobile-product-filter-form" action="{{ url_for('product.products', category_slug=request.view_args.get('category_slug')) }}" method="GET">
-            <div class="mb-3">
-                <label for="mobile-category" class="form-label">Kategorija</label>
-                <select class="form-select" id="mobile-category">
-                    <option value="" data-slug="">Sve kategorije</option>
-                    {% for category in categories %}
-                    <option value="{{ category.slug }}" data-slug="{{ category.slug }}" {% if category.id == category_id %}selected{% endif %}>
-                        {{ category.name }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            {% if category_attributes %}
-            <div class="mb-3">
-                <h5 class="mb-3">Atributi</h5>
-                {% for attr in category_attributes %}
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ attr.name }}</label>
-                    {% set options = attribute_options.get(attr.id, []) %}
-                    {% if options %}
-                        <select name="attr_{{ attr.id }}" class="form-select mobile-attribute-dropdown">
-                            <option value="">--</option>
-                            {% for option in options %}
-                                {% if attr.type == 'bool' %}
-                                    {% set filter_value = '1' if option == 'Da' else '0' %}
-                                    <option value="{{ filter_value }}" {% if attr_filters.get(attr.id|string) == filter_value %}selected{% endif %}>{{ option }}</option>
-                                {% else %}
-                                    <option value="{{ option }}" {% if attr_filters.get(attr.id|string) == option %}selected{% endif %}>{{ option }}</option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    {% else %}
-                        <input type="text" name="attr_{{ attr.id }}" class="form-control" value="{{ attr_filters.get(attr.id, '') }}">
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <div class="mb-3">
-                <label for="mobile-sort" class="form-label">Sortiraj po</label>
-                <select class="form-select" id="mobile-sort" name="sort">
-                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Nazivu (A-Z)</option>
-                    <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Nazivu (Z-A)</option>
-                    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Ceni (rastuće)</option>
-                    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Ceni (opadajuće)</option>
-                                <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Najnovije</option>
-                </select>
-            </div>
-
-            {% if search_query %}
-            <input type="hidden" name="q" value="{{ search_query }}">
-            {% endif %}
-            <input type="hidden" name="attr_filters" id="mobile_attr_filters_hidden" value='{{ attr_filters|tojson }}'>
-            
-            <div class="d-grid gap-2 mt-4">
-                <button type="button" class="btn btn-outline-secondary btn-lg" id="mobileFilterCancelBtn">Zatvori</button>
-            </div>
-        </form>
+        </section>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const categorySelect = document.getElementById('category');
-    if(categorySelect) {
-        categorySelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const slug = selectedOption.dataset.slug;
-            if (slug) {
-                window.location.href = "{{ url_for('product.products') }}/" + slug;
-            } else {
-                window.location.href = "{{ url_for('product.products') }}";
-            }
-        });
-    }
-
-    const filterForm = document.getElementById('product-filter-form');
-
-    filterForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const attrInputs = filterForm.querySelectorAll('[name^="attr_"]');
-        const attrFilters = {};
-        attrInputs.forEach(input => {
-            if (input.value) {
-                const attrId = input.name.replace('attr_', '');
-                attrFilters[attrId] = input.value;
-            }
-        });
-        let attrFiltersInput = filterForm.querySelector('input[name="attr_filters"]');
-        if (!attrFiltersInput) {
-            attrFiltersInput = document.createElement('input');
-            attrFiltersInput.type = 'hidden';
-            attrFiltersInput.name = 'attr_filters';
-            filterForm.appendChild(attrFiltersInput);
-        }
-        attrFiltersInput.value = JSON.stringify(attrFilters);
-
-        filterForm.submit();
-    });
-
-    // Mobile filter drawer functionality
-    const mobileFilterToggle = document.getElementById('mobileFilterToggle');
-    const mobileFilterDrawer = document.getElementById('mobileFilterDrawer');
-    const mobileFilterClose = document.getElementById('mobileFilterClose');
-    const mobileFilterCancelBtn = document.getElementById('mobileFilterCancelBtn');
-    const mobileFilterForm = document.getElementById('mobile-product-filter-form');
-    const mobileCategorySelect = document.getElementById('mobile-category');
-
-    if (mobileFilterToggle) {
-        mobileFilterToggle.addEventListener('click', function() {
-            mobileFilterDrawer.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-    }
-
-    function closeMobileFilter() {
-        mobileFilterDrawer.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    if (mobileFilterClose) {
-        mobileFilterClose.addEventListener('click', closeMobileFilter);
-    }
-
-    if (mobileFilterCancelBtn) {
-        mobileFilterCancelBtn.addEventListener('click', closeMobileFilter);
-    }
-
-    if (mobileFilterDrawer) {
-        mobileFilterDrawer.addEventListener('click', function(e) {
-            if (e.target === mobileFilterDrawer) {
-                closeMobileFilter();
-            }
-        });
-    }
-
-    if (mobileCategorySelect) {
-        mobileCategorySelect.addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const slug = selectedOption.dataset.slug;
-            if (slug) {
-                window.location.href = "{{ url_for('product.products') }}/" + slug;
-            } else {
-                window.location.href = "{{ url_for('product.products') }}";
-            }
-        });
-    }
-
-    // Auto-submit mobile form when attribute filter changes
-    document.querySelectorAll('.mobile-attribute-dropdown').forEach(function(select) {
-        select.addEventListener('change', function(e) {
-            console.log('Mobile filter changed:', this.name, 'Value:', this.value);
-            // Trigger mobile form submit
-            mobileFilterForm.dispatchEvent(new Event('submit'));
-        });
-    });
-
-    if (mobileFilterForm) {
-        mobileFilterForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const attrInputs = mobileFilterForm.querySelectorAll('[name^="attr_"]');
-            const attrFilters = {};
-            attrInputs.forEach(input => {
-                if (input.value) {
-                    const attrId = input.name.replace('attr_', '');
-                    attrFilters[attrId] = input.value;
-                }
-            });
-            let attrFiltersInput = mobileFilterForm.querySelector('input[name="attr_filters"]');
-            if (!attrFiltersInput) {
-                attrFiltersInput = document.createElement('input');
-                attrFiltersInput.type = 'hidden';
-                attrFiltersInput.name = 'attr_filters';
-                mobileFilterForm.appendChild(attrFiltersInput);
-            }
-            attrFiltersInput.value = JSON.stringify(attrFilters);
-            mobileFilterForm.submit();
-        });
-    }
-});
-</script>
+<script src="{{ url_for('static', filename='js/shop.js', v=cache_buster) }}"></script>
 {% endblock %}
