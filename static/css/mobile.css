@@ -97,7 +97,7 @@ html {
    NAVIGATION
    ============================================ */
 
-@media (max-width: 991px) {
+@media (max-width: 1199.98px) {
   /* Mobile navbar */
   .navbar-collapse {
     max-height: 80vh;

@@ -1,7 +1,7 @@
 import os
 import logging
 import json
-from datetime import timedelta
+from datetime import timedelta, datetime
 import time  # NOVI IMPORT
 import hashlib
 import bleach
@@ -60,6 +60,12 @@ def create_app(config_name='default'):
     def nl2br(value):
         return Markup('<br>\n').join(escape(value).split('\n'))
 
+    @app.template_filter('km')
+    def km_filter(value, decimals=2):
+        """1234.5 -> '1.234,50 KM' (format za BiH)."""
+        s = f'{float(value or 0):,.{decimals}f}'
+        return s.replace(',', '_').replace('.', ',').replace('_', '.') + ' KM'
+
     @app.template_filter('bool_to_da_ne')
     def bool_to_da_ne(value):
         """Convert boolean or string boolean values to Da/Ne"""
@@ -110,8 +116,14 @@ def create_app(config_name='default'):
     def inject_global_vars():
         # IZMJENA OVDJE: Dodajemo filter_by(is_public=True)
         all_categories = Category.query.filter_by(parent_id=None, is_public=True).order_by(Category.name).all()
+        # Footer: kategorije po važnosti komponente (procesori, ploče, grafičke…), ostale abecedno
+        from pc_build_check import SLOTS
+        rank = {key: i for i, (key, _, _, _) in enumerate(SLOTS)}
+        footer_categories = sorted(all_categories, key=lambda c: (rank.get(c.component_type, len(rank)), c.name.lower()))
         return dict(
             all_categories=all_categories,
+            footer_categories=footer_categories[:6],
+            current_year=datetime.utcnow().year,
             timedelta=timedelta,
             cache_buster=app.config.get('_CACHE_BUSTER', '0')
         )

@@ -83,7 +83,7 @@
     <a href="#main-content" class="visually-hidden-focusable skip-link">Preskoči na glavni sadržaj</a>
 
     {% block site_nav %}
-    <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-xl">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
                 <i class="fas fa-microchip"></i>Sajborg Shop
@@ -92,7 +92,7 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <ul class="navbar-nav me-auto mb-2 mb-xl-0">
 
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'product.products' %}active{% endif %}" href="{{ url_for('product.products') }}">Proizvodi</a>
@@ -108,7 +108,7 @@
                     </li>
                 </ul>
 
-                <form class="d-flex my-2 my-lg-0 ms-lg-auto me-lg-3" action="{{ url_for('product.products') }}" id="search-form" autocomplete="off" role="search">
+                <form class="d-flex my-2 my-xl-0 ms-xl-auto me-xl-3" action="{{ url_for('product.products') }}" id="search-form" autocomplete="off" role="search">
                     <div class="input-group">
                         <input class="form-control" type="search" name="q" placeholder="Pretraži..." aria-label="Search" value="{{ search_query|default('') }}" autocomplete="off">
                         <button class="btn btn-outline-light" type="submit"><i class="fas fa-search"></i></button>
@@ -237,46 +237,41 @@
     {% block site_footer %}
     <footer class="footer">
         <div class="container">
-            <div class="row">
-                <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
-                    <h5>Sajborg Shop</h5>
-                    <p>Vaša destinacija za računarske dijelove i elektroniku po najboljim cijenama u Bosni i Hercegovini.</p>
-                    <div class="social-icons">
-                        <a href="#" class="me-2"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="me-2"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="me-2"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                    </div>
+            <div class="ft-grid">
+                <div class="ft-brand">
+                    <a href="{{ url_for('main.index') }}" class="ft-logo"><i class="fas fa-microchip" aria-hidden="true"></i> Sajborg Shop</a>
+                    <p>Računarske komponente na stanju. Šaljemo kurirskom službom širom Bosne i Hercegovine, a plaćate pouzećem kad paket stigne.</p>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-                    <h5>Brzi linkovi</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ url_for('main.index') }}">Početna</a></li>
-                        <li><a href="{{ url_for('product.products') }}">Proizvodi</a></li>
-                        <li><a href="{{ url_for('builder.builder') }}">PC Konfigurator</a></li>
-                        <li><a href="{{ url_for('main.about') }}">O nama</a></li>
+                <nav class="ft-col" aria-label="Kupovina">
+                    <h2 class="ft-title">Kupovina</h2>
+                    <ul>
+                        <li><a href="{{ url_for('product.products') }}">Svi proizvodi</a></li>
+                        <li><a href="{{ url_for('product.products', sort='newest') }}">Novo na stanju</a></li>
+                        <li><a href="{{ url_for('builder.builder') }}">PC konfigurator</a></li>
+                        {% if current_user.is_authenticated %}<li><a href="{{ url_for('cart.view_cart') }}">Korpa</a></li>{% endif %}
                     </ul>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
-                    <h5>Kategorije</h5>
-                    <ul class="list-unstyled">
-                        {% for category in all_categories[:5] %}
-                            <li><a href="{{ url_for('product.products', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                </nav>
+                <nav class="ft-col" aria-label="Kategorije">
+                    <h2 class="ft-title">Kategorije</h2>
+                    <ul>
+                        {% for category in footer_categories %}
+                        <li><a href="{{ url_for('product.products', category_slug=category.slug) }}">{{ category.name }}</a></li>
                         {% endfor %}
                     </ul>
-                </div>
+                </nav>
+                <nav class="ft-col" aria-label="Informacije">
+                    <h2 class="ft-title">Informacije</h2>
+                    <ul>
+                        <li><a href="{{ url_for('main.about') }}">O nama</a></li>
+                        <li><a href="{{ url_for('blog.posts') }}">Tech Magazin</a></li>
+                        <li><a href="{{ url_for('main.privacy_policy') }}">Politika privatnosti</a></li>
+                        <li><a href="{{ url_for('main.terms_of_use') }}">Uslovi korišćenja</a></li>
+                    </ul>
+                </nav>
             </div>
-            <hr class="my-4">
-            <div class="row">
-                <div class="col-md-6 text-center text-md-start">
-                    <p class="mb-0">&copy; 2025 Sajborg Shop. Sva prava zadržana.</p>
-                </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <p class="mb-0">
-                        <a href="{{ url_for('main.privacy_policy') }}">Politika privatnosti</a> |
-                        <a href="{{ url_for('main.terms_of_use') }}">Uslovi korišćenja</a>
-                    </p>
-                </div>
+            <div class="ft-bottom">
+                <span>&copy; {{ current_year }} Sajborg Shop</span>
+                <span>Plaćanje pouzećem, dostava kurirskom službom</span>
             </div>
         </div>
     </footer>

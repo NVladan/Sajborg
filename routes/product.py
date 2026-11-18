@@ -75,6 +75,8 @@ def products(category_slug):
         query = query.order_by(Product.price.desc())
     elif sort_by == 'name_desc':
         query = query.order_by(Product.name.desc())
+    elif sort_by == 'newest':
+        query = query.order_by(Product.created_at.desc())
     else:  # Default: name_asc
         query = query.order_by(Product.name.asc())
 

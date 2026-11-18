@@ -10,6 +10,13 @@
     const $$ = (sel, el) => Array.from((el || document).querySelectorAll(sel));
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const km = (n) => (Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' KM';
+    // Srpska množina: 1 artikal, 2–4 artikla, 5+ artikala (11–14 su "mnogo")
+    const plural = (n, one, few, many) => {
+        const n10 = n % 10, n100 = n % 100;
+        if (n10 === 1 && n100 !== 11) return one;
+        if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+        return many;
+    };
     const csrf = () => (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
     const store = {
         get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } },
@@ -249,6 +256,12 @@
             : (warns ? 'Provjerite upozorenja' : (missing ? `Još ${missing} ${missing === 1 ? 'osnovna komponenta' : (missing < 5 ? 'osnovne komponente' : 'osnovnih komponenti')}` : 'Sve se slaže'));
     }
     $('#pb-mobile-go').addEventListener('click', () => $('.pb-summary').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    // Traka nije potrebna (i prekrila bi dugmad) kad je sam pregled na ekranu
+    if ('IntersectionObserver' in window) {
+        new IntersectionObserver((entries) => {
+            root.classList.toggle('summary-visible', entries[0].isIntersecting);
+        }, { threshold: 0.15 }).observe($('.pb-summary'));
+    }
 
     let checkTimer, checkSeq = 0;
     function refresh() {
@@ -312,8 +325,8 @@
         items.sort((a, b) => by === 'name' ? a.p.name.localeCompare(b.p.name) : (by === 'price-desc' ? b.p.price - a.p.price : a.p.price - b.p.price));
 
         const hidden = all.length - compatibleCount;
-        $('#pb-picker-sub').textContent = `${items.length} ${items.length === 1 ? 'artikal' : 'artikala'} na stanju`
-            + (onlyCompat.checked && hidden > 0 ? `, ${hidden} nekompatibilnih skriveno` : '');
+        $('#pb-picker-sub').textContent = `${items.length} ${plural(items.length, 'artikal', 'artikla', 'artikala')} na stanju`
+            + (onlyCompat.checked && hidden > 0 ? `, ${hidden} ${plural(hidden, 'nekompatibilan skriven', 'nekompatibilna skrivena', 'nekompatibilnih skriveno')}` : '');
 
         if (!items.length) {
             list.innerHTML = `<li class="pb-option-empty">${all.length ? (onlyCompat.checked && hidden ? 'Nijedan artikal ne odgovara izabranim dijelovima. Isključite „Samo kompatibilne" da vidite sve.' : 'Ništa ne odgovara pretrazi.') : 'Trenutno nema ovih komponenti na stanju.'}</li>`;
