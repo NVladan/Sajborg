@@ -18,7 +18,9 @@
     <meta name="theme-color" content="#0C0F15" media="(prefers-color-scheme: dark)">
     <title>{% block title %}Sajborg Shop{% endblock %} - PC Komponente i Gaming Oprema</title>
 
-    <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico', v=cache_buster) }}" sizes="any">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon-32.png', v=cache_buster) }}" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png', v=cache_buster) }}">
 
     <!-- Fonts: Schibsted Grotesk (display) + Hanken Grotesk (body) + JetBrains Mono (accents) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +61,7 @@
       "@type": "Organization",
       "name": "Sajborg Shop",
       "url": "{{ url_for('main.index', _external=True) }}",
-      "logo": "{{ url_for('static', filename='img/favicon.png', _external=True) }}"
+      "logo": "{{ url_for('static', filename='img/logo-512.png', _external=True) }}"
     }
     </script>
     <script type="application/ld+json">
@@ -86,7 +88,7 @@
     <nav class="navbar navbar-expand-xl">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('main.index') }}">
-                <i class="fas fa-microchip"></i>Sajborg Shop
+                <img src="{{ url_for('static', filename='img/logo-mark.png', v=cache_buster) }}" alt="" width="36" height="36" class="brand-logo">Sajborg Shop
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -239,7 +241,7 @@
         <div class="container">
             <div class="ft-grid">
                 <div class="ft-brand">
-                    <a href="{{ url_for('main.index') }}" class="ft-logo"><i class="fas fa-microchip" aria-hidden="true"></i> Sajborg Shop</a>
+                    <a href="{{ url_for('main.index') }}" class="ft-logo"><img src="{{ url_for('static', filename='img/logo-mark.png', v=cache_buster) }}" alt="" width="32" height="32" class="brand-logo"> Sajborg Shop</a>
                     <p>Računarske komponente na stanju. Šaljemo kurirskom službom širom Bosne i Hercegovine, a plaćate pouzećem kad paket stigne.</p>
                 </div>
                 <nav class="ft-col" aria-label="Kupovina">

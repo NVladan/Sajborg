@@ -24,7 +24,7 @@
             aria-controls="adm-sidebar" aria-label="Otvori meni">
         <i class="fas fa-bars" aria-hidden="true"></i>
     </button>
-    <a href="{{ url_for('admin.dashboard') }}" class="adm-brand"><i class="fas fa-microchip" aria-hidden="true"></i> Sajborg admin</a>
+    <a href="{{ url_for('admin.dashboard') }}" class="adm-brand"><img src="{{ url_for('static', filename='img/logo-mark.png', v=cache_buster) }}" alt="" width="28" height="28" class="brand-logo"> Sajborg admin</a>
     {% if nav_pending_orders %}
     <a href="{{ url_for('admin.orders', status='pending') }}" class="adm-topbar-pending" title="Porudžbine na čekanju">
         <i class="fas fa-inbox" aria-hidden="true"></i> {{ nav_pending_orders }}
@@ -39,7 +39,7 @@
     <aside class="adm-sidebar offcanvas-lg offcanvas-start no-print" tabindex="-1" id="adm-sidebar" aria-label="Admin meni">
         <div class="adm-sidebar-head">
             <a href="{{ url_for('admin.dashboard') }}" class="adm-brand">
-                <span class="adm-brand-mark"><i class="fas fa-microchip" aria-hidden="true"></i></span>
+                <img src="{{ url_for('static', filename='img/logo-mark.png', v=cache_buster) }}" alt="" width="32" height="32" class="brand-logo">
                 <span>Sajborg <span class="adm-brand-sub">admin</span></span>
             </a>
             <button type="button" class="adm-icon-btn d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#adm-sidebar" aria-label="Zatvori meni">

@@ -225,17 +225,8 @@ a:hover { color: var(--accent-hover); }
   align-items: center;
   gap: 0.55rem;
 }
-.navbar-brand i {
-  font-size: 1.1rem;
-  width: 34px; height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  color: var(--on-accent);
-  background: linear-gradient(135deg, var(--accent), #5B7CF0);
-  box-shadow: var(--shadow-accent);
-}
+.brand-logo { flex: none; object-fit: contain; }
+.navbar-brand .brand-logo { width: 36px; height: 36px; }
 
 .nav-link {
   color: var(--ink-muted) !important;
@@ -425,15 +416,7 @@ a:hover { color: var(--accent-hover); }
   color: var(--ink-strong) !important;
   margin-bottom: 0.75rem;
 }
-.ft-logo i {
-  width: 30px; height: 30px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 9px;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.85rem;
-}
+.ft-logo .brand-logo { width: 32px; height: 32px; }
 .ft-brand p { max-width: 42ch; margin: 0; line-height: 1.6; }
 .ft-title {
   font-family: var(--font-display);
