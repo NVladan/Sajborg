@@ -1,157 +1,100 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
-{% block title %}Upravljanje Proizvodima - Sajborg Shop Admin{% endblock %}
+{% block title %}Proizvodi - Sajborg Shop Admin{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Upravljanje Proizvodima</h1>
-        <div>
-            <a href="{{ url_for('admin.add_product', next=request.full_path) }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Dodaj Novi Proizvod
-            </a>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Nazad na Panel
-            </a>
-        </div>
-    </div>
+{% block admin_content %}
+{% set oos = 'true' if show_out_of_stock else 'false' %}
+{% call ui.header('Proizvodi', products.total ~ ' ' ~ ui.plural(products.total, 'proizvod', 'proizvoda', 'proizvoda') ~ (' u prikazu' if (search_query or selected_category_id) else (', uključujući rasprodate' if show_out_of_stock else ' na stanju'))) %}
+    <a href="{{ url_for('admin.add_product', next=request.full_path) }}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Dodaj proizvod</a>
+{% endcall %}
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Filteri</h4>
-        </div>
-        <div class="card-body">
-            <form action="{{ url_for('admin.products') }}" method="GET" class="d-flex justify-content-between align-items-center">
-                <div class="input-group me-3">
-                    <input type="text" class="form-control" name="q" value="{{ search_query or '' }}" placeholder="Pretraži po nazivu proizvoda...">
-                    <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Pretraži</button>
-                </div>
-
-                {% if selected_category_id %}
-                <input type="hidden" name="category_id" value="{{ selected_category_id }}">
-                {% endif %}
-                <input type="hidden" name="show_out_of_stock" value="{{ 'true' if show_out_of_stock else 'false' }}">
-
-                <div>
-                    {% if show_out_of_stock %}
-                        <a href="{{ url_for('admin.products', q=search_query, category_id=selected_category_id, show_out_of_stock='false') }}" class="btn btn-secondary">
-                            <i class="fas fa-eye-slash"></i> Sakrij artikle kojih nema na stanju
-                        </a>
-                    {% else %}
-                        <a href="{{ url_for('admin.products', q=search_query, category_id=selected_category_id, show_out_of_stock='true') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-eye"></i> Prikaži artikle kojih nema na stanju
-                        </a>
-                    {% endif %}
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <ul class="nav nav-tabs mb-4">
-        <li class="nav-item">
-            <a class="nav-link {% if not selected_category_id %}active{% endif %}" href="{{ url_for('admin.products', q=search_query, show_out_of_stock='true' if show_out_of_stock else 'false') }}">Sve Kategorije</a>
-        </li>
+<section class="adm-panel">
+    <nav class="adm-seg" aria-label="Kategorije">
+        <a href="{{ url_for('admin.products', q=search_query or None, show_out_of_stock=oos) }}"
+           class="{{ 'is-active' if not selected_category_id }}">Sve kategorije</a>
         {% for category in categories %}
-        <li class="nav-item">
-            <a class="nav-link {% if selected_category_id == category.id %}active{% endif %}" href="{{ url_for('admin.products', category_id=category.id, q=search_query, show_out_of_stock='true' if show_out_of_stock else 'false') }}">{{ category.name }}</a>
-        </li>
+        <a href="{{ url_for('admin.products', category_id=category.id, q=search_query or None, show_out_of_stock=oos) }}"
+           class="{{ 'is-active' if selected_category_id == category.id }}">{{ category.name }}</a>
         {% endfor %}
-    </ul>
+    </nav>
 
-
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Proizvodi</h4>
-                <span class="text-muted">{{ products.total }} proizvoda pronađeno</span>
-            </div>
+    <form id="product-filter-form" action="{{ url_for('admin.products') }}" method="GET" class="adm-toolbar" role="search">
+        {% if selected_category_id %}<input type="hidden" name="category_id" value="{{ selected_category_id }}">{% endif %}
+        <input type="hidden" name="show_out_of_stock" value="{{ oos }}">
+        <div class="adm-search">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input type="search" class="form-control" name="q" value="{{ search_query or '' }}"
+                   placeholder="Pretraži po nazivu" aria-label="Pretraži proizvode">
         </div>
-        <div class="card-body">
-            {% if products.items %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Slika</th>
-                            <th style="width: 30%;">Naziv</th>
-                            <th style="width: 15%;">Kategorija</th>
-                            <th style="width: 10%;">Cena</th>
-                            <th style="width: 10%;">Stanje</th>
-                            <th style="width: 10%;">Istaknut</th>
-                            <th style="width: 15%;">Akcije</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products.items %}
-                        <tr class="{{ 'table-danger' if product.stock == 0 }}">
-                            <td>
-                                {% set primary_image = (product.images|selectattr('is_primary')|first) or (product.images|first) %}
-                                <img src="{{ url_for('static', filename=primary_image.image_path) if primary_image else url_for('static', filename='img/no-image.svg') }}" alt="Admin slika za {{ product.name }}" style="width: 50px; height: 50px; object-fit: contain;">
-                            </td>
-                            <td>{{ product.name }}</td>
-                            <td>{{ product.category.name }}</td>
-                            <td>{{ product.price|round(2) }} KM</td>
-                            <td>{{ product.stock }}</td>
-                            <td>
-                                {% if product.featured %}
-                                    <span class="badge bg-success">Da</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Ne</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('admin.edit_product', product_id=product.id, next=request.full_path) }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i> Izmeni
-                                </a>
-                                <form action="{{ url_for('admin.delete_product', product_id=product.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovaj proizvod?')">
-                                    <input type="hidden" name="next" value="{{ request.full_path }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i> Obriši
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+        <span class="adm-toolbar-spacer"></span>
+        <a href="{{ url_for('admin.products', q=search_query or None, category_id=selected_category_id, show_out_of_stock='false' if show_out_of_stock else 'true') }}"
+           class="btn btn-sm {{ 'btn-secondary' if show_out_of_stock else 'btn-outline-secondary' }}" aria-pressed="{{ 'true' if show_out_of_stock else 'false' }}">
+            <i class="fas {{ 'fa-eye' if show_out_of_stock else 'fa-eye-slash' }}" aria-hidden="true"></i>
+            {{ 'Rasprodati su prikazani' if show_out_of_stock else 'Prikaži i rasprodate' }}
+        </a>
+    </form>
 
-            {% if products.pages > 1 %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if products.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin.products', page=products.prev_num, q=search_query, category_id=selected_category_id, show_out_of_stock='true' if show_out_of_stock else 'false') }}">Prethodna</a>
-                    </li>
-                    {% endif %}
-                    {% for page_num in products.iter_pages() %}
-                        <li class="page-item {% if page_num == products.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('admin.products', page=page_num, q=search_query, category_id=selected_category_id, show_out_of_stock='true' if show_out_of_stock else 'false') }}">{{ page_num }}</a>
-                        </li>
-                    {% endfor %}
-                    {% if products.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('admin.products', page=products.next_num, q=search_query, category_id=selected_category_id, show_out_of_stock='true' if show_out_of_stock else 'false') }}">Sledeća</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-box-open fa-3x mb-3 text-muted"></i>
-                <h3>Nema pronađenih proizvoda</h3>
-                {% if search_query %}
-                <p>Nismo mogli pronaći proizvode koji odgovaraju pretrazi "{{ search_query }}".</p>
-                <a href="{{ url_for('admin.products') }}" class="btn btn-primary">Prikaži Sve Proizvode</a>
-                {% else %}
-                <p>Još uvek nema proizvoda u bazi. <a href="{{ url_for('admin.add_product') }}">Kreirajte prvi!</a></p>
-                {% endif %}
-            </div>
-            {% endif %}
-        </div>
+    {% if products.items %}
+    <div class="adm-table-wrap">
+        <table class="adm-table is-stack">
+            <thead>
+                <tr>
+                    <th>Proizvod</th>
+                    <th class="num">Cijena</th>
+                    <th class="num">Stanje</th>
+                    <th>Veza</th>
+                    <th><span class="visually-hidden">Akcije</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products.items %}
+                <tr class="{{ 'is-muted' if product.stock == 0 }}">
+                    <td>
+                        <div class="adm-cell-product">
+                            {{ ui.thumb(product) }}
+                            <div class="min-w-0">
+                                <a href="{{ url_for('admin.edit_product', product_id=product.id, next=request.full_path) }}" class="adm-row-title">{{ product.name }}</a>
+                                <span class="adm-row-sub">
+                                    {{ product.category.name }}{% if product.featured %}, <i class="fas fa-star text-warning" aria-hidden="true"></i> istaknut{% endif %}{% if not product.is_publicly_visible %}, skriven{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="num" data-label="Cijena">{{ ui.km(product.price) }}</td>
+                    <td class="num" data-label="Stanje">
+                        <span class="{{ 'adm-stock-zero' if product.stock == 0 }}">{{ product.stock }}</span>
+                    </td>
+                    <td data-label="Veza">
+                        {% if product.lager_product_id %}{{ ui.pill('Lager', 'delivered') }}{% else %}<span class="text-body-tertiary">ručno</span>{% endif %}
+                    </td>
+                    <td class="shrink">
+                        <div class="adm-row-actions">
+                            <a href="{{ url_for('product.product_detail', slug=product.slug) }}" class="adm-act" target="_blank" rel="noopener" title="Pogledaj na sajtu" aria-label="Pogledaj {{ product.name }} na sajtu"><i class="fas fa-arrow-up-right-from-square"></i></a>
+                            <a href="{{ url_for('admin.edit_product', product_id=product.id, next=request.full_path) }}" class="adm-act" title="Izmijeni" aria-label="Izmijeni {{ product.name }}"><i class="fas fa-pen"></i></a>
+                            <form action="{{ url_for('admin.delete_product', product_id=product.id) }}" method="POST"
+                                  onsubmit="return confirm('Obrisati „{{ product.name|replace("'", "\\'") }}“? Ovo se ne može poništiti.')">
+                                <input type="hidden" name="next" value="{{ request.full_path }}">
+                                {{ ui.csrf() }}
+                                <button type="submit" class="adm-act is-danger" title="Obriši" aria-label="Obriši {{ product.name }}"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
+    {{ ui.pagination(products, 'admin.products', {'q': search_query or None, 'category_id': selected_category_id, 'show_out_of_stock': oos}) }}
+    {% elif search_query %}
+    {% call ui.empty('fa-magnifying-glass', 'Nema proizvoda koji odgovaraju „' ~ search_query ~ '"', 'Probajte kraći naziv' ~ ('' if show_out_of_stock else ' ili uključite rasprodate proizvode') ~ '.') %}
+        <a href="{{ url_for('admin.products') }}" class="btn btn-outline-secondary">Očisti pretragu</a>
+    {% endcall %}
+    {% else %}
+    {% call ui.empty('fa-box-open', 'Ovdje nema proizvoda', 'Dodajte proizvod ručno ili ga objavite sa lagera.') %}
+        <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">Dodaj proizvod</a>
+        <a href="{{ url_for('admin.lager_sync', _anchor='objavi') }}" class="btn btn-outline-secondary">Objavi sa lagera</a>
+    {% endcall %}
+    {% endif %}
+</section>
 {% endblock %}

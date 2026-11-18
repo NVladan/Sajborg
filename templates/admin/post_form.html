@@ -1,109 +1,107 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
-{% block title %}{% if is_edit %}Izmeni Članak{% else %}Dodaj Novi Članak{% endif %} - Sajborg Shop Admin{% endblock %}
+{% block title %}{% if is_edit %}{{ post.title }}{% else %}Novi članak{% endif %} - Sajborg Shop Admin{% endblock %}
 
-{% block extra_css %}
-{# Summernote CSS #}
+{% block admin_css %}
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <style>
-    /* Fallback styles for textarea if Summernote fails to load */
-    #summernote {
-        min-height: 400px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 16px;
-        line-height: 1.6;
+    #summernote { min-height: 420px; font-size: 16px; line-height: 1.65; }
+    .adm-post-title {
+        font-family: var(--font-display);
+        font-weight: 800;
+        font-size: 1.5rem;
+        letter-spacing: -0.01em;
+        border: 0;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        padding: 0.25rem 0 0.6rem;
+        background: transparent;
+        color: var(--ink-strong);
     }
-    /* Summernote editor styling */
-    .note-editor.note-frame {
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-    }
-    .note-editor .note-editing-area .note-editable {
-        min-height: 400px;
-        padding: 15px;
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    .note-toolbar {
-        background-color: #f8f9fa;
-    }
-    /* Loading indicator */
-    .editor-loading {
-        padding: 20px;
-        text-align: center;
-        color: #6c757d;
-        background: #f8f9fa;
-        border: 1px solid #ced4da;
-        border-radius: 0.375rem;
-    }
+    .adm-post-title:focus { box-shadow: none; border-color: var(--accent); background: transparent; color: var(--ink-strong); }
+    .note-editor.note-frame { border: 1px solid var(--border-strong) !important; border-radius: var(--radius-sm); overflow: hidden; }
+    .note-editor .note-toolbar { background: var(--surface-2) !important; border-bottom: 1px solid var(--border) !important; }
+    .note-editor .note-editing-area .note-editable { min-height: 420px; padding: 1.1rem 1.25rem; font-size: 16px; line-height: 1.65; background: var(--surface) !important; color: var(--ink) !important; }
+    .note-statusbar { background: var(--surface-2) !important; }
+    .editor-loading { padding: 2rem; text-align: center; color: var(--ink-muted); background: var(--surface-2); border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if is_edit %}Izmeni Članak{% else %}Dodaj Novi Članak{% endif %}</h1>
-        <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Nazad na Članke
+{% block admin_content %}
+<header class="adm-head">
+    <div class="adm-head-text">
+        <a href="{{ url_for('admin.posts') }}" class="adm-back"><i class="fas fa-chevron-left" aria-hidden="true"></i> Tech Magazin</a>
+        <h1 class="adm-title">{{ 'Izmjena članka' if is_edit else 'Novi članak' }}</h1>
+    </div>
+    {% if is_edit and post.is_published %}
+    <div class="adm-head-actions">
+        <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" target="_blank" rel="noopener" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Pogledaj na sajtu
         </a>
     </div>
+    {% endif %}
+</header>
 
-    <div class="card">
-        <div class="card-body">
-            <form method="POST" enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
+<div class="adm-form-grid">
+    <form method="POST" enctype="multipart/form-data" id="post-form">
+        {{ form.hidden_tag() }}
+        <section class="adm-panel">
+            <div class="adm-section pb-3">
+                <label for="title" class="visually-hidden">Naslov</label>
+                {{ form.title(class="form-control adm-post-title" ~ (' is-invalid' if form.title.errors else ''), placeholder="Naslov članka") }}
+                {% for error in form.title.errors %}<p class="adm-error">{{ error }}</p>{% endfor %}
 
-                <div class="mb-3">
-                    {{ form.title.label(class="form-label") }}
-                    {{ form.title(class="form-control", placeholder="Unesite naslov članka") }}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.content.label(class="form-label") }}
+                <div class="mt-3">
                     <div id="editor-loading" class="editor-loading">
-                        <i class="fas fa-spinner fa-spin"></i> Učitavanje editora...
+                        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Učitavanje editora…
                     </div>
                     <textarea id="summernote" name="content" class="form-control" style="display: none;">{{ form.content.data or '' }}</textarea>
                     <noscript>
                         <textarea name="content" class="form-control" style="min-height: 400px;">{{ form.content.data or '' }}</textarea>
                     </noscript>
+                    {% for error in form.content.errors %}<p class="adm-error">{{ error }}</p>{% endfor %}
                 </div>
+            </div>
+        </section>
+    </form>
 
-                <div class="row align-items-center">
-                    <div class="col-md-6 mb-3">
-                        {{ form.featured_image.label(class="form-label") }}
-                        {{ form.featured_image(class="form-control") }}
-                        <div class="form-text">Ova slika će se prikazivati na listi svih članaka. Slike za sam sadržaj članka dodajete direktno u editoru iznad.</div>
-                        {% if is_edit and post and post.featured_image %}
-                            <div class="mt-2">
-                                <label>Trenutna Slika:</label><br>
-                                <img src="{{ url_for('static', filename=post.featured_image) }}" alt="Istaknuta slika" style="max-width: 200px; border: 1px solid #ccc;">
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="form-check form-switch">
-                            {{ form.is_published(class="form-check-input") }}
-                            {{ form.is_published.label(class="form-check-label", for="is_published") }}
-                        </div>
-                    </div>
+    <aside class="adm-form-aside">
+        <section class="adm-panel">
+            <div class="adm-panel-body">
+                {{ ui.check(form.is_published, 'Objavljen', 'Isključeno: članak se čuva kao nacrt i nije vidljiv na sajtu.', form='post-form') }}
+                <div class="adm-actions-stack">
+                    <button type="submit" form="post-form" class="btn btn-primary">
+                        <i class="fas fa-check" aria-hidden="true"></i> {{ 'Sačuvaj izmjene' if is_edit else 'Sačuvaj članak' }}
+                    </button>
+                    <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-secondary">Odustani</a>
                 </div>
+            </div>
+        </section>
 
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                    <a href="{{ url_for('admin.posts') }}" class="btn btn-outline-secondary">Otkaži</a>
-                    <button type="submit" class="btn btn-primary">{% if is_edit %}Sačuvaj Izmene{% else %}Kreiraj Članak{% endif %}</button>
+        <section class="adm-panel">
+            <div class="adm-panel-head"><h2 class="adm-panel-title">Naslovna slika</h2></div>
+            <div class="adm-panel-body">
+                {% if is_edit and post and post.featured_image %}
+                <div class="adm-gallery-item mb-3" style="aspect-ratio: 16 / 9;">
+                    <img src="{{ url_for('static', filename=post.featured_image) }}" alt="Trenutna naslovna slika" style="object-fit: cover;">
                 </div>
-            </form>
-        </div>
-    </div>
+                {% endif %}
+                <label class="adm-drop">
+                    <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+                    <strong>{{ 'Zamijeni sliku' if (is_edit and post.featured_image) else 'Dodaj sliku' }}</strong>
+                    <span>Prikazuje se u listi članaka. Slike u tekstu dodajete u editoru.</span>
+                    {{ form.featured_image(form='post-form', accept='image/*', **{'aria-label': 'Naslovna slika'}) }}
+                    <span class="adm-drop-files" data-file-names></span>
+                </label>
+            </div>
+        </section>
+    </aside>
 </div>
 {% endblock %}
 
-{% block extra_js %}
-{# jQuery - required by Summernote #}
+{% block admin_js %}
 <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-{# Summernote rich text editor #}
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
-{# Our editor initialization script #}
 <script src="{{ url_for('static', filename='js/post_editor.js') }}?v={{ cache_buster|default('1') }}"></script>
 {% endblock %}

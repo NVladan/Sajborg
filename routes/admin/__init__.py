@@ -20,6 +20,19 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Redoslijed kategorija u adminu: po važnosti komponente za računar (prema tipu u PC konfiguratoru)
+COMPONENT_IMPORTANCE = ('CPU', 'Motherboard', 'GPU', 'RAM', 'Storage', 'Power Supply', 'Case',
+                        'CPU Cooler', 'Case Fans', 'Monitor', 'Keyboard', 'Mouse')
+
+
+def category_rank_expr():
+    """SQL izraz za ORDER BY: važnije komponente prvo, kategorije bez tipa na kraju."""
+    from sqlalchemy import case
+    from models import Category
+    return case({ct: i for i, ct in enumerate(COMPONENT_IMPORTANCE)},
+                value=Category.component_type, else_=len(COMPONENT_IMPORTANCE))
+
+
 def safe_products_next(value):
     """Povratna adresa na listu proizvoda (tab, pretraga, strana) — samo lokalni /admin/products URL."""
     if value and value.startswith('/admin/products') and not value.startswith('//'):

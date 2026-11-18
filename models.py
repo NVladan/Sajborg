@@ -185,6 +185,8 @@ class Order(db.Model):
     shipping_phone_number = db.Column(db.String(32))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Završene porudžbine (dostavljene/otkazane) se mogu arhivirati da ne opterećuju listu u adminu
+    archived_at = db.Column(db.DateTime, nullable=True, index=True)
     products = db.relationship('Product', secondary=order_items, lazy='subquery',
                                backref=db.backref('orders', lazy=True))
 
@@ -196,6 +198,10 @@ class Order(db.Model):
 
     def __repr__(self):
         return f'<Order {self.id}>'
+
+    @property
+    def is_finished(self):
+        return self.status in ('delivered', 'dostavljeno', 'cancelled')
 
     @property
     def full_shipping_address(self):

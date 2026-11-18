@@ -1,72 +1,60 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
-{% block title %}Upravljanje Člancima - Sajborg Shop Admin{% endblock %}
+{% block title %}Tech Magazin - Sajborg Shop Admin{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Upravljanje Člancima</h1>
-        <div>
-            <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Dodaj Novi Članak
-            </a>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Nazad na Panel
-            </a>
-        </div>
+{% block admin_content %}
+{% set published = posts|selectattr('is_published')|list|length %}
+{% call ui.header('Tech Magazin', posts|length ~ ' ' ~ ui.plural(posts|length, 'članak', 'članka', 'članaka') ~ ', od toga ' ~ published ~ ' ' ~ ui.plural(published, 'objavljen', 'objavljena', 'objavljeno')) %}
+    <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Novi članak</a>
+{% endcall %}
+
+<section class="adm-panel">
+    {% if posts %}
+    <div class="adm-table-wrap">
+        <table class="adm-table is-stack">
+            <thead>
+                <tr><th>Članak</th><th>Datum</th><th>Status</th><th><span class="visually-hidden">Akcije</span></th></tr>
+            </thead>
+            <tbody>
+                {% for post in posts %}
+                <tr>
+                    <td>
+                        <div class="adm-cell-product">
+                            <span class="adm-thumb">
+                                {% if post.featured_image %}<img src="{{ url_for('static', filename=post.featured_image) }}" alt="" loading="lazy" style="object-fit: cover;">
+                                {% else %}<i class="fas fa-newspaper" aria-hidden="true"></i>{% endif %}
+                            </span>
+                            <div class="min-w-0">
+                                <a href="{{ url_for('admin.edit_post', post_id=post.id) }}" class="adm-row-title">{{ post.title }}</a>
+                                <span class="adm-row-sub">{{ post.author.username }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-label="Datum">{{ post.created_at.strftime('%d.%m.%Y.') }}</td>
+                    <td data-label="Status">{{ ui.pill('Objavljeno', 'delivered') if post.is_published else ui.pill('Nacrt') }}</td>
+                    <td class="shrink">
+                        <div class="adm-row-actions">
+                            {% if post.is_published %}
+                            <a href="{{ url_for('blog.post_detail', slug=post.slug) }}" class="adm-act" target="_blank" rel="noopener" title="Pogledaj na sajtu" aria-label="Pogledaj {{ post.title }} na sajtu"><i class="fas fa-arrow-up-right-from-square"></i></a>
+                            {% endif %}
+                            <a href="{{ url_for('admin.edit_post', post_id=post.id) }}" class="adm-act" title="Izmijeni" aria-label="Izmijeni {{ post.title }}"><i class="fas fa-pen"></i></a>
+                            <form action="{{ url_for('admin.delete_post', post_id=post.id) }}" method="POST"
+                                  onsubmit="return confirm('Obrisati članak „{{ post.title|replace("'", "\\'") }}“? Ovo se ne može poništiti.');">
+                                {{ ui.csrf() }}
+                                <button type="submit" class="adm-act is-danger" title="Obriši" aria-label="Obriši {{ post.title }}"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <div class="card">
-        <div class="card-body">
-            {% if posts %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 40%;">Naslov</th>
-                            <th style="width: 15%;">Autor</th>
-                            <th style="width: 15%;">Datum Kreiranja</th>
-                            <th style="width: 10%;">Status</th>
-                            <th style="width: 20%;">Akcije</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for post in posts %}
-                        <tr>
-                            <td>{{ post.title }}</td>
-                            <td>{{ post.author.username }}</td>
-                            <td>{{ post.created_at.strftime('%d.%m.%Y.') }}</td>
-                            <td>
-                                {% if post.is_published %}
-                                <span class="badge bg-success">Objavljeno</span>
-                                {% else %}
-                                <span class="badge bg-secondary">Nacrt</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ url_for('admin.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary" title="Izmeni">
-                                    <i class="fas fa-edit"></i> Izmeni
-                                </a>
-                                <form action="{{ url_for('admin.delete_post', post_id=post.id) }}" method="POST" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Obriši" onclick="return confirm('Da li ste sigurni da želite da obrišete ovaj članak?');">
-                                        <i class="fas fa-trash"></i> Obriši
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-file-alt fa-3x mb-3 text-muted"></i>
-                <h3>Nema kreiranih članaka.</h3>
-                <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary mt-2">Kreiraj prvi članak</a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+    {% else %}
+    {% call ui.empty('fa-newspaper', 'Još nema članaka', 'Recenzije, vodiči i novosti iz svijeta hardvera pomažu kupcima da se odluče.') %}
+        <a href="{{ url_for('admin.add_post') }}" class="btn btn-primary">Napiši prvi članak</a>
+    {% endcall %}
+    {% endif %}
+</section>
 {% endblock %}

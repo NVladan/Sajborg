@@ -160,11 +160,8 @@ def apply_sync(product, markup):
     return True
 
 
-@admin_bp.route('/lager-sync')
-@admin_required
-def lager_sync():
-    markup = _parse_markup(request.args.get('markup', DEFAULT_MARKUP))
-
+def build_sync_overview(markup=DEFAULT_MARKUP, with_suggestions=True):
+    """Sve što stranica Lager ↔ Sajt prikazuje; bez prijedloga je dovoljno brzo i za brojače na dashboardu."""
     products = (Product.query
                 .options(joinedload(Product.lager_product), joinedload(Product.category))
                 .order_by(Product.name)
@@ -188,7 +185,8 @@ def lager_sync():
     unlinked = [p for p in products if not p.lager_product]
     # Proizvodi bez stanja se ne nude za povezivanje; ostaju samo za upozorenje o duplikatu ispod
     linkable_items = linkable(lager_items)
-    unlinked_rows = [{'product': p, 'suggestion': best_name_match(p.name, linkable_items)}
+    unlinked_rows = [{'product': p,
+                      'suggestion': best_name_match(p.name, linkable_items) if with_suggestions else None}
                      for p in sorted(unlinked, key=lambda p: p.name.lower()) if p.stock > 0]
 
     # Nepovezana roba sa lagera, samo iz glavnih kategorija koje već imaju bar jedan povezan artikal
@@ -206,19 +204,29 @@ def lager_sync():
             'item': item,
             'sale_price': target_price(item.purchase_price, markup),
             # Možda proizvod već postoji na sajtu (npr. skriven sa stanjem 0) — bolje ga povezati nego duplirati
-            'similar_product': best_name_match(item.name, unlinked, DUPLICATE_MIN_SCORE),
+            'similar_product': (best_name_match(item.name, unlinked, DUPLICATE_MIN_SCORE)
+                                if with_suggestions else None),
         })
 
+    return {
+        'mismatched': mismatched,
+        'in_sync': in_sync,
+        'unlinked_rows': unlinked_rows,
+        'unpublished': unpublished,
+        'filtered_by_links': bool(relevant_main_ids),
+        'lager_items': linkable_items,
+    }
+
+
+@admin_bp.route('/lager-sync')
+@admin_required
+def lager_sync():
+    markup = _parse_markup(request.args.get('markup', DEFAULT_MARKUP))
     return render_template('admin/lager_sync.html',
                            title='Lager ↔ Sajt',
                            markup=markup,
-                           mismatched=mismatched,
-                           in_sync=in_sync,
-                           unlinked_rows=unlinked_rows,
-                           unpublished=unpublished,
-                           filtered_by_links=bool(relevant_main_ids),
-                           lager_items=linkable_items,
-                           lager_label=lager_label)
+                           lager_label=lager_label,
+                           **build_sync_overview(markup))
 
 
 @admin_bp.route('/lager-sync/apply/<int:product_id>', methods=['POST'])

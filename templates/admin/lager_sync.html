@@ -1,8 +1,8 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
 
 {% block title %}Lager ↔ Sajt - Sajborg Shop Admin{% endblock %}
 
-{% block extra_css %}
+{% block admin_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/lager_sync.css', v=cache_buster) }}">
 {% endblock %}
 
@@ -24,14 +24,14 @@
     {{ name if name|length <= 4 else name|capitalize }}
 {%- endmacro %}
 
-{% block content %}
+{% block admin_content %}
 {% set publish_count = unpublished.values()|map('length')|sum %}
 {% if mismatched %}{% set default_tab = 'uskladi' %}
 {% elif publish_count %}{% set default_tab = 'objavi' %}
 {% elif unlinked_rows %}{% set default_tab = 'povezi' %}
 {% else %}{% set default_tab = 'uredu' %}{% endif %}
 
-<div class="container py-4 ls">
+<div class="ls">
     <header class="ls-head">
         <div>
             <h1 class="ls-title">Lager ↔ Sajt</h1>
@@ -45,9 +45,6 @@
                 <span aria-hidden="true">%</span>
                 <button type="submit" class="btn btn-sm btn-outline-secondary">Primijeni</button>
             </form>
-            <a href="{{ url_for('lager.view_lager') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-warehouse"></i> Lager
-            </a>
         </div>
     </header>
 
@@ -290,7 +287,7 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block admin_js %}
 <script>
 (function () {
     const tabs = document.querySelectorAll('.ls-tab');

@@ -1,0 +1,120 @@
+{# Zajedničke komponente admin panela. Uvoz: {% import 'admin/_ui.html' as ui %} #}
+
+{% set ORDER_STATUS = {
+    'pending':     ('Na čekanju', 'pending'),
+    'preparing':   ('U pripremi', 'preparing'),
+    'shipped':     ('Poslato', 'shipped'),
+    'delivered':   ('Dostavljeno', 'delivered'),
+    'dostavljeno': ('Dostavljeno', 'delivered'),
+    'paid':        ('Plaćeno', 'delivered'),
+    'cancelled':   ('Otkazano', 'cancelled'),
+} %}
+
+{% macro status(value) -%}
+    {% set label, tone = ORDER_STATUS.get(value, (value or '—', 'neutral')) %}
+    <span class="adm-status is-{{ tone }}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro pill(label, tone='neutral') -%}
+    <span class="adm-status is-{{ tone }}">{{ label }}</span>
+{%- endmacro %}
+
+{# 1234.5 -> "1.234,50 KM" #}
+{% macro km(value, decimals=2) -%}
+    {%- set s = ('{:,.' ~ decimals ~ 'f}').format(value or 0) -%}
+    <span class="adm-money">{{ s.replace(',', '_').replace('.', ',').replace('_', '.') }}&nbsp;KM</span>
+{%- endmacro %}
+
+{# Srpska množina: 1 porudžbina, 2–4 porudžbine, 5+ porudžbina (11–14 su "mnogo") #}
+{% macro plural(n, one, few, many) -%}
+    {%- set n10 = n % 10 -%}{%- set n100 = n % 100 -%}
+    {%- if n10 == 1 and n100 != 11 -%}{{ one }}
+    {%- elif n10 in (2, 3, 4) and n100 not in (12, 13, 14) -%}{{ few }}
+    {%- else -%}{{ many }}{%- endif -%}
+{%- endmacro %}
+
+{% macro csrf() -%}
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{# Zaglavlje stranice: naslov, opis, akcije (caller) i opciono link nazad #}
+{% macro header(title, sub=None, back=None, back_label=None) -%}
+<header class="adm-head">
+    <div class="adm-head-text">
+        {% if back %}
+        <a href="{{ back }}" class="adm-back"><i class="fas fa-chevron-left" aria-hidden="true"></i> {{ back_label }}</a>
+        {% endif %}
+        <h1 class="adm-title">{{ title }}</h1>
+        {% if sub %}<p class="adm-sub">{{ sub }}</p>{% endif %}
+    </div>
+    {% if caller %}<div class="adm-head-actions">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro empty(icon, title, text=None) -%}
+<div class="adm-empty">
+    <span class="adm-empty-icon"><i class="fas {{ icon }}" aria-hidden="true"></i></span>
+    <p class="adm-empty-title">{{ title }}</p>
+    {% if text %}<p class="adm-empty-text">{{ text }}</p>{% endif %}
+    {% if caller %}<div class="adm-empty-actions">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Paginacija; `args` su ostali parametri upita koje treba sačuvati #}
+{% macro pagination(pager, endpoint, args={}) -%}
+{% if pager.pages > 1 %}
+<nav class="adm-pager" aria-label="Stranice">
+    <span class="adm-pager-info">Strana {{ pager.page }} od {{ pager.pages }}</span>
+    <div class="adm-pager-links">
+        {% if pager.has_prev %}
+        <a class="adm-page" href="{{ url_for(endpoint, page=pager.prev_num, **args) }}" aria-label="Prethodna strana"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+        {% else %}
+        <span class="adm-page is-disabled" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+        {% endif %}
+        {% for num in pager.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if num is none %}
+            <span class="adm-page is-gap" aria-hidden="true">…</span>
+            {% elif num == pager.page %}
+            <span class="adm-page is-current" aria-current="page">{{ num }}</span>
+            {% else %}
+            <a class="adm-page" href="{{ url_for(endpoint, page=num, **args) }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if pager.has_next %}
+        <a class="adm-page" href="{{ url_for(endpoint, page=pager.next_num, **args) }}" aria-label="Sljedeća strana"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+        {% else %}
+        <span class="adm-page is-disabled" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}
+{%- endmacro %}
+
+{# Polje WTForms forme sa labelom, greškom i pomoćnim tekstom #}
+{% macro field(f, label=None, help=None, cls='form-control', wrap='') -%}
+<div class="adm-field {{ wrap }}{% if f.errors %} has-error{% endif %}">
+    {{ f.label(class="adm-label", text=label) if label else f.label(class="adm-label") }}
+    {{ f(class=cls ~ (' is-invalid' if f.errors else ''), **kwargs) }}
+    {% for error in f.errors %}<p class="adm-error">{{ error }}</p>{% endfor %}
+    {% if help %}<p class="adm-help">{{ help }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro check(f, label=None, help=None) -%}
+<div class="adm-check">
+    {{ f(class="form-check-input", role="switch", **kwargs) }}
+    <div>
+        {{ f.label(class="adm-check-label", text=label) if label else f.label(class="adm-check-label") }}
+        {% if help %}<p class="adm-help">{{ help }}</p>{% endif %}
+    </div>
+</div>
+{%- endmacro %}
+
+{# Mala slika proizvoda (glavna ili prva) #}
+{% macro thumb(product, size='') -%}
+    {% set img = (product.images|selectattr('is_primary')|first) or (product.images|first) %}
+    <span class="adm-thumb {{ size }}">
+        {% if img %}<img src="{{ url_for('static', filename=img.image_path) }}" alt="" loading="lazy">
+        {% else %}<i class="fas fa-image" aria-hidden="true"></i>{% endif %}
+    </span>
+{%- endmacro %}

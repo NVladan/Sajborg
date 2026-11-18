@@ -159,4 +159,31 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     }
   }
+
+  // Promjena uloge korisnika: odmah se čuva, uz potvrdu (vraća staru vrijednost na "Otkaži")
+  document.querySelectorAll('select[data-autosubmit]').forEach(function(select) {
+    let previous = select.value;
+    select.addEventListener('change', function() {
+      const label = select.options[select.selectedIndex].text;
+      const who = (select.labels[0] && select.labels[0].textContent.replace('Uloga za ', '')) || 'korisnika';
+      if (confirm('Promijeniti ulogu za ' + who + ' u „' + label + '"?')) {
+        select.form.submit();
+      } else {
+        select.value = previous;
+      }
+    });
+  });
+
+  // Zona za upload: imena izabranih fajlova i isticanje pri prevlačenju
+  document.querySelectorAll('.adm-drop').forEach(function(drop) {
+    const input = drop.querySelector('input[type=file]');
+    const out = drop.querySelector('.adm-drop-files');
+    if (!input) return;
+    input.addEventListener('change', function() {
+      const names = Array.from(input.files).map(function(f) { return f.name; });
+      if (out) out.textContent = names.length > 1 ? names.length + ' fajla: ' + names.join(', ') : names.join('');
+    });
+    ['dragenter', 'dragover'].forEach(function(ev) { drop.addEventListener(ev, function() { drop.classList.add('is-over'); }); });
+    ['dragleave', 'drop'].forEach(function(ev) { drop.addEventListener(ev, function() { drop.classList.remove('is-over'); }); });
+  });
 });

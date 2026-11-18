@@ -5,13 +5,13 @@ from extensions import db
 from models import Category, CategoryAttribute, AttributeOption
 from forms.product_forms import CategoryForm
 from utils import validate_image_upload, secure_filename_custom
-from . import admin_bp, admin_required
+from . import admin_bp, admin_required, category_rank_expr
 
 
 @admin_bp.route('/categories')
 @admin_required
 def categories():
-    categories = Category.query.filter_by(parent_id=None).order_by('name').all()
+    categories = Category.query.filter_by(parent_id=None).order_by(category_rank_expr(), Category.name).all()
     return render_template('admin/categories.html',
                            title='Upravljanje Kategorijama',
                            categories=categories)

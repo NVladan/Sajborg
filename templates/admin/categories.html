@@ -1,103 +1,85 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
-{% block title %}Upravljanje Kategorijama - Sajborg Shop Admin{% endblock %}
+{% block title %}Kategorije - Sajborg Shop Admin{% endblock %}
 
-{% macro render_category_row(category, level=0) %}
+{% macro category_row(category, level=0) %}
+    {% set n_products = category.products|length %}
     <tr>
-        <td style="padding-left: {{ 1 + level * 2.5 }}rem;">
-            <div class="d-flex align-items-center">
-                <img src="{{ url_for('static', filename=category.image_path if category.image_path else 'img/no-image.svg') }}" class="category-list-image" alt="Admin slika za kategoriju {{ category.name }}">
-                <div class="ms-3">
-                    <strong>{{ category.name }}</strong>
-                    {% if category.parent %}
-                        <small class="d-block text-muted">Podkategorija od: {{ category.parent.name }}</small>
-                    {% endif %}
+        <td>
+            <div class="adm-cell-product">
+                <span class="adm-tree-indent" style="--level: {{ level }}" aria-hidden="true"></span>
+                {% if level %}<i class="fas fa-turn-up fa-rotate-90 adm-tree-branch" aria-hidden="true"></i>{% endif %}
+                <span class="adm-thumb">
+                    {% if category.image_path %}<img src="{{ url_for('static', filename=category.image_path) }}" alt="" loading="lazy">
+                    {% else %}<i class="fas fa-folder" aria-hidden="true"></i>{% endif %}
+                </span>
+                <div class="min-w-0">
+                    <a href="{{ url_for('admin.edit_category', category_id=category.id) }}" class="adm-row-title">{{ category.name }}</a>
+                    <span class="adm-row-sub">/{{ category.slug }}{% if category.component_type %}, konfigurator: {{ category.component_type }}{% endif %}</span>
                 </div>
             </div>
         </td>
-        <td><code class="text-muted">{{ category.slug }}</code></td>
-        <td>{{ category.description | truncate(80) }}</td>
-        <td>
-            {% if category.is_featured %}
-                <span class="badge bg-success">Da</span>
-            {% else %}
-                <span class="badge bg-secondary">Ne</span>
-            {% endif %}
+        <td class="num" data-label="Proizvoda">
+            <a href="{{ url_for('admin.products', category_id=category.id, show_out_of_stock='true') }}" class="text-reset text-decoration-none fw-semibold">{{ n_products }}</a>
         </td>
-        <td>
-            <div class="btn-group">
-                <a href="{{ url_for('admin.edit_category', category_id=category.id) }}" class="btn btn-sm btn-outline-primary" title="Izmeni">
-                    <i class="fas fa-edit"></i> Izmeni
-                </a>
-                <a href="{{ url_for('admin.manage_attributes', category_id=category.id) }}" class="btn btn-sm btn-outline-info" title="Upravljaj Atributima">
-                    <i class="fas fa-list"></i> Atributi
-                </a>
-                <form action="{{ url_for('admin.delete_category', category_id=category.id) }}" method="POST" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Obriši" onclick="return confirm('Da li ste sigurni da želite da obrišete ovu kategoriju?');">
-                        <i class="fas fa-trash"></i> Obriši
+        <td data-label="Atributi">
+            <a href="{{ url_for('admin.manage_attributes', category_id=category.id) }}" class="adm-link">
+                {{ category.attributes|length }} {{ ui.plural(category.attributes|length, 'atribut', 'atributa', 'atributa') }}
+            </a>
+        </td>
+        <td class="shrink">
+            <div class="adm-row-actions">
+                <form action="{{ url_for('admin.toggle_featured_category', category_id=category.id) }}" method="POST">
+                    {{ ui.csrf() }}
+                    <button type="submit" class="adm-act{% if category.is_featured %} is-on{% endif %}"
+                            title="{{ 'Istaknuta na početnoj (klik uklanja)' if category.is_featured else 'Istakni na početnoj' }}"
+                            aria-pressed="{{ 'true' if category.is_featured else 'false' }}" aria-label="Istaknuta: {{ category.name }}">
+                        <i class="{{ 'fas' if category.is_featured else 'far' }} fa-star"></i>
                     </button>
                 </form>
-                <form action="{{ url_for('admin.toggle_featured_category', category_id=category.id) }}" method="POST" class="d-inline">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-sm btn-outline-info" title="Toggle Featured">
-                        <i class="fas fa-star"></i>
-                    </button>
+                <a href="{{ url_for('admin.edit_category', category_id=category.id) }}" class="adm-act" title="Izmijeni" aria-label="Izmijeni {{ category.name }}"><i class="fas fa-pen"></i></a>
+                <form action="{{ url_for('admin.delete_category', category_id=category.id) }}" method="POST"
+                      onsubmit="return confirm('Obrisati kategoriju „{{ category.name|replace("'", "\\'") }}“?{% if n_products %} Biće obrisano i {{ n_products }} proizvoda u njoj.{% endif %} Ovo se ne može poništiti.');">
+                    {{ ui.csrf() }}
+                    <button type="submit" class="adm-act is-danger" title="Obriši" aria-label="Obriši {{ category.name }}"><i class="fas fa-trash"></i></button>
                 </form>
             </div>
         </td>
     </tr>
-    {% if category.subcategories %}
-        {% for subcat in category.subcategories|sort(attribute='name') %}
-            {{ render_category_row(subcat, level + 1) }}
-        {% endfor %}
-    {% endif %}
+    {% for sub in category.subcategories|sort(attribute='name') %}
+        {{ category_row(sub, level + 1) }}
+    {% endfor %}
 {% endmacro %}
 
+{% block admin_content %}
+{% call ui.header('Kategorije', 'Struktura prodavnice. Istaknute kategorije (zvjezdica) prikazuju se na početnoj stranici.') %}
+    <a href="{{ url_for('admin.add_category') }}" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Nova kategorija</a>
+{% endcall %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Upravljanje Kategorijama</h1>
-        <div>
-            <a href="{{ url_for('admin.add_category') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Dodaj Kategoriju
-            </a>
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Nazad na Panel
-            </a>
-        </div>
+<section class="adm-panel">
+    {% if categories %}
+    <div class="adm-table-wrap">
+        <table class="adm-table is-stack">
+            <thead>
+                <tr>
+                    <th>Kategorija</th>
+                    <th class="num">Proizvoda</th>
+                    <th>Atributi</th>
+                    <th><span class="visually-hidden">Akcije</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                    {{ category_row(category) }}
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <div class="card">
-        <div class="card-body">
-            {% if categories %}
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th style="width: 30%;">Naziv</th>
-                                <th style="width: 20%;">Slug</th>
-                                <th style="width: 30%;">Opis</th>
-                                <th style="width: 10%;">Istaknuto</th>
-                                <th style="width: 10%;">Akcije</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for category in categories %}
-                            {{ render_category_row(category) }}
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-            <div class="text-center py-5">
-                <i class="fas fa-folder-open fa-3x mb-3 text-muted"></i>
-                <h3>Nema pronađenih kategorija.</h3>
-                <a href="{{ url_for('admin.add_category') }}" class="btn btn-primary mt-2">Dodaj prvu kategoriju</a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+    {% else %}
+    {% call ui.empty('fa-tags', 'Još nema kategorija', 'Kategorije grupišu proizvode u prodavnici i nose atribute za filtere.') %}
+        <a href="{{ url_for('admin.add_category') }}" class="btn btn-primary">Nova kategorija</a>
+    {% endcall %}
+    {% endif %}
+</section>
 {% endblock %}

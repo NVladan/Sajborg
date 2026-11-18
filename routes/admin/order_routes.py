@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import render_template, redirect, url_for, flash, request
 from sqlalchemy.orm import joinedload
 from extensions import db
@@ -12,11 +14,15 @@ def orders():
     status = request.args.get('status', '')
     search_query = request.args.get('q', '')
     sort_by = request.args.get('sort', 'created_desc')
+    archived = request.args.get('archived') == '1'
 
     # Eager load user data to avoid N+1 queries
     query = Order.query.join(User).options(joinedload(Order.user))
+    query = query.filter(Order.archived_at.isnot(None) if archived else Order.archived_at.is_(None))
 
-    if status:
+    if status == 'delivered':
+        query = query.filter(Order.status.in_(('delivered', 'dostavljeno')))
+    elif status:
         query = query.filter(Order.status == status)
 
     if search_query:
@@ -38,9 +44,18 @@ def orders():
     else:
         query = query.order_by(Order.created_at.desc())
 
-    orders_pagination = query.paginate(page=page, per_page=10, error_out=False)
+    orders_pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    status_counts = dict(db.session.query(Order.status, db.func.count(Order.id))
+                         .filter(Order.archived_at.is_(None))
+                         .group_by(Order.status).all())
+    status_counts['delivered'] = status_counts.get('delivered', 0) + status_counts.pop('dostavljeno', 0)
 
     return render_template('admin/orders.html',
+                           status_counts=status_counts,
+                           archived=archived,
+                           archived_count=Order.query.filter(Order.archived_at.isnot(None)).count(),
+                           total_count=sum(status_counts.values()),
                            title='Upravljanje Porudžbinama',
                            orders=orders_pagination,
                            status=status,
@@ -99,3 +114,24 @@ def update_order_status(order_id):
     else:
         flash('Došlo je do greške prilikom ažuriranja statusa.', 'danger')
     return redirect(url_for('admin.order_detail', order_id=order.id))
+
+
+@admin_bp.route('/orders/<int:order_id>/archive', methods=['POST'])
+@admin_required
+def archive_order(order_id):
+    """Arhivira završenu porudžbinu (ili je vraća iz arhive kad je archived=0)."""
+    order = Order.query.get_or_404(order_id)
+    back = request.form.get('next')
+    back = back if back and back.startswith('/admin/orders') and not back.startswith('//') else None
+
+    if request.form.get('archived', '1') == '0':
+        order.archived_at = None
+        db.session.commit()
+        flash(f'Porudžbina #{order.id} je vraćena iz arhive.', 'success')
+    elif not order.is_finished:
+        flash('Arhivirati se mogu samo dostavljene ili otkazane porudžbine.', 'warning')
+    else:
+        order.archived_at = datetime.utcnow()
+        db.session.commit()
+        flash(f'Porudžbina #{order.id} je arhivirana.', 'info')
+    return redirect(back or url_for('admin.order_detail', order_id=order.id))

@@ -1,0 +1,101 @@
+{% extends 'layout.html' %}
+
+{#
+  Ljuska admin panela: bočni meni umjesto navigacije i footera prodavnice.
+  Stranice nasljeđuju ovaj šablon i pune blok `admin_content`.
+#}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_ui.css', v=cache_buster) }}">
+{% block admin_css %}{% endblock %}
+{% endblock %}
+
+{% macro nav_link(endpoint, icon, label, active, count=None, count_tone='') -%}
+<a href="{{ url_for(endpoint) }}" class="adm-nav-link{% if active %} is-active{% endif %}"{% if active %} aria-current="page"{% endif %}>
+    <i class="fas {{ icon }}" aria-hidden="true"></i>
+    <span>{{ label }}</span>
+    {% if count %}<span class="adm-nav-count {{ count_tone }}">{{ count }}</span>{% endif %}
+</a>
+{%- endmacro %}
+
+{% block site_nav %}
+<header class="adm-topbar no-print">
+    <button class="adm-icon-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#adm-sidebar"
+            aria-controls="adm-sidebar" aria-label="Otvori meni">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+    <a href="{{ url_for('admin.dashboard') }}" class="adm-brand"><i class="fas fa-microchip" aria-hidden="true"></i> Sajborg admin</a>
+    {% if nav_pending_orders %}
+    <a href="{{ url_for('admin.orders', status='pending') }}" class="adm-topbar-pending" title="Porudžbine na čekanju">
+        <i class="fas fa-inbox" aria-hidden="true"></i> {{ nav_pending_orders }}
+    </a>
+    {% endif %}
+</header>
+{% endblock %}
+
+{% block main %}
+{% set ep = request.endpoint or '' %}
+<div class="adm">
+    <aside class="adm-sidebar offcanvas-lg offcanvas-start no-print" tabindex="-1" id="adm-sidebar" aria-label="Admin meni">
+        <div class="adm-sidebar-head">
+            <a href="{{ url_for('admin.dashboard') }}" class="adm-brand">
+                <span class="adm-brand-mark"><i class="fas fa-microchip" aria-hidden="true"></i></span>
+                <span>Sajborg <span class="adm-brand-sub">admin</span></span>
+            </a>
+            <button type="button" class="adm-icon-btn d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#adm-sidebar" aria-label="Zatvori meni">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <nav class="adm-nav">
+            <div class="adm-nav-group">
+                {{ nav_link('admin.dashboard', 'fa-gauge-high', 'Pregled', ep == 'admin.dashboard') }}
+                {{ nav_link('admin.orders', 'fa-receipt', 'Porudžbine', ep in ('admin.orders', 'admin.order_detail'), nav_pending_orders, 'is-alert') }}
+            </div>
+            <div class="adm-nav-group">
+                <p class="adm-nav-title">Katalog</p>
+                {{ nav_link('admin.products', 'fa-box', 'Proizvodi', ep in ('admin.products', 'admin.add_product', 'admin.edit_product')) }}
+                {{ nav_link('admin.categories', 'fa-tags', 'Kategorije', ep in ('admin.categories', 'admin.add_category', 'admin.edit_category', 'admin.manage_attributes', 'admin.manage_attribute_options')) }}
+            </div>
+            <div class="adm-nav-group">
+                <p class="adm-nav-title">Lager</p>
+                {{ nav_link('admin.lager_sync', 'fa-rotate', 'Lager ↔ Sajt', ep == 'admin.lager_sync') }}
+                {{ nav_link('lager.view_lager', 'fa-warehouse', 'Lager', false) }}
+            </div>
+            <div class="adm-nav-group">
+                <p class="adm-nav-title">Sadržaj i ljudi</p>
+                {{ nav_link('admin.posts', 'fa-newspaper', 'Tech Magazin', ep in ('admin.posts', 'admin.add_post', 'admin.edit_post')) }}
+                {{ nav_link('admin.users', 'fa-users', 'Korisnici', ep == 'admin.users') }}
+            </div>
+        </nav>
+
+        <div class="adm-sidebar-foot">
+            <a href="{{ url_for('main.index') }}" class="adm-nav-link" target="_blank" rel="noopener">
+                <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Otvori sajt</span>
+            </a>
+            <div class="adm-user">
+                <span class="adm-avatar" aria-hidden="true">{{ current_user.username[:1]|upper }}</span>
+                <span class="adm-user-name">{{ current_user.username }}</span>
+                <button type="button" class="adm-icon-btn theme-toggle" id="theme-toggle" aria-label="Promijeni temu (svijetla/tamna)">
+                    <i class="fas fa-moon icon-moon" aria-hidden="true"></i>
+                    <i class="fas fa-sun icon-sun" aria-hidden="true"></i>
+                </button>
+                <a href="{{ url_for('auth.logout') }}" class="adm-icon-btn" title="Odjavi se" aria-label="Odjavi se">
+                    <i class="fas fa-right-from-bracket" aria-hidden="true"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <main id="main-content" class="adm-main">
+        {% block admin_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}
+
+{% block site_footer %}{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js', v=cache_buster) }}"></script>
+{% block admin_js %}{% endblock %}
+{% endblock %}

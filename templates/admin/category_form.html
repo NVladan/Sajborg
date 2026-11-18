@@ -1,118 +1,78 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
-{% block title %}{% if is_edit %}Izmeni{% else %}Dodaj{% endif %} Kategoriju - Sajborg Shop Admin{% endblock %}
+{% block title %}{% if is_edit %}{{ category.name }}{% else %}Nova kategorija{% endif %} - Sajborg Shop Admin{% endblock %}
 
-{% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>{% if is_edit %}Izmeni{% else %}Dodaj Novu{% endif %} Kategoriju</h1>
-        <div>
-            <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Nazad na Kategorije
-            </a>
-        </div>
+{% block admin_content %}
+{% set form_action = url_for('admin.edit_category', category_id=category.id) if is_edit else url_for('admin.add_category') %}
+
+<header class="adm-head">
+    <div class="adm-head-text">
+        <a href="{{ url_for('admin.categories') }}" class="adm-back"><i class="fas fa-chevron-left" aria-hidden="true"></i> Kategorije</a>
+        <h1 class="adm-title">{{ category.name if is_edit else 'Nova kategorija' }}</h1>
     </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h3 class="mb-0">Informacije o Kategoriji</h3>
-        </div>
-        <div class="card-body">
-            <form method="POST" enctype="multipart/form-data" action="{% if is_edit %}{{ url_for('admin.edit_category', category_id=category.id) }}{% else %}{{ url_for('admin.add_category') }}{% endif %}">
-                {{ form.hidden_tag() }}
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        {{ form.name.label(class="form-label") }}
-                        {% if form.name.errors %}
-                            {{ form.name(class="form-control is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.name.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.name(class="form-control") }}
-                        {% endif %}
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        {{ form.slug.label(class="form-label") }}
-                        {% if form.slug.errors %}
-                            {{ form.slug(class="form-control is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.slug.errors %}
-                                    {{ error }}
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.slug(class="form-control") }}
-                        {% endif %}
-                        <div class="form-text">URL-prijateljski naziv (npr., "graficke-karte"). Automatski će se generisati iz naziva ako se ostavi prazno.</div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    {{ form.description.label(class="form-label") }}
-                    {% if form.description.errors %}
-                        {{ form.description(class="form-control is-invalid", rows=5) }}
-                        <div class="invalid-feedback">
-                            {% for error in form.description.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.description(class="form-control", rows=5) }}
-                    {% endif %}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.parent_id.label(class="form-label") }}
-                    {% if form.parent_id.errors %}
-                        {{ form.parent_id(class="form-select is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.parent_id.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.parent_id(class="form-select") }}
-                    {% endif %}
-                    <div class="form-text">Izaberite nadređenu kategoriju da biste ovu kategoriju učinili podkategorijom. Ostavite "None" za osnovnu kategoriju.</div>
-                </div>
-
-                <div class="mb-3">
-                    {{ form.component_type.label(class="form-label") }}
-                    {{ form.component_type(class="form-select") }}
-                    <div class="form-text">Ako ova kategorija pripada PC Konfiguratoru, izaberite odgovarajući tip (npr. CPU, GPU). U suprotnom, ostavite "N/A".</div>
-                </div>
-
-                <div class="mb-3">
-                    {{ form.image.label(class="form-label") }}
-                    {{ form.image(class="form-control") }}
-                    {% if is_edit and category and category.image_path %}
-                        <div class="mt-2">
-                            <label>Trenutna Slika:</label><br>
-                            <img src="{{ url_for('static', filename=category.image_path) }}" alt="Slika Kategorije" style="max-width: 200px; max-height: 120px; border: 1px solid #ccc;">
-                        </div>
-                    {% endif %}
-                </div>
-
-                <div class="mb-3 form-check">
-                    {{ form.is_featured(class="form-check-input") }}
-                    {{ form.is_featured.label(class="form-check-label") }}
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">Otkaži</a>
-                    {{ form.submit(class="btn btn-primary") }}
-                </div>
-            </form>
-        </div>
+    {% if is_edit %}
+    <div class="adm-head-actions">
+        <a href="{{ url_for('admin.manage_attributes', category_id=category.id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-list-check" aria-hidden="true"></i> Atributi
+        </a>
     </div>
+    {% endif %}
+</header>
+
+<div class="adm-form-grid">
+    <form method="POST" enctype="multipart/form-data" id="category-form" action="{{ form_action }}">
+        {{ form.hidden_tag() }}
+        <section class="adm-panel">
+            <div class="adm-section">
+                <h2 class="adm-section-title">Osnovno</h2>
+                <div class="adm-fields">
+                    {{ ui.field(form.name, 'Naziv', wrap='span-6') }}
+                    {{ ui.field(form.slug, 'Adresa (slug)', 'Dio linka, npr. graficke-karte. Popunjava se sam iz naziva.', wrap='span-6') }}
+                    {{ ui.field(form.description, 'Opis', 'Prikazuje se na stranici kategorije i u pretraživačima.', rows=4) }}
+                </div>
+            </div>
+            <div class="adm-section">
+                <h2 class="adm-section-title">Mjesto u prodavnici</h2>
+                <div class="adm-fields">
+                    {{ ui.field(form.parent_id, 'Nadređena kategorija', 'Ostavite prazno za glavnu kategoriju.', cls='form-select', wrap='span-6') }}
+                    {{ ui.field(form.component_type, 'Komponenta u PC konfiguratoru', 'Samo za kategorije koje se biraju u konfiguratoru (CPU, GPU…).', cls='form-select', wrap='span-6') }}
+                </div>
+            </div>
+        </section>
+    </form>
+
+    <aside class="adm-form-aside">
+        <section class="adm-panel">
+            <div class="adm-panel-body">
+                {{ ui.check(form.is_featured, 'Istaknuta kategorija', 'Prikazuje se na početnoj stranici.', form='category-form') }}
+                <div class="adm-actions-stack">
+                    <button type="submit" form="category-form" class="btn btn-primary">
+                        <i class="fas fa-check" aria-hidden="true"></i> {{ 'Sačuvaj izmjene' if is_edit else 'Napravi kategoriju' }}
+                    </button>
+                    <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">Odustani</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="adm-panel">
+            <div class="adm-panel-head"><h2 class="adm-panel-title">Slika</h2></div>
+            <div class="adm-panel-body">
+                {% if is_edit and category and category.image_path %}
+                <div class="adm-gallery-item mb-3" style="aspect-ratio: 16 / 9;">
+                    <img src="{{ url_for('static', filename=category.image_path) }}" alt="Trenutna slika kategorije">
+                </div>
+                {% endif %}
+                <label class="adm-drop">
+                    <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+                    <strong>{{ 'Zamijeni sliku' if (is_edit and category.image_path) else 'Dodaj sliku' }}</strong>
+                    <span>Prevucite fajl ovdje ili kliknite.</span>
+                    {{ form.image(form='category-form', accept='image/*', **{'aria-label': 'Slika kategorije'}) }}
+                    <span class="adm-drop-files" data-file-names></span>
+                </label>
+                {% for error in form.image.errors %}<p class="adm-error">{{ error }}</p>{% endfor %}
+            </div>
+        </section>
+    </aside>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

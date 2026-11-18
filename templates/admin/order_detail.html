@@ -1,546 +1,232 @@
-{% extends 'layout.html' %}
+{% extends 'admin/base.html' %}
+{% import 'admin/_ui.html' as ui %}
 
 {% block title %}Porudžbina #{{ order.id }} - Sajborg Shop Admin{% endblock %}
 
-{% block extra_css %}
+{% block admin_css %}
 <style>
-/* Print-specific styles */
+@media screen { .print-only { display: none !important; } }
 @media print {
-    /* Hide non-essential elements */
-    .navbar, footer, .footer,
-    #chat-widget-container,
-    .btn, button,
-    form,
-    .col-lg-4,
-    .d-flex.justify-content-between.align-items-center.mb-4 > div,
-    .badge,
-    .card-header h3::before,
-    a[href]::after {
-        display: none !important;
-    }
-
-    /* Reset page layout */
-    body {
-        background: white !important;
-        font-size: 12pt !important;
-        color: #000 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-
-    .main-content {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .container {
-        max-width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* Show print header */
-    .print-header {
-        display: block !important;
-        text-align: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #333;
-    }
-
-    .print-header h1 {
-        font-size: 24pt;
-        margin: 0;
-        color: #1a3a5c;
-    }
-
-    .print-header .company-info {
-        font-size: 10pt;
-        color: #666;
-        margin-top: 5px;
-    }
-
-    .print-header .invoice-title {
-        font-size: 18pt;
-        margin-top: 15px;
-        color: #333;
-    }
-
-    /* Order info layout */
-    .col-lg-8 {
-        width: 100% !important;
-        max-width: 100% !important;
-        flex: 0 0 100% !important;
-    }
-
-    .row {
-        display: block !important;
-    }
-
-    .col-md-6 {
-        width: 48% !important;
-        display: inline-block !important;
-        vertical-align: top !important;
-        margin-bottom: 15px;
-    }
-
-    /* Card styling for print */
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-        margin-bottom: 20px !important;
-        page-break-inside: avoid;
-    }
-
-    .card-header {
-        background: none !important;
-        border-bottom: 1px solid #ddd !important;
-        padding: 10px 0 !important;
-    }
-
-    .card-header h3 {
-        font-size: 14pt !important;
-        margin: 0 !important;
-        color: #333 !important;
-    }
-
-    .card-body {
-        padding: 15px 0 !important;
-    }
-
-    /* Table styling for print */
-    .table {
-        font-size: 10pt !important;
-        border-collapse: collapse !important;
-    }
-
-    .table th, .table td {
-        padding: 8px !important;
-        border: 1px solid #ddd !important;
-    }
-
-    .table thead th {
-        background-color: #f5f5f5 !important;
-        font-weight: bold !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-
-    .table tfoot th {
-        background-color: #f0f0f0 !important;
-        font-size: 11pt !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
-
-    /* Hide product images in print */
-    .table img {
-        display: none !important;
-    }
-
-    .table td:first-child {
-        display: none !important;
-    }
-
-    .table th:first-child {
-        display: none !important;
-    }
-
-    /* Links should not show URL */
-    a {
-        color: #000 !important;
-        text-decoration: none !important;
-    }
-
-    /* Address card */
-    .card .card-body address {
-        font-style: normal;
-        line-height: 1.6;
-    }
-
-    /* Warranty and status text for print */
-    .warranty-print,
-    .status-print {
-        display: inline !important;
-        font-weight: bold;
-    }
-
-    /* Print footer */
-    .print-footer {
-        display: block !important;
-        margin-top: 40px;
-        padding-top: 20px;
-        border-top: 1px solid #ddd;
-        text-align: center;
-        font-size: 9pt;
-        color: #666;
-    }
-
-    /* Page margins */
-    @page {
-        margin: 15mm;
-        size: A4;
-    }
-
-    /* Hide h1 title (we have print header) */
-    .container > .d-flex > h1 {
-        display: none !important;
-    }
-}
-
-/* Hide print elements on screen */
-@media screen {
-    .print-header,
-    .print-footer,
-    .warranty-print,
-    .status-print {
-        display: none;
-    }
+    body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+    .adm-head-actions, .adm-back, .adm-status { display: none !important; }
+    .adm-form-grid { display: block; }
+    .adm-panel { border: 0; margin: 0 0 14pt; break-inside: avoid; }
+    .adm-panel-head { padding: 0 0 4pt; border-bottom: 1px solid #999; }
+    .adm-panel-body { padding: 6pt 0; }
+    .adm-table th, .adm-table td { padding: 5pt 6pt; border-bottom: 1px solid #ccc; color: #000; }
+    .adm-table .adm-thumb { display: none; }
+    .adm-table a { color: #000; text-decoration: none; }
+    .print-header { text-align: center; margin-bottom: 18pt; padding-bottom: 10pt; border-bottom: 2px solid #333; }
+    .print-header h1 { font-size: 20pt; margin: 0; }
+    .print-header p { margin: 2pt 0 0; color: #555; font-size: 10pt; }
+    .print-footer { margin-top: 24pt; padding-top: 10pt; border-top: 1px solid #ccc; text-align: center; font-size: 9pt; color: #555; }
+    @page { margin: 15mm; size: A4; }
 }
 </style>
 {% endblock %}
 
-{% block content %}
-<!-- Print-only header -->
-<div class="print-header">
-    <h1><i class="fas fa-microchip"></i> Sajborg Shop</h1>
-    <div class="company-info">
-        PC Komponente i Gaming Oprema | www.sajborg.com
-    </div>
-    <div class="invoice-title">
-        FAKTURA / OTPREMNICA #{{ order.id }}
-    </div>
-    <div style="font-size: 10pt; margin-top: 5px;">
-        Datum: {{ order.created_at.strftime('%d.%m.%Y.') }}
-    </div>
+{% block admin_content %}
+{% set st = 'delivered' if order.status in ('delivered', 'dostavljeno', 'paid') else order.status %}
+{% set order_steps = [
+    ('pending', 'Primljena', order.created_at.strftime('%d.%m.%Y. u %H:%M')),
+    ('preparing', 'U pripremi', 'Provjera i pakovanje'),
+    ('shipped', 'Poslato', 'Predato kurirskoj službi'),
+    ('delivered', 'Dostavljeno', 'Kupac je preuzeo paket'),
+] %}
+{% set step_keys = order_steps|map(attribute=0)|list %}
+{% set current_index = step_keys.index(st) if st in step_keys else -1 %}
+{% set next_action = {
+    'pending':   ('preparing', 'Počni pripremu', 'fa-box-open'),
+    'preparing': ('shipped', 'Označi kao poslato', 'fa-truck-fast'),
+    'shipped':   ('delivered', 'Označi kao dostavljeno', 'fa-circle-check'),
+}.get(st) %}
+{% set payment_label = 'Kartica (Stripe)' if order.payment_method == 'stripe' else 'Plaćanje pouzećem' %}
+
+<div class="print-only print-header">
+    <h1>Sajborg Shop</h1>
+    <p>PC komponente i gaming oprema, www.sajborg.com</p>
+    <p><strong>Otpremnica #{{ order.id }}</strong>, {{ order.created_at.strftime('%d.%m.%Y.') }}</p>
 </div>
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Porudžbina #{{ order.id }}</h1>
-        <div>
-            <a href="{{ url_for('admin.orders') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Nazad na Porudžbine
-            </a>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h3 class="mb-0">Detalji Porudžbine</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Informacije o Porudžbini</h5>
-                            <table class="table">
-                                <tr>
-                                    <th style="width: 40%;">Datum Porudžbine:</th>
-                                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ukupan Iznos:</th>
-                                    <td>{{ order.total_amount|round(2) }} KM</td>
-                                </tr>
-                                <tr>
-                                    <th>Način Plaćanja:</th>
-                                    <td>{{ 'Kreditna Kartica (Stripe)' if order.payment_method == 'stripe' else 'Plaćanje pouzećem' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>ID Plaćanja:</th>
-                                    <td>{{ order.payment_id or 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Poslednje Ažuriranje:</th>
-                                    <td>{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Informacije o Kupcu</h5>
-                            <table class="table">
-                                <tr>
-                                    <th style="width: 40%;">Kupac:</th>
-                                    <td>{{ order.user.username }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Email:</th>
-                                    <td>{{ order.user.email }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Nalog Kreiran:</th>
-                                    <td>{{ order.user.created_at.strftime('%Y-%m-%d') }}</td>
-                                </tr>
-                                <tr>
-                                    <th>Ukupno Porudžbina:</th>
-                                    <td>{{ order.user.orders|length }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h5>Adresa za Dostavu</h5>
-                            <div class="card">
-                                <div class="card-body">
-                                    <address class="mb-0">
-                                        {{ order.full_shipping_address|nl2br }}
-                                    </address>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Status</h5>
-                            <div class="card">
-                                <div class="card-body">
-                                    <p class="mb-2">Trenutni Status:
-                                        {% if order.status == 'pending' %}
-                                            <span class="badge bg-warning">Na čekanju</span>
-                                            <span class="status-print">Na čekanju</span>
-                                        {% elif order.status == 'preparing' %}
-                                            <span class="badge bg-info">U pripremi</span>
-                                            <span class="status-print">U pripremi</span>
-                                        {% elif order.status == 'shipped' %}
-                                            <span class="badge bg-primary">Poslato</span>
-                                            <span class="status-print">Poslato</span>
-                                        {% elif order.status == 'delivered' or order.status == 'dostavljeno' %}
-                                            <span class="badge bg-success">Dostavljeno</span>
-                                            <span class="status-print">Dostavljeno</span>
-                                        {% elif order.status == 'cancelled' %}
-                                            <span class="badge bg-danger">Otkazano</span>
-                                            <span class="status-print">Otkazano</span>
-                                        {% elif order.status == 'paid' %}
-                                            <span class="badge bg-success">Plaćeno</span>
-                                            <span class="status-print">Plaćeno</span>
-                                        {% endif %}
-                                    </p>
-                                    <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <div class="input-group">
-                                            <select name="status" class="form-select">
-                                                <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Na čekanju</option>
-                                                <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>U pripremi</option>
-                                                <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Poslato</option>
-                                                <option value="delivered" {% if order.status == 'delivered' or order.status == 'dostavljeno' %}selected{% endif %}>Dostavljeno</option>
-                                                <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Otkazano</option>
-                                            </select>
-                                            <button class="btn btn-primary" type="submit">Ažuriraj Status</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">Stavke Porudžbine</h3>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th style="width: 70px;">Slika</th>
-                                    <th>Proizvod</th>
-                                    <th>Cena</th>
-                                    <th>Količina</th>
-                                    <th>Garancija</th>
-                                    <th class="text-end">Međuzbir</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for item in order_items %}
-                                <tr>
-                                    <td>
-                                        <img src="{{ url_for('static', filename=(item.product.images|selectattr('is_primary')|first).image_path if (item.product.images|selectattr('is_primary')|first) else (item.product.images|first).image_path if item.product.images else 'img/no-image.svg') }}"
-                                             alt="Slika stavke porudžbine: {{ item.product.name }}"
-                                             style="width: 50px; height: 50px; object-fit: contain;">
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('product.product_detail', slug=item.product.slug) }}" target="_blank">
-                                            {{ item.product.name }}
-                                        </a>
-                                        <div class="small text-muted">{{ item.product.category.name }}</div>
-                                    </td>
-                                    <td>{{ item.price|round(2) }} KM</td>
-                                    <td>{{ item.quantity }}</td>
-                                    <td>
-                                        {% if item.extended_warranty %}
-                                            <span class="badge bg-success"><i class="fas fa-shield-alt"></i> Produžena</span>
-                                            <span class="warranty-print">Produžena (+10%)</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary">Standardna</span>
-                                            <span class="warranty-print">Standardna</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-end">{{ (item.price * item.quantity)|round(2) }} KM</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <th colspan="5" class="text-end">Ukupno:</th>
-                                    <th class="text-end">{{ order.total_amount|round(2) }} KM</th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">Vremenska Linija Porudžbine</h3>
-                </div>
-                <div class="card-body">
-                    <ul class="list-group">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-bold">Porudžbina Kreirana</div>
-                                <small class="text-muted">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
-                            </div>
-                            <span class="badge bg-success rounded-pill">
-                                <i class="fas fa-check"></i>
-                            </span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-bold">Status Plaćanja</div>
-                                <small class="text-muted">
-                                    {% if order.payment_method == 'stripe' %}
-                                        Kreditna Kartica (Stripe)
-                                    {% else %}
-                                        Plaćanje pouzećem
-                                    {% endif %}
-                                </small>
-                            </div>
-                            <span class="badge {% if order.status in ['preparing', 'shipped', 'delivered', 'dostavljeno'] %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %} rounded-pill">
-                                {% if order.status in ['preparing', 'shipped', 'delivered', 'dostavljeno'] %}
-                                    <i class="fas fa-check"></i>
-                                {% elif order.status == 'cancelled' %}
-                                    <i class="fas fa-times"></i>
-                                {% else %}
-                                    <i class="fas fa-clock"></i>
-                                {% endif %}
-                            </span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-bold">Obrada Porudžbine</div>
-                                <small class="text-muted">Priprema Vaše porudžbine</small>
-                            </div>
-                            <span class="badge {% if order.status in ['shipped', 'delivered', 'dostavljeno'] %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% elif order.status == 'preparing' %}bg-warning{% else %}bg-secondary{% endif %} rounded-pill">
-                                {% if order.status in ['shipped', 'delivered', 'dostavljeno'] %}
-                                    <i class="fas fa-check"></i>
-                                {% elif order.status == 'cancelled' %}
-                                    <i class="fas fa-times"></i>
-                                {% elif order.status == 'preparing' %}
-                                    <i class="fas fa-clock"></i>
-                                {% else %}
-                                    <i class="fas fa-hourglass"></i>
-                                {% endif %}
-                            </span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-bold">Poslato</div>
-                                <small class="text-muted">Porudžbina poslata na dostavu</small>
-                            </div>
-                            <span class="badge {% if order.status in ['shipped', 'delivered', 'dostavljeno'] %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
-                                {% if order.status in ['shipped', 'delivered', 'dostavljeno'] %}
-                                    <i class="fas fa-check"></i>
-                                {% elif order.status == 'cancelled' %}
-                                    <i class="fas fa-times"></i>
-                                {% else %}
-                                    <i class="fas fa-hourglass"></i>
-                                {% endif %}
-                            </span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="fw-bold">Dostavljeno</div>
-                                <small class="text-muted">Porudžbina primljena od strane kupca</small>
-                            </div>
-                            <span class="badge {% if order.status in ['delivered', 'dostavljeno'] %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
-                                {% if order.status in ['delivered', 'dostavljeno'] %}
-                                    <i class="fas fa-check"></i>
-                                {% elif order.status == 'cancelled' %}
-                                    <i class="fas fa-times"></i>
-                                {% else %}
-                                    <i class="fas fa-hourglass"></i>
-                                {% endif %}
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h3 class="mb-0">Akcije</h3>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        {% if order.status != 'cancelled' %}
-                        <button type="button" class="btn btn-outline-danger"
-                                onclick="if(confirm('Da li ste sigurni da želite da otkažete ovu porudžbinu?')) { document.getElementById('cancel-form').submit(); }">
-                            <i class="fas fa-ban"></i> Otkaži Porudžbinu
-                        </button>
-                        <form id="cancel-form" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" style="display: none;">
-                            <input type="hidden" name="status" value="cancelled">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        </form>
-                        {% endif %}
-
-                        <button type="button" class="btn btn-outline-secondary" onclick="window.print();">
-                            <i class="fas fa-print"></i> Odštampaj Porudžbinu
-                        </button>
-
-                        {% if order.status in ['pending', 'preparing'] %}
-                        <button type="button" class="btn btn-outline-success"
-                                onclick="if(confirm('Označi ovu porudžbinu kao poslatu?')) { document.getElementById('ship-form').submit(); }">
-                            <i class="fas fa-shipping-fast"></i> Označi kao Poslato
-                        </button>
-                        <form id="ship-form" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" style="display: none;">
-                            <input type="hidden" name="status" value="shipped">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        </form>
-                        {% endif %}
-
-                        {% if order.status == 'shipped' %}
-                        <button type="button" class="btn btn-outline-primary"
-                                onclick="if(confirm('Označi ovu porudžbinu kao dostavljenu?')) { document.getElementById('deliver-form').submit(); }">
-                            <i class="fas fa-check-circle"></i> Označi kao Dostavljeno
-                        </button>
-                        <form id="deliver-form" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" style="display: none;">
-                            <input type="hidden" name="status" value="delivered">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        </form>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Print-only footer -->
-    <div class="print-footer">
-        <p><strong>Sajborg Shop</strong> - PC Komponente i Gaming Oprema</p>
-        <p>Hvala Vam na povjerenju! Za sva pitanja kontaktirajte nas putem www.sajborg.com</p>
-        <p style="margin-top: 10px;">
-            Način plaćanja: {{ 'Kreditna Kartica (Stripe)' if order.payment_method == 'stripe' else 'Plaćanje pouzećem' }}
+<header class="adm-head">
+    <div class="adm-head-text">
+        <a href="{{ url_for('admin.orders') }}" class="adm-back"><i class="fas fa-chevron-left" aria-hidden="true"></i> Porudžbine</a>
+        <h1 class="adm-title">Porudžbina #{{ order.id }}</h1>
+        <p class="adm-sub d-flex align-items-center gap-2 flex-wrap">
+            {{ ui.status(order.status) }}
+            {% if order.archived_at %}{{ ui.pill('Arhivirana ' ~ order.archived_at.strftime('%d.%m.%Y.')) }}{% endif %}
+            <span>{{ order.created_at.strftime('%d.%m.%Y. u %H:%M') }}, {{ payment_label|lower }}</span>
         </p>
     </div>
+    <div class="adm-head-actions">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="fas fa-print" aria-hidden="true"></i> Štampaj otpremnicu
+        </button>
+        {% if next_action %}
+        <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" class="m-0">
+            {{ ui.csrf() }}
+            <input type="hidden" name="status" value="{{ next_action[0] }}">
+            <button type="submit" class="btn btn-primary"><i class="fas {{ next_action[2] }}" aria-hidden="true"></i> {{ next_action[1] }}</button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+<div class="adm-form-grid">
+    <div>
+        <section class="adm-panel">
+            <div class="adm-panel-head">
+                <h2 class="adm-panel-title">Stavke</h2>
+                <span class="adm-panel-meta">{{ order_items|sum(attribute='quantity') }} kom.</span>
+            </div>
+            <div class="adm-table-wrap">
+                <table class="adm-table">
+                    <thead>
+                        <tr>
+                            <th>Proizvod</th>
+                            <th class="num">Cijena</th>
+                            <th class="num">Kol.</th>
+                            <th>Garancija</th>
+                            <th class="num">Ukupno</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order_items %}
+                        <tr>
+                            <td>
+                                <div class="adm-cell-product">
+                                    {{ ui.thumb(item.product) }}
+                                    <div>
+                                        <a href="{{ url_for('product.product_detail', slug=item.product.slug) }}" target="_blank" rel="noopener" class="adm-row-title">{{ item.product.name }}</a>
+                                        <span class="adm-row-sub">{{ item.product.category.name }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="num">{{ ui.km(item.price) }}</td>
+                            <td class="num">{{ item.quantity }}</td>
+                            <td>{{ ui.pill('Produžena', 'accent') if item.extended_warranty else 'Standardna' }}</td>
+                            <td class="num">{{ ui.km(item.subtotal) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        {% set items_total = order_items|sum(attribute='subtotal') %}
+                        {% if order.total_amount - items_total > 0.005 %}
+                        <tr>
+                            <td colspan="4" class="num text-body-secondary">Dostava i ostalo</td>
+                            <td class="num">{{ ui.km(order.total_amount - items_total) }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr class="adm-order-total">
+                            <td colspan="4" class="num">Ukupno za naplatu</td>
+                            <td class="num">{{ ui.km(order.total_amount) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+        <section class="adm-panel">
+            <div class="adm-panel-head"><h2 class="adm-panel-title">Dostava</h2></div>
+            <div class="adm-panel-body">
+                <dl class="adm-dl">
+                    <dt>Primalac</dt><dd>{{ order.shipping_first_name }} {{ order.shipping_last_name }}</dd>
+                    <dt>Adresa</dt><dd>{{ order.shipping_address }}<br>{{ order.shipping_postal_code }} {{ order.shipping_city }}, {{ order.shipping_country }}</dd>
+                    <dt>Telefon</dt><dd>{% if order.shipping_phone_number %}<a href="tel:{{ order.shipping_phone_number|replace(' ', '') }}">{{ order.shipping_phone_number }}</a>{% else %}—{% endif %}</dd>
+                    <dt>Plaćanje</dt><dd>{{ payment_label }}{% if order.payment_id %}<span class="adm-row-sub">ID: {{ order.payment_id }}</span>{% endif %}</dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+
+    <aside class="adm-form-aside">
+        <section class="adm-panel no-print">
+            <div class="adm-panel-head"><h2 class="adm-panel-title">Tok porudžbine</h2></div>
+            <ol class="adm-steps">
+                {% for key, title, sub in order_steps %}
+                {% if st == 'cancelled' %}
+                    {% set state = 'is-done' if loop.first else 'is-todo' %}
+                {% elif loop.index0 < current_index or (loop.index0 == current_index and loop.last) %}
+                    {% set state = 'is-done' %}
+                {% elif loop.index0 == current_index %}
+                    {% set state = 'is-current' %}
+                {% else %}
+                    {% set state = 'is-todo' %}
+                {% endif %}
+                <li class="{{ state }}">
+                    <span class="adm-step-dot">{% if state == 'is-done' %}<i class="fas fa-check" aria-hidden="true"></i>{% endif %}</span>
+                    <div>
+                        <div class="adm-step-title">{{ title }}</div>
+                        <div class="adm-step-sub">{{ sub }}</div>
+                    </div>
+                </li>
+                {% endfor %}
+                {% if st == 'cancelled' %}
+                <li class="is-cancelled">
+                    <span class="adm-step-dot"><i class="fas fa-xmark" aria-hidden="true"></i></span>
+                    <div>
+                        <div class="adm-step-title">Otkazano</div>
+                        <div class="adm-step-sub">{{ order.updated_at.strftime('%d.%m.%Y. u %H:%M') }}</div>
+                    </div>
+                </li>
+                {% endif %}
+            </ol>
+            <div class="adm-panel-foot">
+                <form action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" class="d-flex gap-2">
+                    {{ ui.csrf() }}
+                    <label for="status" class="visually-hidden">Status</label>
+                    <select name="status" id="status" class="form-select form-select-sm">
+                        <option value="pending" {% if st == 'pending' %}selected{% endif %}>Na čekanju</option>
+                        <option value="preparing" {% if st == 'preparing' %}selected{% endif %}>U pripremi</option>
+                        <option value="shipped" {% if st == 'shipped' %}selected{% endif %}>Poslato</option>
+                        <option value="delivered" {% if st == 'delivered' %}selected{% endif %}>Dostavljeno</option>
+                        <option value="cancelled" {% if st == 'cancelled' %}selected{% endif %}>Otkazano</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary text-nowrap" type="submit">Promijeni status</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="adm-panel">
+            <div class="adm-panel-head"><h2 class="adm-panel-title">Kupac</h2></div>
+            <div class="adm-panel-body">
+                <dl class="adm-dl">
+                    <dt>Nalog</dt><dd>{{ order.user.username }}</dd>
+                    <dt>Email</dt><dd><a href="mailto:{{ order.user.email }}">{{ order.user.email }}</a></dd>
+                    <dt>Kupac od</dt><dd>{{ order.user.created_at.strftime('%d.%m.%Y.') }}</dd>
+                    <dt>Porudžbina</dt><dd>{{ order.user.orders|length }} do sada</dd>
+                </dl>
+            </div>
+        </section>
+
+        {% if order.archived_at or order.is_finished %}
+        <form action="{{ url_for('admin.archive_order', order_id=order.id) }}" method="POST" class="no-print">
+            {{ ui.csrf() }}
+            <input type="hidden" name="archived" value="{{ '0' if order.archived_at else '1' }}">
+            {% if not order.archived_at %}<input type="hidden" name="next" value="{{ url_for('admin.orders') }}">{% endif %}
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="fas {{ 'fa-box-open' if order.archived_at else 'fa-box-archive' }}" aria-hidden="true"></i>
+                {{ 'Vrati iz arhive' if order.archived_at else 'Arhiviraj porudžbinu' }}
+            </button>
+            {% if not order.archived_at %}<p class="adm-help text-center">Sklanja je iz liste porudžbina. Možete je vratiti iz Arhive.</p>{% endif %}
+        </form>
+        {% endif %}
+
+        {% if st != 'cancelled' %}
+        <form id="cancel-form" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" method="POST" class="no-print text-center"
+              onsubmit="return confirm('Otkazati porudžbinu #{{ order.id }}?');">
+            {{ ui.csrf() }}
+            <input type="hidden" name="status" value="cancelled">
+            <button type="submit" class="btn btn-link text-danger text-decoration-none fw-semibold">
+                <i class="fas fa-ban" aria-hidden="true"></i> Otkaži porudžbinu
+            </button>
+        </form>
+        {% endif %}
+    </aside>
+</div>
+
+<div class="print-only print-footer">
+    <p><strong>Sajborg Shop</strong>, PC komponente i gaming oprema</p>
+    <p>Hvala na povjerenju! Za sva pitanja pišite nam preko www.sajborg.com</p>
 </div>
 {% endblock %}

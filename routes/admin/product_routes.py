@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, flash, request, current_ap
 from extensions import db
 from models import Product, Category, ProductImage, ProductAttributeValue, LagerProduct
 from forms.product_forms import ProductForm
-from . import admin_bp, admin_required, safe_products_next
+from . import admin_bp, admin_required, safe_products_next, category_rank_expr
 from .product_image_routes import save_product_images
 from .lager_sync_routes import prefill_product_form, DEFAULT_MARKUP
 import os
@@ -18,7 +18,7 @@ def products():
     show_out_of_stock = request.args.get('show_out_of_stock', 'false').lower() == 'true'
 
     # Query for categories to create tabs
-    categories = Category.query.order_by(Category.name.asc()).all()
+    categories = Category.query.order_by(category_rank_expr(), Category.name.asc()).all()
 
     # Base query for products
     query = Product.query
@@ -36,7 +36,7 @@ def products():
         query = query.filter(Product.stock > 0)
 
     # Sortiranje prvo po kategoriji, pa po imenu proizvoda
-    query = query.join(Category).order_by(Category.name.asc(), Product.name.asc())
+    query = query.join(Category).order_by(category_rank_expr(), Category.name.asc(), Product.name.asc())
     
     products_pagination = query.paginate(page=page, per_page=10, error_out=False)
 
@@ -162,7 +162,8 @@ def edit_product(product_id):
         product.description = form.description.data
         product.price = form.price.data
         product.stock = form.stock.data
-        product.specs = form.specs.data
+        if 'specs' in request.form:  # staro polje; forma ga više ne prikazuje (koriste se atributi)
+            product.specs = form.specs.data
         product.category_id = form.category_id.data
         product.component_type = category.component_type if category else None
         product.featured = form.featured.data

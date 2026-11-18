@@ -10,20 +10,29 @@ from . import admin_bp, admin_required
 def users():
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('q', '')
+    role = request.args.get('role', '')
+    sort_by = request.args.get('sort', 'username_asc')
 
     query = User.query
+    if role:
+        query = query.filter(User.role == role)
     if search_query:
         query = query.filter(
             (User.username.ilike(f'%{search_query}%')) |
             (User.email.ilike(f'%{search_query}%'))
         )
 
-    users_pagination = query.order_by(User.username.asc()).paginate(page=page, per_page=10, error_out=False)
+    order = User.created_at.desc() if sort_by == 'created_desc' else User.username.asc()
+    users_pagination = query.order_by(order).paginate(page=page, per_page=20, error_out=False)
+    role_counts = dict(db.session.query(User.role, db.func.count(User.id)).group_by(User.role).all())
 
     return render_template('admin/users.html',
                            title='Upravljanje Korisnicima',
                            users=users_pagination,
-                           search_query=search_query)
+                           search_query=search_query,
+                           role=role,
+                           sort_by=sort_by,
+                           role_counts=role_counts)
 
 
 @admin_bp.route('/users/update_role/<int:user_id>', methods=['POST'])
