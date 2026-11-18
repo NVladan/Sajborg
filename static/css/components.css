@@ -575,169 +575,51 @@
   }
 }
 
-/* Cookie Consent Banner */
+/* Cookie Consent Banner: mali, u donjem lijevom uglu, ne prekriva sadržaj */
 .cc-banner {
   position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(140%);
-  z-index: 10000;
-  width: calc(100% - 2rem);
-  max-width: 820px;
-  border-radius: var(--radius, 16px);
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 400px;
+  padding: 0.55rem 0.55rem 0.55rem 1rem;
+  border-radius: 12px;
+  background: var(--surface);
   border: 1px solid var(--border);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  box-shadow: var(--shadow-md);
   opacity: 0;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
-  pointer-events: none;
+  transform: translateY(8px);
+  visibility: hidden;
+  transition: opacity .2s ease, transform .2s ease, visibility 0s linear .2s;
 }
-
-.cc-banner.cc-visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.cc-banner.cc-hiding {
-  transform: translateX(-50%) translateY(140%);
-  opacity: 0;
-  transition: transform 0.35s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.25s ease;
-}
-
-.cc-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  background-size: 200% 100%;
-  animation: cc-glow-shift 3s ease-in-out infinite;
-}
-
-@keyframes cc-glow-shift {
-  0%, 100% { background-position: 0% 0; }
-  50% { background-position: 100% 0; }
-}
-
-.cc-inner {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 1.25rem 1.75rem;
-}
-
-.cc-icon-wrap {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent) 0%, #5B7CF0 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--on-accent);
-  font-size: 1.3rem;
-  box-shadow: var(--shadow-accent);
-}
-
-.cc-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.cc-heading {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary, #2C3E50);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.01em;
-}
-
-.cc-desc {
-  margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.55;
-  color: var(--text-secondary, #7F8C9A);
-}
-
-.cc-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.35rem;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--accent-blue, #4A90E2);
-  text-decoration: none;
-  transition: gap 0.2s ease;
-}
-
-.cc-link:hover {
-  gap: 0.55rem;
-  color: var(--accent-blue, #4A90E2);
-}
-
+.cc-banner.cc-visible { opacity: 1; transform: none; visibility: visible; transition: opacity .2s ease, transform .2s ease; }
+.cc-banner.cc-hiding { opacity: 0; transform: translateY(8px); visibility: hidden; }
+.cc-text { margin: 0; font-size: 0.84rem; line-height: 1.4; color: var(--ink-muted); }
+.cc-text a { color: var(--accent); font-weight: 600; }
 .cc-accept {
-  flex-shrink: 0;
-  padding: 0.65rem 1.75rem;
-  border: none;
-  border-radius: var(--radius-sm, 12px);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.88rem;
+  flex: none;
+  padding: 0.4rem 0.9rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ink-strong);
+  color: var(--surface);
+  font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--shadow-xs);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-  letter-spacing: 0.02em;
 }
-
-.cc-accept:hover {
-  transform: translateY(-2px);
-  background: var(--accent-hover);
-  box-shadow: var(--shadow-accent);
-}
-
-.cc-accept:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
-}
+.cc-accept:hover { background: var(--accent); color: var(--on-accent); }
+.cc-accept:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
 
 @media (max-width: 640px) {
-  .cc-banner {
-    bottom: 1rem;
-    width: calc(100% - 1.5rem);
-    border-radius: var(--border-radius-sm, 12px);
-  }
-
-  .cc-inner {
-    flex-wrap: wrap;
-    padding: 1.1rem 1.25rem;
-    gap: 1rem;
-  }
-
-  .cc-icon-wrap {
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    font-size: 1.1rem;
-  }
-
-  .cc-body {
-    flex: 1 1 calc(100% - 56px);
-  }
-
-  .cc-accept {
-    width: 100%;
-    padding: 0.75rem;
-    border-radius: var(--border-radius-sm, 12px);
-  }
+  /* Lijevo od dugmeta za chat, da ga ne pokriva */
+  .cc-banner { left: 0.75rem; right: 5.25rem; bottom: 0.75rem; max-width: none; padding-left: 0.85rem; }
+  .cc-text { font-size: 0.8rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cc-banner, .cc-banner.cc-visible { transition: none; }
 }
 /* ---------- Kratka obavještenja (toast) za uspjeh/informaciju ---------- */
 .flash-toasts {

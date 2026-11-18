@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const cookieBanner = document.getElementById('cookie-consent-banner');
   const cookieAcceptBtn = document.getElementById('cookie-accept-btn');
   if (cookieBanner && !localStorage.getItem('cookieConsent')) {
-    setTimeout(function() { cookieBanner.classList.add('cc-visible'); }, 800);
+    setTimeout(function() { cookieBanner.classList.add('cc-visible'); }, 1500);
   }
   if (cookieAcceptBtn) {
     cookieAcceptBtn.addEventListener('click', function() {
