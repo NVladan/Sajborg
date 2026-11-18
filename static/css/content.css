@@ -54,6 +54,12 @@
 .ct-body h2 { font-size: 1.6rem; margin-top: 2.25rem; }
 .ct-body h3 { font-size: 1.3rem; margin-top: 1.75rem; }
 .ct-body img { display: block; }
+/* Tabele u člancima */
+.ct-body table { width: 100%; margin: 1.5rem 0 1.75rem; border-collapse: collapse; font-size: 0.95rem; line-height: 1.45; }
+.ct-body th, .ct-body td { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.ct-body thead th { font-family: var(--font-display); font-weight: 700; color: var(--ink-strong); border-bottom: 2px solid var(--border-strong); }
+.ct-body tbody td:first-child { color: var(--ink-muted); font-weight: 600; }
+.ct-body tbody tr:last-child td { border-bottom: 0; background: var(--surface-2); color: var(--ink-strong); }
 .ct-cta {
     display: flex;
     gap: 1rem 1.5rem;
@@ -144,6 +150,8 @@ a.ct-service:hover { border-color: var(--accent); color: var(--ink); }
 @media (max-width: 640px) {
     .ct-services { grid-template-columns: minmax(0, 1fr); }
     .ct-body { font-size: 1.02rem; }
+    .ct-body table { font-size: 0.86rem; }
+    .ct-body th, .ct-body td { padding: 0.55rem 0.45rem; }
     .ct-cta .btn { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
