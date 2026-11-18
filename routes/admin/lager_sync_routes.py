@@ -194,7 +194,6 @@ def lager_sync():
     # Nepovezana roba sa lagera, samo iz glavnih kategorija koje već imaju bar jedan povezan artikal
     relevant_main_ids = {main_category(p.lager_product.category).id for p in linked}
     unpublished = {}
-    ignored = []
     for item in lager_items:
         if (item.stock or 0) <= 0 or item.id in linked_lager_ids:
             continue
@@ -202,7 +201,6 @@ def lager_sync():
         if relevant_main_ids and main.id not in relevant_main_ids:
             continue
         if item.sync_ignored:
-            ignored.append(item)
             continue
         unpublished.setdefault(main.name, []).append({
             'item': item,
@@ -218,7 +216,6 @@ def lager_sync():
                            in_sync=in_sync,
                            unlinked_rows=unlinked_rows,
                            unpublished=unpublished,
-                           ignored=ignored,
                            filtered_by_links=bool(relevant_main_ids),
                            lager_items=linkable_items,
                            lager_label=lager_label)
@@ -281,15 +278,12 @@ def lager_sync_link(product_id):
 @admin_bp.route('/lager-sync/ignore/<int:lager_id>', methods=['POST'])
 @admin_required
 def lager_sync_ignore(lager_id):
-    """Trajno skriva (ili vraća) artikal sa lagera na tabu "Za objaviti"."""
+    """Trajno skriva artikal sa lagera na tabu "Za objaviti"."""
     markup = _parse_markup(request.form.get('markup'))
     item = LagerProduct.query.get_or_404(lager_id)
-    item.sync_ignored = request.form.get('ignored', '1') == '1'
+    item.sync_ignored = True
     db.session.commit()
-    if item.sync_ignored:
-        flash(f'Ignorisano: {item.name}', 'info')
-    else:
-        flash(f'Vraćeno u listu za objavu: {item.name}', 'success')
+    flash(f'Ignorisano: {item.name}', 'info')
     return _back(markup)
 
 

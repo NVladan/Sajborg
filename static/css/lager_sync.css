@@ -250,18 +250,6 @@
 .ls-link-btn:focus-visible,
 .ls-unlink:focus-visible { outline: 2px solid var(--accent-ring); }
 
-/* ---------- Ignorisano ---------- */
-.ls-ignored { margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 0.75rem; }
-.ls-ignored summary {
-    cursor: pointer;
-    color: var(--ink-muted);
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0 0.75rem;
-}
-.ls-ignored summary .ls-group-count { color: var(--ink-faint); margin-left: 0.35rem; }
-.ls-ignored .ls-name-text { color: var(--ink-muted); }
-
 /* ---------- Povezivanje ---------- */
 .ls-link-form { display: flex; gap: 0.5rem; min-width: 0; }
 .ls-link-form input { min-width: 0; }
