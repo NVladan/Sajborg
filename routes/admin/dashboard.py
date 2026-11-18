@@ -98,6 +98,7 @@ def dashboard():
                            revenue_days=REVENUE_DAYS,
                            attention=attention,
                            recent_orders=recent_orders,
+                           archived_orders=Order.query.filter(Order.archived_at.isnot(None)).count(),
                            total_products=Product.query.filter_by(is_publicly_visible=True).count(),
                            total_users=User.query.count(),
                            total_posts=Post.query.count())

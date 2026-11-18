@@ -813,14 +813,29 @@ code.adm-k { background: var(--surface-2); color: var(--ink); padding: 0.1rem 0.
     /* Tabela postaje lista kartica */
     .adm-table.is-stack thead { display: none; }
     .adm-table.is-stack, .adm-table.is-stack tbody, .adm-table.is-stack tr, .adm-table.is-stack td { display: block; width: 100%; }
-    .adm-table.is-stack tr { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+    /* Kompaktna kartica: naslov preko cijele širine, vrijednosti u jednom redu, akcije desno */
+    .adm-table.is-stack tr {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem 1.1rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--border);
+    }
     .adm-table.is-stack tbody tr:last-child { border-bottom: 0; }
-    .adm-table.is-stack td { border: 0; padding: 0.2rem 0; text-align: left; }
-    .adm-table.is-stack td[data-label] { display: flex; justify-content: space-between; gap: 1rem; }
-    .adm-table.is-stack td[data-label]::before { content: attr(data-label); color: var(--ink-faint); font-size: 0.85rem; }
-    .adm-table.is-stack td.num { text-align: right; }
-    .adm-table.is-stack .adm-row-actions { justify-content: flex-start; margin-top: 0.35rem; }
-    .adm-table.is-stack td.shrink { width: 100%; }
+    .adm-table.is-stack td { border: 0; padding: 0; text-align: left; width: auto; }
+    .adm-table.is-stack td:not([data-label]):not(.shrink) { flex: 1 1 100%; min-width: 0; }
+    .adm-table.is-stack td.shrink:first-child + td:not([data-label]) { flex-basis: calc(100% - 4.5rem); }
+    .adm-table.is-stack td[data-label] { display: inline-flex; align-items: baseline; gap: 0.35rem; font-size: 0.9rem; }
+    .adm-table.is-stack td[data-label]::before { content: attr(data-label); color: var(--ink-faint); font-size: 0.8rem; }
+    .adm-table.is-stack td.num { text-align: left; }
+    .adm-table.is-stack td.shrink { width: auto; }
+    .adm-table.is-stack td.shrink:last-child { margin-left: auto; }
+    .adm-table.is-stack .adm-row-actions { justify-content: flex-end; }
+    .adm-table.is-stack tfoot { display: block; }
+    .adm-table.is-stack tfoot tr { display: flex; justify-content: space-between; align-items: baseline; padding: 0.6rem 1rem; border-top: 1px solid var(--border); }
+    .adm-table.is-stack tfoot td, .adm-table.is-stack tfoot td:not([data-label]):not(.shrink) { border: 0; padding: 0; flex: 0 1 auto; }
+    .adm-table.is-stack .adm-cell-product .adm-thumb { width: 40px; height: 40px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -835,3 +850,25 @@ code.adm-k { background: var(--surface-2); color: var(--ink); padding: 0.1rem 0.
 .adm .ls-title { font-size: clamp(1.55rem, 2.4vw, 1.95rem); margin-bottom: 0.25rem; }
 .adm-rev-total .adm-money, .adm-order-total .adm-money { font-variant-numeric: normal; }
 .adm-seg-sep { flex: none; width: 1px; margin: 0.25rem 0.35rem; background: var(--border-strong); }
+body:has(.adm-sidebar.show) #chat-widget-container, body:has(.adm-sidebar.showing) #chat-widget-container { display: none; }
+
+/* Traka za čuvanje na dnu ekrana (telefon/tablet) */
+.adm-savebar { display: none; }
+@media (max-width: 991.98px) {
+    .adm-savebar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom));
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: 0 -8px 24px -12px rgba(16, 24, 40, .25);
+    }
+    .adm-savebar .btn-primary { flex: 1; }
+    body:has(.adm-savebar) .adm-main { padding-bottom: 6rem; }
+    body:has(.adm-savebar) #chat-widget-container { bottom: 84px; }
+}

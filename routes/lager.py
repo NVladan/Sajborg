@@ -34,6 +34,10 @@ def role_required(*roles):
     return wrapper
 
 
+def _lager_url(**kwargs):
+    return url_for('lager.view_lager', **kwargs)
+
+
 # Definisanje uloga u obe varijante (mala i velika slova) radi rešavanja problema sa osetljivošću na velika slova
 FULL_ACCESS_ROLES = ('admin', 'dobavljac', 'Admin', 'Dobavljač')
 VIEW_ACCESS_ROLES = ('admin', 'dobavljac', 'distributer', 'Admin', 'Dobavljač', 'Distributer')
@@ -43,101 +47,60 @@ VIEW_ACCESS_ROLES = ('admin', 'dobavljac', 'distributer', 'Admin', 'Dobavljač',
 @login_required
 @role_required(*VIEW_ACCESS_ROLES)
 def view_lager():
-    # NOVO: Dohvatanje aktivnog taba iz query parametra
-    active_tab = request.args.get('active_tab', 'Vrednost_Lagera')  # Vrednost_Lagera je default
+    """Lager: sve kategorije na jednoj stranici, pretraga i filteri u pregledaču."""
+    role = current_user.role.lower()
+    can_edit = role in ('admin', 'dobavljac', 'dobavljač')
+    is_distributer = role == 'distributer'
 
-    # NOVO: Dohvatanje filtera za nulte zalihe i pretrage
-    show_zero_stock = request.args.get('show_zero', 'false').lower() == 'true'
-    search_query = request.args.get('search', '').strip().lower()
+    main_categories = (LagerCategory.query.filter(LagerCategory.parent_id.is_(None))
+                       .order_by(LagerCategory.sort_order).all())
+    products_by_cat = {}
+    for p in LagerProduct.query.order_by(LagerProduct.name).all():
+        if is_distributer and (p.stock or 0) <= 0:
+            continue  # distributer nikad ne vidi artikle bez stanja
+        products_by_cat.setdefault(p.category_id, []).append(p)
 
-    main_categories = LagerCategory.query.filter(LagerCategory.parent_id.is_(None)).order_by(
-        LagerCategory.sort_order).all()
+    categories = []
+    for cat in main_categories:
+        groups = []
+        for sub in sorted(cat.subcategories, key=lambda s: (s.sort_order, s.name.lower())):
+            groups.append({'name': sub.name, 'subcategory': sub.name, 'products': products_by_cat.get(sub.id, [])})
+        direct = products_by_cat.get(cat.id, [])
+        if direct:
+            groups.append({'name': 'Ostalo' if groups else cat.name, 'subcategory': '', 'products': direct})
+        items = [p for g in groups for p in g['products']]
+        in_stock = [p for p in items if (p.stock or 0) > 0]
+        categories.append({
+            'name': cat.name,
+            'slug': cat.name.replace(' ', '_').replace('/', '_'),
+            'groups': groups,
+            'subcategories': [s.name for s in sorted(cat.subcategories, key=lambda s: s.sort_order)],
+            'in_stock': len(in_stock),
+            'pieces': sum(p.stock or 0 for p in in_stock),
+            'value': sum((p.purchase_price or 0) * (p.stock or 0) for p in in_stock),
+        })
 
-    lager_data = {}
-    stock_values = {'grand_total': 0, 'categories': {}}
-    all_categories_for_js = {cat.name: [sub.name for sub in sorted(cat.subcategories, key=lambda s: s.sort_order)] for
-                             cat in main_categories}
-
-    all_products = LagerProduct.query.order_by(LagerProduct.name).all()
-    products_by_cat_id = {}
-    for p in all_products:
-        cat_id = p.category_id
-        if cat_id not in products_by_cat_id:
-            products_by_cat_id[cat_id] = []
-        products_by_cat_id[cat_id].append(p)
-
-    for category in main_categories:
-        current_main_category_data = {}
-        category_total_value = 0
-
-        child_categories = sorted(category.subcategories, key=lambda s: s.sort_order)
-        for subcat in child_categories:
-            products_in_subcat = products_by_cat_id.get(subcat.id, [])
-
-            # NOVO: Primena filtera za nulte zalihe i pretragu
-            if current_user.role.lower() == 'distributer':
-                products_in_subcat = [p for p in products_in_subcat if p.stock > 0]
-            elif not show_zero_stock:
-                products_in_subcat = [p for p in products_in_subcat if p.stock > 0]
-
-            # NOVO: Primena pretrage
-            if search_query:
-                products_in_subcat = [p for p in products_in_subcat if search_query in p.name.lower()]
-
-            if products_in_subcat:
-                current_main_category_data[subcat.name] = products_in_subcat
-                for p in products_in_subcat:
-                    category_total_value += (p.purchase_price or 0) * (p.stock or 0)
-
-        products_in_main = products_by_cat_id.get(category.id, [])
-
-        # NOVO: Primena filtera za nulte zalihe i pretragu
-        if current_user.role.lower() == 'distributer':
-            products_in_main = [p for p in products_in_main if p.stock > 0]
-        elif not show_zero_stock:
-            products_in_main = [p for p in products_in_main if p.stock > 0]
-
-        # NOVO: Primena pretrage
-        if search_query:
-            products_in_main = [p for p in products_in_main if search_query in p.name.lower()]
-
-        if products_in_main:
-            current_main_category_data[category.name] = products_in_main
-            for p in products_in_main:
-                category_total_value += (p.purchase_price or 0) * (p.stock or 0)
-
-        # --- KLJUČNA IZMJENA ---
-        # Uvijek dodajemo glavnu kategoriju u podatke za prikaz, čak i ako je prazna.
-        # Templejt će se pobrinuti za prikaz praznog taba sa dugmićima za dodavanje.
-        lager_data[category.name] = current_main_category_data
-
-        # Vrijednost zaliha dodajemo samo ako zaista postoji.
-        if category_total_value > 0:
-            stock_values['categories'][category.name] = category_total_value
-            stock_values['grand_total'] += category_total_value
-
-    # --- NOVI DIO ---
-    # Dobavi ID-jeve 10 posljednje ažuriranih artikala (bilo dodavanje ili izmjena)
-    try:
-        recent_items_query = db.session.query(LagerProduct.id).order_by(LagerProduct.updated_at.desc()).limit(10).all()
-        # Kreiraj set ID-jeva za brzu provjeru u template-u
-        recent_item_ids = {item[0] for item in recent_items_query}
-    except Exception as e:
-        print(f"Greška prilikom dobavljanja nedavnih artikala: {e}")
-        recent_item_ids = set()  # U slučaju greške, proslijedi prazan set
-    # --- KRAJ NOVOG DIJELA ---
+    recent = (LagerProduct.query.order_by(LagerProduct.updated_at.desc()).limit(10).all())
+    if is_distributer:
+        recent = [p for p in recent if (p.stock or 0) > 0]
 
     return render_template('lager.html',
-                           title='Interaktivni Lager',
-                           data=lager_data,
-                           stock_values=stock_values,
-                           current_user_role=current_user.role,
-                           lager_category_data_for_js=all_categories_for_js,
-                           active_tab=active_tab,
-                           recent_item_ids=recent_item_ids,
-                           show_zero_stock=show_zero_stock,  # NOVO: Prosleđivanje stanja filtera
-                           search_query=search_query)  # NOVO: Prosleđivanje pretrage
+                           title='Lager',
+                           categories=categories,
+                           grand_total=sum(c['value'] for c in categories),
+                           recent_ids=[p.id for p in recent],
+                           can_edit=can_edit,
+                           is_distributer=is_distributer,
+                           active_tab=request.args.get('active_tab', ''),
+                           search_query=request.args.get('search', ''))
 
+
+
+@lager_bp.route('/v2')
+@login_required
+def view_lager_v2_redirect():
+    """Privremena adresa nove verzije; stari linkovi vode na /lager/."""
+    return redirect(url_for('lager.view_lager', **request.args))
 
 # --- Ostatak fajla ostaje nepromijenjen, osim rute update_details, add_product i add_subcategory ---
 
@@ -215,8 +178,8 @@ def update_details(product_id):
             flash('Neispravan format za količinu ili cijenu.', 'danger')
             # NOVO: Redirekcija na isti tab u slučaju greške
             if active_tab_slug:
-                return redirect(url_for('lager.view_lager', active_tab=active_tab_slug))
-            return redirect(url_for('lager.view_lager'))
+                return redirect(_lager_url(active_tab=active_tab_slug))
+            return redirect(_lager_url())
 
     try:
         db.session.commit()
@@ -227,9 +190,9 @@ def update_details(product_id):
 
     # NOVO: Redirekcija na isti tab
     if active_tab_slug:
-        return redirect(url_for('lager.view_lager', active_tab=active_tab_slug))
+        return redirect(_lager_url(active_tab=active_tab_slug))
 
-    return redirect(url_for('lager.view_lager'))
+    return redirect(_lager_url())
 
 
 @lager_bp.route('/add_product', methods=['POST'])
@@ -249,8 +212,8 @@ def add_product():
             # NOVO: Redirekcija na isti tab u slučaju greške
             if category_name_for_redirect:
                 tab_slug = category_name_for_redirect.replace(' ', '_').replace('/', '_')
-                return redirect(url_for('lager.view_lager', active_tab=tab_slug))
-            return redirect(url_for('lager.view_lager'))
+                return redirect(_lager_url(active_tab=tab_slug))
+            return redirect(_lager_url())
 
         category = None
         if subcategory_name:
@@ -259,24 +222,24 @@ def add_product():
                 flash(f'Glavna kategorija "{category_name}" nije pronađena.', 'danger')
                 if category_name_for_redirect:
                     tab_slug = category_name_for_redirect.replace(' ', '_').replace('/', '_')
-                    return redirect(url_for('lager.view_lager', active_tab=tab_slug))
-                return redirect(url_for('lager.view_lager'))
+                    return redirect(_lager_url(active_tab=tab_slug))
+                return redirect(_lager_url())
 
             category = LagerCategory.query.filter_by(name=subcategory_name, parent_id=parent_category.id).first()
             if not category:
                 flash(f'Podkategorija "{subcategory_name}" unutar "{category_name}" nije pronađena.', 'danger')
                 if category_name_for_redirect:
                     tab_slug = category_name_for_redirect.replace(' ', '_').replace('/', '_')
-                    return redirect(url_for('lager.view_lager', active_tab=tab_slug))
-                return redirect(url_for('lager.view_lager'))
+                    return redirect(_lager_url(active_tab=tab_slug))
+                return redirect(_lager_url())
         else:
             category = LagerCategory.query.filter_by(name=category_name).first()
             if not category:
                 flash(f'Kategorija "{category_name}" nije pronađena.', 'danger')
                 if category_name_for_redirect:
                     tab_slug = category_name_for_redirect.replace(' ', '_').replace('/', '_')
-                    return redirect(url_for('lager.view_lager', active_tab=tab_slug))
-                return redirect(url_for('lager.view_lager'))
+                    return redirect(_lager_url(active_tab=tab_slug))
+                return redirect(_lager_url())
 
         stock = int(request.form.get('stock', 0))
         purchase_price_str = request.form.get('purchase_price', '0').replace(',', '.')
@@ -308,9 +271,9 @@ def add_product():
     # NOVO: Redirekcija na isti tab
     if category_name_for_redirect:
         tab_slug = category_name_for_redirect.replace(' ', '_').replace('/', '_')
-        return redirect(url_for('lager.view_lager', active_tab=tab_slug))
+        return redirect(_lager_url(active_tab=tab_slug))
 
-    return redirect(url_for('lager.view_lager'))
+    return redirect(_lager_url())
 
 
 @lager_bp.route('/add_subcategory', methods=['POST'])
@@ -324,18 +287,18 @@ def add_subcategory():
     if not subcategory_name or not parent_category_name:
         flash('Naziv podkategorije je obavezan.', 'danger')
         # NOVO: Redirekcija na isti tab u slučaju greške
-        return redirect(url_for('lager.view_lager', active_tab=parent_category_slug))
+        return redirect(_lager_url(active_tab=parent_category_slug))
 
     parent_category = LagerCategory.query.filter_by(name=parent_category_name).first()
     if not parent_category:
         flash(f'Glavna kategorija "{parent_category_name}" nije pronađena.', 'danger')
-        return redirect(url_for('lager.view_lager', active_tab=parent_category_slug))
+        return redirect(_lager_url(active_tab=parent_category_slug))
 
     # Provjera da li podkategorija sa tim imenom vec postoji pod istim roditeljem
     existing_category = LagerCategory.query.filter_by(name=subcategory_name, parent_id=parent_category.id).first()
     if existing_category:
         flash(f'Podkategorija "{subcategory_name}" već postoji u "{parent_category.name}".', 'warning')
-        return redirect(url_for('lager.view_lager', active_tab=parent_category_slug))
+        return redirect(_lager_url(active_tab=parent_category_slug))
 
     new_slug = slugify(subcategory_name)
     counter = 1
@@ -356,4 +319,4 @@ def add_subcategory():
         flash(f'Došlo je do greške: {str(e)}', 'danger')
 
     # NOVO: Redirekcija na isti tab
-    return redirect(url_for('lager.view_lager', active_tab=parent_category_slug))
+    return redirect(_lager_url(active_tab=parent_category_slug))

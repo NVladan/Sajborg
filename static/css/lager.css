@@ -1,415 +1,334 @@
-/*
-    Stilovi za Interaktivni Lager - Modern Theme
-*/
+/* Lager — koristi tokene iz main.css i komponente iz admin_ui.css */
 
-.lager-container {
-    max-width: 1600px;
-    margin: 20px auto;
-    background-color: var(--surface);
-    color: var(--ink);
-    padding: 25px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
+/* Prodavnica postavlja overflow-x: hidden na html/body, što kvari sticky kolonu kategorija */
+html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
+
+.lg {
+    --lg-nav-h: 92px;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 1.5rem clamp(1rem, 3vw, 2.5rem) 4rem;
 }
+.lg-head { margin-bottom: 1rem; }
+.lg-head .adm-sub strong { color: var(--ink-strong); font-weight: 700; }
 
-.lager-container h1 {
-    color: var(--ink-strong);
-    font-weight: 700;
-    margin-bottom: 1.5rem;
-}
-
-.lager-container h3 {
-    color: var(--ink-strong);
-    font-weight: 600;
-}
-
-.controls {
-    background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(109, 213, 176, 0.1) 100%);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 25px;
-    border: 2px solid var(--border);
-    display: flex;
+.lg-markup {
+    display: inline-flex;
     align-items: center;
-    gap: 1rem;
-}
-
-.controls label {
-    color: var(--ink);
+    gap: 0.45rem;
+    margin: 0;
     font-weight: 600;
-    margin-bottom: 0;
-}
-
-.tab-container {
-    border: none;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    box-shadow: var(--shadow-sm);
-}
-
-.tab-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    background: var(--gradient-bg);
-    border-bottom: none;
-    padding: 0.5rem;
-    gap: 0.5rem;
-}
-
-.tab-button {
-    padding: 0.7rem 1.2rem;
-    cursor: pointer;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    white-space: nowrap;
-    font-size: 0.95em;
-    color: white;
-    border-radius: var(--border-radius-sm);
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.tab-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.tab-button.active {
-    background-color: var(--surface);
-    color: var(--accent);
-    font-weight: 700;
-    box-shadow: var(--shadow-sm);
-}
-
-.tab-content {
-    display: none;
-    padding: 20px 15px;
-    background-color: var(--surface);
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* Subcategory Cards */
-.subcategory-card {
-    background-color: var(--surface-2);
-    border: 2px solid var(--border);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.subcategory-card:last-child {
-    margin-bottom: 5px;
-}
-
-.subcategory-card h3 {
-    margin-top: 0;
-    border-bottom: 3px solid var(--accent-blue);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
-    color: var(--ink-strong);
-    font-weight: 700;
-}
-
-/* Value Summary */
-.value-summary {
-    background: var(--gradient-bg);
-    color: white;
-    padding: 30px;
-    border-radius: var(--border-radius);
-    text-align: center;
-    margin-bottom: 30px;
-    box-shadow: var(--shadow-lg);
-}
-
-.value-summary h2 {
-    font-size: 1.2em;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 1rem;
-}
-
-.value-summary .total-value {
-    font-size: 2.5em;
-    font-weight: bold;
-    color: white;
-}
-
-.category-values-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.category-card {
-    background-color: var(--surface);
-    border: 2px solid var(--border);
-    border-left: 5px solid var(--accent-blue);
-    padding: 15px;
-    border-radius: var(--border-radius-sm);
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
-}
-
-.category-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-    border-left-color: var(--accent-green);
-}
-
-.category-card .name {
-    font-weight: 700;
-    margin-bottom: 8px;
-    font-size: 1.1em;
-    color: var(--ink);
-}
-
-.category-card .value {
-    font-size: 1.6em;
-    color: var(--accent-blue);
-    text-align: right;
-    font-weight: 700;
-}
-
-/* Table Styles */
-.table {
-    color: var(--ink);
-    --bs-table-bg: transparent;
-    --bs-table-striped-bg: color-mix(in srgb, var(--accent) 5%, transparent);
-    --bs-table-hover-bg: color-mix(in srgb, var(--accent) 8%, transparent);
-    --bs-table-border-color: var(--border);
-}
-
-.table thead {
-    background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(109, 213, 176, 0.1) 100%);
-}
-
-.table thead th {
-    color: var(--ink);
-    font-weight: 700;
-    border-bottom: 2px solid var(--accent-blue);
-}
-
-/* Stil za nedavno ažurirane (PLAVA).
-  Ovo će se primijeniti samo ako artikal NIJE .quantity-zero,
-  jer .quantity-zero ima !important.
-*/
-tr.recently-updated {
-    background-color: var(--accent-soft); /* Bootstrap 'info-subtle' boja */
-}
-
-/* NOVI STIL (Prioritet 1):
-  Ako je artikal i nedavno ažuriran I ima stanje 0,
-  koristi MNOGO JAČU crvenu boju.
-  Ovo pravilo je specifičnije i ima !important, pa će pregaziti druga pravila.
-*/
-tr.recently-updated.quantity-zero {
-    background-color: var(--danger) !important; /* Jača 'danger' crvena */
-    color: white !important; /* Svijetli tekst za bolji kontrast */
-}
-
-/* Postojeći stil za 0 stanje (Prioritet 2):
-  Ovo će se sada primjenjivati samo na artikle koji imaju stanje 0,
-  ALI NISU nedavno ažurirani (jer će njih uhvatiti gornje pravilo).
-*/
-.quantity-zero {
-    background-color: color-mix(in srgb, var(--danger) 12%, transparent) !important;
-    color: var(--danger-color);
-}
-
-.quantity-btn {
-    border: 2px solid var(--border);
-    transition: all 0.2s;
-    border-radius: var(--border-radius-sm);
-}
-
-.quantity-btn:hover {
-    background-color: var(--accent-blue);
-    border-color: var(--accent-blue);
-    color: white;
-}
-
-.editable-note {
-    cursor: pointer;
-    font-style: italic;
+    font-size: 0.9rem;
     color: var(--ink-muted);
 }
+.lg-markup .form-control { width: 76px; height: 38px; text-align: center; font-weight: 700; }
 
-.editable-note:hover {
-    background-color: var(--accent-soft);
+/* ---------- Pretraga ---------- */
+.lg-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1.25rem;
+}
+.lg-search { flex: 1 1 360px; max-width: 640px; }
+.lg-search .form-control { height: 46px; font-size: 1rem; padding-right: 2.5rem; border-radius: var(--radius-sm); }
+.lg-kbd {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--ink-faint);
+    font-size: 0.78rem;
+    font-family: inherit;
+    box-shadow: none;
+}
+.lg-search .form-control:focus ~ .lg-kbd,
+.lg-search .form-control:not(:placeholder-shown) ~ .lg-kbd { display: none; }
+.lg-zero .form-check-input { margin-top: 0.15rem; }
+
+/* ---------- Raspored ---------- */
+.lg-layout {
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
 }
 
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-    .lager-container {
-        padding: 15px 10px;
-        margin: 10px 5px;
-    }
+.lg-cats {
+    position: sticky;
+    top: calc(var(--lg-nav-h) + 0.75rem);
+    max-height: calc(100vh - var(--lg-nav-h) - 1.5rem);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+.lg-cat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: left;
+}
+.lg-cat:hover { background: var(--surface-2); color: var(--ink); }
+.lg-cat.is-active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.lg-cat:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lg-cat.is-empty { color: var(--ink-faint); }
+.lg-cat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-cat-name i { width: 1.1rem; margin-right: 0.35rem; color: var(--ink-faint); }
+.lg-cat.is-active .lg-cat-name i { color: var(--accent); }
+.lg-cat-count { font-size: 0.78rem; font-weight: 700; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.lg-cat.is-active .lg-cat-count { color: var(--accent); }
+.lg-cats-sep { margin: 0.35rem 0.5rem; border-color: var(--border); opacity: 1; }
 
-    .lager-container h1 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-    }
+.lg-main { min-width: 0; }
+.lg-main > .adm-panel { margin-bottom: 1.25rem; }
+.lg.is-searching .lg-cats { opacity: .55; }
 
-    /* Make controls stack vertically on mobile */
-    .controls {
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 15px;
-    }
+.lg-pane-head { align-items: flex-start; }
+.lg-pane-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
-    .controls .form-group {
-        width: 100%;
-        margin: 0;
-    }
+/* ---------- Grupe (podkategorije) ---------- */
+.lg-group + .lg-group { border-top: 1px solid var(--border); }
+.lg-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.25rem 0.35rem;
+}
+.lg-group-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; margin: 0; color: var(--ink-strong); }
+.lg-group-count { color: var(--ink-faint); font-weight: 600; margin-left: 0.3rem; }
+.lg-group-add {
+    border: 0;
+    background: none;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    color: var(--ink-faint);
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity .12s ease;
+}
+.lg-group:hover .lg-group-add, .lg-group-add:focus-visible { opacity: 1; }
+.lg-group-add:hover { color: var(--accent); background: var(--accent-soft); }
+.lg-group-empty { padding: 0 1.25rem 0.9rem; margin: 0; color: var(--ink-faint); font-size: 0.88rem; }
 
-    .controls label {
-        display: block;
-        margin-bottom: 0.5rem;
-    }
+/* ---------- Redovi ---------- */
+.lg-table { width: 100%; border-collapse: collapse; margin-bottom: 0.4rem; }
+.lg-row { cursor: pointer; transition: background-color .1s ease; }
+.lg-row td { padding: 0.55rem 0.75rem; border-top: 1px solid var(--border); vertical-align: middle; }
+.lg-row:first-child td { border-top: 0; }
+.lg-row td:first-child { padding-left: 1.25rem; }
+.lg-row td:last-child { padding-right: 1rem; }
+.lg-row:hover { background: var(--surface-2); }
+.lg-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lg-row.is-zero .lg-name, .lg-row.is-zero .lg-c-num { color: var(--ink-faint); }
+.lg-row.is-zero .lg-qty { color: var(--adm-cancelled); }
+.lg-row.is-saving { opacity: .7; }
+.lg-row.is-saved { animation: lg-saved 1.1s ease; }
+@keyframes lg-saved { 0% { background: color-mix(in srgb, var(--adm-delivered) 16%, transparent); } 100% { background: transparent; } }
 
-    .controls input[type="number"],
-    .controls input[type="text"] {
-        width: 100% !important;
-    }
+.lg-c-name { width: 100%; min-width: 0; }
+.lg-name { display: block; color: var(--ink-strong); font-weight: 600; font-size: 0.93rem; line-height: 1.35; }
+.lg-where { display: block; color: var(--ink-faint); font-size: 0.8rem; }
+.lg-tags { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
+.lg-tags:empty { display: none; }
+.lg-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding: 0.05rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: var(--surface-3);
+    color: var(--ink-muted);
+}
+.lg-tag i { font-size: 0.68rem; }
+.lg-tag.is-firm { background: var(--accent-soft); color: var(--accent); }
+.lg-tag.is-res { background: color-mix(in srgb, var(--adm-pending) 14%, transparent); color: var(--adm-pending); }
 
-    .controls .btn {
-        width: 100%;
-        margin-top: 0.5rem;
-    }
+.lg-c-qty { white-space: nowrap; text-align: center; width: 8rem; }
+.lg-table thead th {
+    padding: 0 0.75rem 0.3rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+.lg-group ~ .lg-group thead { display: none; }
+.lg.is-searching .lg-table thead { display: none; }
+@media (max-width: 640px) { .lg-table thead { display: none; } }
+.lg-markup-label { color: var(--accent); }
+.lg-c-num { white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-size: 0.92rem; min-width: 7.5rem; }
+.lg-c-sale { color: var(--ink-strong); font-weight: 700; }
+.lg-c-act { width: 1%; }
 
-    /* Tab buttons scroll horizontally */
-    .tab-buttons {
+.lg-qty { display: inline-block; min-width: 2ch; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-strong); }
+.lg-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 2px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+}
+.lg-step .lg-qty { min-width: 2.2ch; text-align: center; }
+.lg-step-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 0;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 0.65rem;
+    display: inline-grid;
+    place-items: center;
+}
+.lg-step-btn:hover { background: var(--surface-3); color: var(--ink-strong); }
+.lg-step-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- Pregled vrijednosti ---------- */
+.lg-values { list-style: none; margin: 0; padding: 0.4rem; }
+.lg-value {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(8rem, 13rem) minmax(0, 1fr) 8.5rem 4.5rem;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0.85rem;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    text-align: left;
+    color: var(--ink);
+}
+.lg-value:hover { background: var(--surface-2); }
+.lg-value-name { font-weight: 600; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-value-bar { height: 10px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.lg-value-bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent); min-width: 3px; }
+.lg-value-km { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lg-value-pcs { text-align: right; color: var(--ink-faint); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+/* ---------- Bočni panel ---------- */
+.lg-drawer { width: min(440px, 100vw) !important; background: var(--surface); color: var(--ink); }
+.lg-drawer .offcanvas-header { border-bottom: 1px solid var(--border); align-items: flex-start; }
+.lg-drawer-foot { display: flex; justify-content: flex-end; gap: 0.5rem; padding: 1rem; border-top: 1px solid var(--border); }
+#lg-add .modal-content, #lg-sub .modal-content { background: var(--surface); color: var(--ink); }
+
+/* ---------- Telefon / tablet ---------- */
+@media (max-width: 991.98px) {
+    .lg-layout { grid-template-columns: minmax(0, 1fr); }
+    .lg-cats {
+        position: sticky;
+        top: calc(var(--lg-nav-h) - 20px);
+        z-index: 5;
+        flex-direction: row;
         overflow-x: auto;
-        overflow-y: hidden;
-        flex-wrap: nowrap;
-        -webkit-overflow-scrolling: touch;
-        padding: 0.5rem;
-        gap: 0.25rem;
+        max-height: none;
+        padding: 0.35rem;
+        scrollbar-width: none;
     }
-
-    .tab-button {
-        flex-shrink: 0;
-        padding: 0.6rem 1rem;
-        font-size: 0.85rem;
-    }
-
-    /* Make tables horizontally scrollable */
-    .table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        margin: 0 -10px;
-        padding: 0 10px;
-    }
-
-    .subcategory-card {
-        padding: 15px 10px;
-        margin-bottom: 20px;
-    }
-
-    .subcategory-card h3 {
-        font-size: 1.2rem;
-        margin-bottom: 15px;
-    }
-
-    /* Table adjustments for mobile */
-    .data-table {
-        min-width: 900px; /* Ensure table is wide enough to show all columns */
-        font-size: 0.85rem;
-    }
-
-    .data-table thead th {
-        padding: 10px 8px;
-        font-size: 0.8rem;
-        white-space: nowrap;
-    }
-
-    .data-table tbody td {
-        padding: 8px 6px;
-    }
-
-    .data-table input.form-control-sm,
-    .data-table textarea.form-control-sm {
-        font-size: 0.85rem;
-        padding: 0.25rem 0.4rem;
-    }
-
-    .data-table .btn-sm {
-        font-size: 0.8rem;
-        padding: 0.35rem 0.6rem;
-    }
-
-    /* Value summary for mobile */
-    .value-summary {
-        padding: 20px 15px;
-    }
-
-    .value-summary h2 {
-        font-size: 1rem;
-    }
-
-    .value-summary .total-value {
-        font-size: 2rem;
-    }
-
-    .category-values-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-    }
-
-    .category-card {
-        padding: 12px;
-    }
-
-    .category-card .name {
-        font-size: 0.95rem;
-    }
-
-    .category-card .value {
-        font-size: 1.3rem;
-    }
-
-    /* Add scroll indicator hint */
-    .table-wrapper::after {
-        content: '← Scroll →';
-        display: block;
-        text-align: center;
-        color: var(--ink-faint);
-        font-size: 0.75rem;
-        padding: 8px;
-        background: linear-gradient(90deg, transparent 0%, var(--accent-soft) 50%, transparent 100%);
-        margin-top: 10px;
-        border-radius: var(--border-radius-sm);
-    }
+    .lg-cats::-webkit-scrollbar { display: none; }
+    .lg-cat { width: auto; flex: none; }
+    .lg-cats-sep { display: none; }
+    .lg-value { grid-template-columns: minmax(0, 1fr) 7.5rem; }
+    .lg-value-bar { grid-column: 1 / -1; grid-row: 2; }
+    .lg-value-pcs { display: none; }
+}
+@media (max-width: 640px) {
+    .lg-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name act" "qty sale"; }
+    .lg-row td { border: 0; padding: 0.15rem 0; }
+    .lg-row { padding: 0.65rem 1rem; border-top: 1px solid var(--border); }
+    .lg-row:first-child { border-top: 0; }
+    .lg-row td:first-child, .lg-row td:last-child { padding-left: 0; padding-right: 0; }
+    .lg-c-name { grid-area: name; }
+    .lg-c-act { grid-area: act; }
+    .lg-c-qty { grid-area: qty; text-align: left; }
+    .lg-c-num:not(.lg-c-sale) { display: none; }
+    .lg-c-sale { grid-area: sale; }
+    .lg-group-add { opacity: 1; }
 }
 
-@media (max-width: 480px) {
-    .lager-container {
-        padding: 10px 5px;
-        margin: 5px 0;
-    }
+@media (prefers-reduced-motion: reduce) {
+    .lg-row.is-saved { animation: none; }
+}
+body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #chat-widget-container { display: none; }
 
-    .lager-container h1 {
-        font-size: 1.3rem;
-    }
+/* ---------- Nedavno izmijenjeno: vidljivo isticanje ---------- */
+.lg-row.is-recent { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.lg-row.is-recent td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+.lg-row.is-recent:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.lg-row.is-recent.is-zero { background: color-mix(in srgb, var(--adm-cancelled) 12%, transparent); }
+.lg-row.is-recent.is-zero td:first-child { box-shadow: inset 4px 0 0 var(--adm-cancelled); }
+.lg-row.is-recent.is-zero .lg-name { color: var(--ink-strong); }
+.lg-tag.is-recent { background: var(--accent); color: var(--on-accent); }
+.lg-row.is-zero .lg-tag.is-recent { background: var(--adm-cancelled); color: #fff; }
+.is-recent-copy .lg-tag.is-recent { display: none; }
 
-    .tab-button {
-        padding: 0.5rem 0.8rem;
-        font-size: 0.8rem;
-    }
+.lg-legend { display: inline-flex; gap: 1rem; color: var(--ink-faint); font-size: 0.83rem; }
+.lg-legend > span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.lg-swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.lg-swatch.is-recent { background: color-mix(in srgb, var(--accent) 18%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.lg-swatch.is-sold { background: color-mix(in srgb, var(--adm-cancelled) 18%, transparent); box-shadow: inset 3px 0 0 var(--adm-cancelled); }
+@media (max-width: 640px) {
+    .lg-row.is-recent { box-shadow: inset 4px 0 0 var(--accent); }
+    .lg-row.is-recent.is-zero { box-shadow: inset 4px 0 0 var(--adm-cancelled); }
+    .lg-row.is-recent td:first-child { box-shadow: none; }
+    .lg-legend { display: none; }
+}
+.lg-cat.has-recent .lg-cat-name::after {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 0.45rem;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: middle;
+}
 
-    .data-table {
-        font-size: 0.8rem;
-    }
-
-    .value-summary .total-value {
-        font-size: 1.75rem;
-    }
-
-    .category-values-grid {
-        grid-template-columns: 1fr;
-    }
+/* ---------- Telefon: dorade ---------- */
+.lg-cat-short { display: none; }
+@media (max-width: 991.98px) {
+    .lg-cat .lg-cat-long { display: none; }
+    .lg-cat .lg-cat-short { display: inline; }
+    .lg-kbd { display: none; }
+}
+@media (max-width: 640px) {
+    .lg { padding-top: 1rem; }
+    .lg-head .adm-head-actions { width: 100%; }
+    .lg-head .adm-head-actions .btn { margin-left: auto; }
+    .lg-c-act { width: auto; justify-self: end; align-self: start; }
+    .lg-pane-head { flex-wrap: wrap; gap: 0.6rem; }
+    .lg-pane-actions { width: 100%; }
+    .lg-pane-actions .btn { flex: 1; }
+    .lg-c-sale { align-self: center; text-align: right; }
+    /* chat dugme ne smije prekrivati cijene u zadnjem redu */
+    .lg-main { padding-bottom: 4.5rem; }
 }

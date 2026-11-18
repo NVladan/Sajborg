@@ -75,4 +75,8 @@
         </section>
     </aside>
 </div>
+<div class="adm-savebar">
+    <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">Odustani</a>
+    <button type="submit" form="category-form" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {{ 'Sačuvaj izmjene' if is_edit else 'Napravi kategoriju' }}</button>
+</div>
 {% endblock %}

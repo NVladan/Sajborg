@@ -80,7 +80,7 @@
                 <span class="adm-panel-meta">{{ order_items|sum(attribute='quantity') }} kom.</span>
             </div>
             <div class="adm-table-wrap">
-                <table class="adm-table">
+                <table class="adm-table is-stack">
                     <thead>
                         <tr>
                             <th>Proizvod</th>
@@ -102,10 +102,10 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="num">{{ ui.km(item.price) }}</td>
-                            <td class="num">{{ item.quantity }}</td>
-                            <td>{{ ui.pill('Produžena', 'accent') if item.extended_warranty else 'Standardna' }}</td>
-                            <td class="num">{{ ui.km(item.subtotal) }}</td>
+                            <td class="num" data-label="Cijena">{{ ui.km(item.price) }}</td>
+                            <td class="num" data-label="Kol.">{{ item.quantity }}</td>
+                            <td data-label="Garancija">{{ ui.pill('Produžena', 'accent') if item.extended_warranty else 'Standardna' }}</td>
+                            <td class="num" data-label="Ukupno"><strong>{{ ui.km(item.subtotal) }}</strong></td>
                         </tr>
                         {% endfor %}
                     </tbody>

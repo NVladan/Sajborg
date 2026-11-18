@@ -141,6 +141,10 @@
         </section>
     </aside>
 </div>
+<div class="adm-savebar">
+    <a href="{{ back_url }}" class="btn btn-outline-secondary">Odustani</a>
+    <button type="submit" form="product-form" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {{ 'Sačuvaj izmjene' if product else 'Objavi proizvod' }}</button>
+</div>
 {% endblock %}
 
 {% block admin_js %}

@@ -64,6 +64,10 @@
                     </tbody>
                 </table>
             </div>
+            {% elif archived_orders %}
+            {% call ui.empty('fa-box-archive', 'Sve porudžbine su arhivirane', 'Nove porudžbine će se pojaviti ovdje.') %}
+                <a href="{{ url_for('admin.orders', archived='1') }}" class="btn btn-sm btn-outline-secondary">Otvori arhivu ({{ archived_orders }})</a>
+            {% endcall %}
             {% else %}
             {{ ui.empty('fa-receipt', 'Još nema porudžbina', 'Kad kupac naruči, porudžbina će se pojaviti ovdje.') }}
             {% endif %}
