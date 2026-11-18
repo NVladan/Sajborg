@@ -37,6 +37,67 @@
         return res.json();
     }
 
+    /* ---------- Prijava / registracija ---------- */
+    $$('[data-toggle-password]').forEach((btn) => btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.togglePassword);
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+        btn.setAttribute('aria-label', show ? 'Sakrij lozinku' : 'Prikaži lozinku');
+        btn.innerHTML = `<i class="fas ${show ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>`;
+    }));
+
+    const rules = $('#sh-pass-rules');
+    if (rules) {
+        const pass = $('#password');
+        const tests = { len: (v) => v.length >= 8, upper: (v) => /[A-Z]/.test(v), lower: (v) => /[a-z]/.test(v), digit: (v) => /[0-9]/.test(v) };
+        const check = () => $$('li', rules).forEach((li) => li.classList.toggle('is-ok', tests[li.dataset.rule](pass.value)));
+        pass.addEventListener('input', check);
+        check();
+    }
+
+    /* ---------- Tabovi u profilu ---------- */
+    const tabs = $$('.sh-tabs [data-tab]');
+    if (tabs.length) {
+        const show = (id, push) => {
+            if (!document.getElementById('pane-' + id)) id = tabs[0].dataset.tab;
+            tabs.forEach((t) => {
+                const on = t.dataset.tab === id;
+                t.classList.toggle('is-active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            $$('.sh-tab-pane').forEach((p) => { p.hidden = p.id !== 'pane-' + id; });
+            if (push) history.replaceState(null, '', '#' + id);
+        };
+        tabs.forEach((t) => t.addEventListener('click', (e) => { e.preventDefault(); show(t.dataset.tab, true); }));
+        // Forma sa greškom ostaje otvorena na svom tabu
+        const withError = $('.sh-tab-pane .is-invalid');
+        // Sekcije imaju id "pane-…", pa hash (#dostava) ne skroluje stranicu ispod tabova
+        show(withError ? withError.closest('.sh-tab-pane').id.replace('pane-', '') : location.hash.slice(1), false);
+    }
+
+    /* ---------- Profil: etiketa adrese uživo ---------- */
+    const shipForm = $('#sh-ship-form');
+    if (shipForm) {
+        const val = (id) => ((document.getElementById(id) || {}).value || '').trim();
+        const required = ['first_name', 'last_name', 'address', 'city', 'phone_number'];
+        const status = $('#sh-ship-status');
+        const render = () => {
+            $$('[data-preview]').forEach((el) => {
+                const text = el.dataset.preview.split(' ').map(val).filter(Boolean).join(' ');
+                el.textContent = text || el.dataset.empty;
+                el.classList.toggle('is-empty', !text);
+            });
+            const missing = required.filter((id) => !val(id)).length;
+            status.className = 'sh-ship-status ' + (missing ? 'is-todo' : 'is-ok');
+            status.innerHTML = missing
+                ? `<i class="fas fa-circle-exclamation" aria-hidden="true"></i> Još ${missing} ${missing === 1 ? 'polje' : (missing < 5 ? 'polja' : 'polja')} do brze narudžbe`
+                : '<i class="fas fa-circle-check" aria-hidden="true"></i> Spremno za brzu narudžbu';
+        };
+        shipForm.addEventListener('input', render);
+        render();
+    }
+
     /* ---------- Traka kategorija: aktivna kategorija u vidnom polju ---------- */
     const activeCat = $('.sh-cats .is-active');
     if (activeCat && activeCat.parentElement.scrollWidth > activeCat.parentElement.clientWidth) {

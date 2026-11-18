@@ -1,0 +1,17 @@
+{# Desni panel na prijavi i registraciji: zašto nalog, uz slike kategorija iz prodavnice #}
+{% macro auth_aside(title) -%}
+<aside class="sh-auth-aside" aria-label="Prednosti naloga">
+    <div class="sh-auth-collage" aria-hidden="true">
+        {% for cat in footer_categories if cat.image_path %}{% if loop.index <= 4 %}
+        <span><img src="{{ url_for('static', filename=cat.image_path) }}" alt="" loading="lazy"></span>
+        {% endif %}{% endfor %}
+    </div>
+    <h2 class="sh-auth-aside-title">{{ title }}</h2>
+    <ul class="sh-auth-perks">
+        <li><i class="fas fa-box" aria-hidden="true"></i><div><strong>Pratite narudžbe</strong><span>Vidite kad je paket u pripremi, poslat i dostavljen.</span></div></li>
+        <li><i class="fas fa-microchip" aria-hidden="true"></i><div><strong>Čuvajte PC konfiguracije</strong><span>Sklopite računar sada, naručite kad budete spremni.</span></div></li>
+        <li><i class="fas fa-bolt" aria-hidden="true"></i><div><strong>Brže naručivanje</strong><span>Adresa i telefon se popune sami pri sljedećoj narudžbi.</span></div></li>
+        <li><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i><div><strong>Plaćanje pouzećem</strong><span>Bez kartice. Plaćate kuriru kad paket stigne.</span></div></li>
+    </ul>
+</aside>
+{%- endmacro %}

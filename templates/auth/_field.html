@@ -1,0 +1,22 @@
+{# Polje forme za prijavu/registraciju/profil. Uvoz: {% from 'auth/_field.html' import field with context %} #}
+{% macro field(f, autocomplete=None, help=None, wide=false, toggle=false, inputmode=None) -%}
+<div class="sh-field{% if wide %} is-wide{% endif %}">
+    {{ f.label() }}
+    {% set extra = {} %}
+    {% if autocomplete %}{% set _ = extra.update({'autocomplete': autocomplete}) %}{% endif %}
+    {% if inputmode %}{% set _ = extra.update({'inputmode': inputmode}) %}{% endif %}
+    {% if f.errors %}{% set _ = extra.update({'aria-invalid': 'true', 'aria-describedby': f.id ~ '-err'}) %}{% endif %}
+    {% if toggle %}
+    <div class="sh-pass">
+        {{ f(class="form-control" ~ (' is-invalid' if f.errors else ''), **extra) }}
+        <button type="button" class="sh-pass-toggle" data-toggle-password="{{ f.id }}" aria-label="Prikaži lozinku" aria-pressed="false">
+            <i class="fas fa-eye" aria-hidden="true"></i>
+        </button>
+    </div>
+    {% else %}
+    {{ f(class="form-control" ~ (' is-invalid' if f.errors else ''), **extra) }}
+    {% endif %}
+    {% for error in f.errors %}<p class="sh-field-error" id="{{ f.id }}-err">{{ error }}</p>{% endfor %}
+    {% if help %}<p class="sh-field-help">{{ help }}</p>{% endif %}
+</div>
+{%- endmacro %}

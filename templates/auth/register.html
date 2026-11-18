@@ -1,96 +1,48 @@
 {% extends 'layout.html' %}
+{% from 'auth/_field.html' import field with context %}
+{% from 'auth/_aside.html' import auth_aside with context %}
 
 {% block title %}Registracija - Sajborg Shop{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+{% endblock %}
+
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center mb-0">Kreirajte nalog</h2>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('auth.register') }}">
-                        {{ form.hidden_tag() }}
+{% set next_url = request.args.get('next') %}
+<div class="sh">
+    <div class="sh-auth-wrap">
+    <div class="sh-auth">
+        <h1 class="sh-title">Novi nalog</h1>
+        <p class="sh-sub">Sa nalogom naručujete, pratite narudžbe i čuvate PC konfiguracije.</p>
 
-                        <div class="mb-3">
-                            {{ form.username.label(class="form-label") }}
-                            {% if form.username.errors %}
-                                {# ISPRAVKA: autocomplete="new-password" da ga browser ne mesa sa login poljem #}
-                                {{ form.username(class="form-control is-invalid", autocomplete="new-password") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.username.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {# ISPRAVKA: autocomplete="new-password" da ga browser ne mesa sa login poljem #}
-                                {{ form.username(class="form-control", autocomplete="new-password") }}
-                            {% endif %}
-                            <div class="form-text">Izaberite korisničko ime između 3 i 64 karaktera.</div>
-                        </div>
+        <form method="POST" action="{{ url_for('auth.register', next=next_url) }}" class="sh-panel sh-form" novalidate>
+            {{ form.hidden_tag() }}
+            {{ field(form.email, 'email', inputmode='email') }}
+            {{ field(form.username, 'nickname', help='Slova, brojevi, _ i -, od 3 do 64 karaktera.') }}
+            {{ field(form.password, 'new-password', toggle=true) }}
+            <ul class="sh-rules" id="sh-pass-rules" aria-live="polite">
+                <li data-rule="len">Najmanje 8 karaktera</li>
+                <li data-rule="upper">Veliko slovo</li>
+                <li data-rule="lower">Malo slovo</li>
+                <li data-rule="digit">Broj</li>
+            </ul>
+            {{ field(form.confirm_password, 'new-password', toggle=true) }}
+            <label class="sh-check">
+                {{ form.subscribe(class="form-check-input") }}
+                <span>{{ form.subscribe.label.text }}</span>
+            </label>
+            <button type="submit" class="btn btn-primary sh-auth-submit">Napravi nalog</button>
+            <p class="sh-field-help text-center mt-3 mb-0">Registracijom prihvatate <a href="{{ url_for('main.terms_of_use') }}">uslove korišćenja</a> i <a href="{{ url_for('main.privacy_policy') }}">politiku privatnosti</a>.</p>
+        </form>
 
-                        <div class="mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {% if form.email.errors %}
-                                {# ISPRAVKA: autocomplete="username" da browser zapamti email kao username #}
-                                {{ form.email(class="form-control is-invalid", autocomplete="username") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.email.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {# ISPRAVKA: autocomplete="username" da browser zapamti email kao username #}
-                                {{ form.email(class="form-control", autocomplete="username") }}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.password.label(class="form-label") }}
-                            {% if form.password.errors %}
-                                {{ form.password(class="form-control is-invalid", autocomplete="new-password") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.password(class="form-control", autocomplete="new-password") }}
-                            {% endif %}
-                            <div class="form-text">Lozinka mora imati najmanje 8 karaktera.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            {{ form.confirm_password.label(class="form-label") }}
-                            {% if form.confirm_password.errors %}
-                                {{ form.confirm_password(class="form-control is-invalid", autocomplete="new-password") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.confirm_password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.confirm_password(class="form-control", autocomplete="new-password") }}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            {{ form.subscribe(class="form-check-input") }}
-                            {{ form.subscribe.label(class="form-check-label") }}
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center">
-                    <p class="mb-0">Već imate nalog? <a href="{{ url_for('auth.login') }}">Prijavite se</a></p>
-                </div>
-            </div>
-        </div>
+        <p class="sh-auth-alt">Već imate nalog? <a href="{{ url_for('auth.login', next=next_url) }}">Prijavite se</a></p>
+    </div>
+    {{ auth_aside("Šta dobijate sa nalogom") }}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/shop.js', v=cache_buster) }}"></script>
 {% endblock %}

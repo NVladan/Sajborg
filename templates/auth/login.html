@@ -1,64 +1,39 @@
 {% extends 'layout.html' %}
+{% from 'auth/_field.html' import field with context %}
+{% from 'auth/_aside.html' import auth_aside with context %}
 
 {% block title %}Prijava - Sajborg Shop{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+{% endblock %}
+
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center mb-0">Prijava</h2>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('auth.login') }}">
-                        {{ form.hidden_tag() }}
+{% set next_url = request.args.get('next') %}
+<div class="sh">
+    <div class="sh-auth-wrap">
+    <div class="sh-auth">
+        <h1 class="sh-title">Prijava</h1>
+        <p class="sh-sub">{{ 'Prijavite se da nastavite sa kupovinom.' if next_url else 'Dobro došli nazad.' }}</p>
 
-                        <div class="mb-3">
-                            {{ form.email.label(class="form-label") }}
-                            {% if form.email.errors %}
-                                {# ISPRAVKA: autocomplete="username" govori pregledniku da je ovo glavno polje za prijavu #}
-                                {{ form.email(class="form-control is-invalid", autocomplete="username") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.email.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {# ISPRAVKA: autocomplete="username" govori pregledniku da je ovo glavno polje za prijavu #}
-                                {{ form.email(class="form-control", autocomplete="username") }}
-                            {% endif %}
-                        </div>
+        <form method="POST" action="{{ url_for('auth.login', next=next_url) }}" class="sh-panel sh-form" novalidate>
+            {{ form.hidden_tag() }}
+            {{ field(form.email, 'username', inputmode='email') }}
+            {{ field(form.password, 'current-password', toggle=true) }}
+            <label class="sh-check">
+                {{ form.remember(class="form-check-input") }}
+                <span>{{ form.remember.label.text }}</span>
+            </label>
+            <button type="submit" class="btn btn-primary sh-auth-submit">Prijavi se</button>
+        </form>
 
-                        <div class="mb-3">
-                            {{ form.password.label(class="form-label") }}
-                            {% if form.password.errors %}
-                                {{ form.password(class="form-control is-invalid", autocomplete="current-password") }}
-                                <div class="invalid-feedback">
-                                    {% for error in form.password.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                {{ form.password(class="form-control", autocomplete="current-password") }}
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            {{ form.remember(class="form-check-input") }}
-                            {{ form.remember.label(class="form-check-label") }}
-                        </div>
-
-                        <div class="d-grid gap-2">
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-center">
-                    <p class="mb-0">Nemate nalog? <a href="{{ url_for('auth.register') }}">Registrujte se sada</a></p>
-                </div>
-            </div>
-        </div>
+        <p class="sh-auth-alt">Nemate nalog? <a href="{{ url_for('auth.register', next=next_url) }}">Napravite ga za minut</a></p>
+    </div>
+    {{ auth_aside("Sa nalogom kupujete brže") }}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/shop.js', v=cache_buster) }}"></script>
 {% endblock %}

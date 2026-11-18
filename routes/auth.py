@@ -5,13 +5,21 @@ from urllib.parse import urlparse
 from extensions import db, limiter
 from flask_wtf.csrf import generate_csrf
 from flask import session
-from models import User
+from models import User, Order, Product, order_items
 from forms.auth_forms import LoginForm, RegistrationForm, ProfileForm
 
 MAX_FAILED_LOGINS = 5
 LOCKOUT_DURATION = timedelta(minutes=15)
 
 auth_bp = Blueprint('auth', __name__)
+
+
+def safe_next(value):
+    """Povratak samo na lokalnu putanju ('/proizvodi/…'); sve ostalo vodi na početnu."""
+    if (value and value.startswith('/') and not value.startswith('//')
+            and '\\' not in value and urlparse(value).netloc == ''):
+        return value
+    return url_for('main.index')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -42,8 +50,8 @@ def login():
                         flash(f'Previše neuspješnih pokušaja. Nalog je zaključan na 15 minuta.', 'danger')
                         return redirect(url_for('auth.login'))
                     db.session.commit()
-                flash('Nevažeći email ili lozinka', 'danger')
-                return redirect(url_for('auth.login'))
+                flash('Email ili lozinka nisu tačni.', 'danger')
+                return redirect(url_for('auth.login', next=request.args.get('next')))
 
             # Provera da li je korisnik banovan
             if user.is_banned:
@@ -56,15 +64,9 @@ def login():
             db.session.commit()
 
             login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            if not next_page or urlparse(next_page).netloc != '':
-                next_page = url_for('main.index')
+            next_page = safe_next(request.args.get('next'))
 
             return redirect(next_page)
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f'{getattr(form, field).label.text}: {error}', 'danger')
 
     return render_template('auth/login.html', title='Prijava', form=form)
 
@@ -87,8 +89,9 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        flash('Vaš nalog je uspešno kreiran! Sada se možete prijaviti.', 'success')
-        return redirect(url_for('auth.login'))
+        login_user(user)
+        flash('Nalog je napravljen i prijavljeni ste.', 'success')
+        return redirect(safe_next(request.args.get('next')))
 
     return render_template('auth/register.html', title='Registracija', form=form)
 
@@ -96,7 +99,7 @@ def register():
 @auth_bp.route('/logout')
 def logout():
     logout_user()
-    flash('Uspešno ste se odjavili.', 'info')
+    flash('Odjavljeni ste.', 'info')
     return redirect(url_for('main.index'))
 
 
@@ -127,10 +130,22 @@ def profile():
         current_user.is_subscribed = form.is_subscribed.data
 
         db.session.commit()
-        flash('Vaš profil je uspešno ažuriran!', 'success')
+        flash('Podaci su sačuvani.', 'success')
         return redirect(url_for('auth.profile'))
 
-    # Get user orders
-    orders = current_user.orders
+    # Narudžbe sa stvarnim stavkama (cijena i količina iz trenutka narudžbe), najnovije prvo
+    orders = Order.query.filter_by(user_id=current_user.id).order_by(Order.created_at.desc()).all()
+    order_lines = {}
+    if orders:
+        rows = db.session.execute(
+            db.select(order_items.c.order_id, order_items.c.quantity, order_items.c.price,
+                      order_items.c.extended_warranty, Product)
+            .join(Product, Product.id == order_items.c.product_id)
+            .where(order_items.c.order_id.in_([o.id for o in orders]))
+        ).all()
+        for order_id, quantity, price, warranty, product in rows:
+            order_lines.setdefault(order_id, []).append(
+                {'product': product, 'quantity': quantity, 'price': price, 'warranty': warranty})
 
-    return render_template('auth/profile.html', title='Profil', form=form, orders=orders)
+    return render_template('auth/profile.html', title='Profil', form=form, orders=orders,
+                           order_lines=order_lines, builds=current_user.pc_builds)

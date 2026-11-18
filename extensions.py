@@ -42,5 +42,6 @@ def init_extensions(app):
     # Configure login manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message_category = 'info'
+    login_manager.login_message = 'Prijavite se da biste nastavili.'
     
 
