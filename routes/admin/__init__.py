@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, flash
+from flask import Blueprint, redirect, url_for, flash, request
 from flask_login import current_user
 from functools import wraps
 from extensions import limiter
@@ -13,8 +13,10 @@ limiter.limit("60 per minute", methods=["POST"])(admin_bp)
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # IZMENJENA LINIJA: Proveravamo da li je uloga 'admin' umesto starog is_admin polja
-        if not current_user.is_authenticated or current_user.role != 'admin':
+        # Neprijavljen korisnik ide na prijavu i poslije nje se vraća na traženu admin stranicu
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth.login', next=request.full_path.rstrip('?')))
+        if current_user.role != 'admin':
             flash('Nemate dozvolu za pristup ovoj stranici.', 'danger')
             return redirect(url_for('main.index'))
         return f(*args, **kwargs)

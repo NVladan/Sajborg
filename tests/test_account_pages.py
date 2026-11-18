@@ -75,3 +75,16 @@ def test_login_required_message_is_serbian(client):
     html = res.get_data(as_text=True)
     assert 'Please log in' not in html
     assert 'Prijavite se da biste nastavili.' in html
+
+
+def test_admin_redirects_guest_to_login_and_back(client, admin_user):
+    res = client.get('/admin/posts')
+    assert res.status_code == 302
+    assert '/login?next=/admin/posts' in res.headers['Location']
+    res = client.post('/login?next=/admin/posts', data={'email': 'admin@example.com', 'password': 'Admin123'})
+    assert res.headers['Location'].endswith('/admin/posts')
+
+
+def test_admin_still_forbidden_for_customer(auth_client):
+    res = auth_client.get('/admin/posts')
+    assert res.status_code == 302 and '/login' not in res.headers['Location']
