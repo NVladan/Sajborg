@@ -35,11 +35,6 @@ class CategoryForm(FlaskForm):
     submit = SubmitField('Create Category')
 
 
-class ImportForm(FlaskForm):
-    url = StringField('URL', validators=[DataRequired()])
-    category_id = SelectField('Category', coerce=int, validators=[DataRequired()])
-    submit = SubmitField('Import Products')
-
 class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = TextAreaField('Content', validators=[DataRequired(), Length(max=100000, message='Sadržaj članka je predugačak (max 100.000 karaktera).')])

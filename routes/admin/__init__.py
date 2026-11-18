@@ -40,4 +40,4 @@ def safe_products_next(value):
     return None
 
 # Import routes to register them with the blueprint
-from . import dashboard, product_routes, category_routes, order_routes, user_routes, product_image_routes, product_import_routes, blog_routes, lager_sync_routes
+from . import dashboard, product_routes, category_routes, order_routes, user_routes, product_image_routes, blog_routes, lager_sync_routes
