@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{# Osnova za stranice grešaka: kod, naslov, objašnjenje, šta dalje #}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/shop.css', v=cache_buster) }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/content.css', v=cache_buster) }}">
+{% endblock %}
+
+{% block content %}
+<div class="sh">
+    <section class="ct-error">
+        <span class="ct-error-code" aria-hidden="true">{% block code %}{% endblock %}</span>
+        <h1 class="ct-error-title">{% block heading %}{% endblock %}</h1>
+        <p class="ct-error-text">{% block text %}{% endblock %}</p>
+        <div class="ct-error-actions">{% block actions %}
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Početna</a>
+            <a href="{{ url_for('product.products') }}" class="btn btn-outline-secondary">Svi proizvodi</a>
+        {% endblock %}</div>
+        {% block extra %}{% endblock %}
+    </section>
+</div>
+{% endblock %}

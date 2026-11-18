@@ -1,172 +1,140 @@
 {% extends 'layout.html' %}
 
 {% block title %}{{ build.name }} - PC Konfigurator - Sajborg Shop{% endblock %}
+{% block meta_description %}PC konfiguracija „{{ build.name }}": {{ components|length }} komponenti, {{ '%.0f'|format(total_price) }} KM. Provjerena kompatibilnost i preporučeno napajanje.{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pc_builder.css', v=cache_buster) }}">
+{% endblock %}
+
+{% set ICON = {'ok': 'fa-circle-check', 'info': 'fa-circle-info', 'warn': 'fa-triangle-exclamation', 'error': 'fa-circle-xmark'} %}
 
 {% block content %}
-<div class="container py-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Početna</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('builder.builder') }}">PC Konfigurator</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ build.name }}</li>
-        </ol>
-    </nav>
-
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h1 class="mb-0">{{ build.name }}</h1>
-            {% if current_user.is_authenticated and build.user_id == current_user.id %}
-            <div>
-                <form method="POST" action="{{ url_for('builder.delete_build', build_id=build.id) }}" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovu konfiguraciju?')">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="fas fa-trash"></i> Obriši Konfiguraciju
-                    </button>
-                </form>
-            </div>
+{% set power = result.power %}
+<div class="pb pb-view">
+    <header class="pb-head">
+        <div>
+            <a href="{{ url_for('builder.builder') }}" class="pb-back"><i class="fas fa-chevron-left" aria-hidden="true"></i> PC konfigurator</a>
+            <h1 class="pb-title">{{ build.name }}</h1>
+            <p class="pb-lede">
+                {% if build.description %}{{ build.description }}<br>{% endif %}
+                <span class="pb-byline">{{ build.user.username }}, {{ build.created_at.strftime('%d.%m.%Y.') }}{{ ', vidljiva drugima' if build.is_public else ', privatna' }}</span>
+            </p>
+        </div>
+        <div class="pb-head-actions">
+            <a href="{{ url_for('builder.builder', build=build.id) }}" class="btn btn-outline-secondary"><i class="fas fa-pen" aria-hidden="true"></i> Otvori u konfiguratoru</a>
+            {% if is_owner %}
+            <form method="POST" action="{{ url_for('builder.delete_build', build_id=build.id) }}" class="m-0"
+                  onsubmit="return confirm('Obrisati konfiguraciju „{{ build.name|replace("'", "\\'") }}“?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash" aria-hidden="true"></i> Obriši</button>
+            </form>
             {% endif %}
         </div>
+    </header>
 
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    {% if build.description %}
-                    <p class="lead">{{ build.description }}</p>
-                    {% endif %}
-
-                    <div class="d-flex align-items-center mb-3">
-                        <span class="badge bg-secondary me-2">Kreirao: {{ build.user.username }}</span>
-                        <span class="badge bg-secondary me-2">{{ build.created_at.strftime('%d.%m.%Y.') }}</span>
-                        {% if build.is_public %}
-                        <span class="badge bg-success">Javna Konfiguracija</span>
-                        {% else %}
-                        <span class="badge bg-secondary">Privatna Konfiguracija</span>
-                        {% endif %}
+    <div class="pb-layout">
+        <section class="pb-slots" aria-label="Komponente">
+            {% for c in components %}
+            {% set img = (c.images|selectattr('is_primary')|first) or (c.images|first) %}
+            {% set available = c.stock > 0 and c.is_publicly_visible %}
+            <article class="pb-slot is-filled{% if not available %} is-unavailable{% endif %}">
+                <span class="pb-slot-icon has-image" aria-hidden="true">
+                    <img src="{{ url_for('static', filename=img.image_path) if img else url_for('static', filename='img/no-image.svg') }}" alt="" loading="lazy">
+                </span>
+                <div class="pb-slot-body">
+                    <h2 class="pb-slot-label">{{ labels.get(c.component_type, c.component_type or 'Ostalo') }}</h2>
+                    <div class="pb-slot-part">
+                        <div class="pb-part-text">
+                            {% if available %}
+                            <a href="{{ url_for('product.product_detail', slug=c.slug) }}" class="pb-part-name">{{ c.name }}</a>
+                            {% else %}
+                            <span class="pb-part-name">{{ c.name }}</span>
+                            <span class="pb-chips"><span>Trenutno nije na stanju</span></span>
+                            {% endif %}
+                        </div>
+                        <span class="pb-part-price">{{ c.price|km }}</span>
                     </div>
                 </div>
+            </article>
+            {% else %}
+            <p class="pb-lede">Ova konfiguracija nema komponenti.</p>
+            {% endfor %}
+        </section>
 
-                <div class="col-md-4 text-md-end">
-                    <h3 class="mb-2">Ukupna Cena: {{ total_price|round(2) }} KM</h3>
-
-                    <form method="POST" action="{{ url_for('builder.add_build_to_cart', build_id=build.id) }}">
-                        {{ add_to_cart_form.hidden_tag() }}
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-cart-plus"></i> Dodaj Sve u Korpu
-                        </button>
-                    </form>
+        <aside class="pb-summary" aria-label="Pregled konfiguracije">
+            <div class="pb-card">
+                <div class="pb-total">
+                    <span class="pb-total-label">Ukupno</span>
+                    <span class="pb-total-value">{{ total_price|km }}</span>
                 </div>
-            </div>
-
-            {% if components|length > 1 %}
-                {% if is_compatible %}
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> Sve komponente su kompatibilne!
-                </div>
+                {% if unavailable %}
+                <p class="pb-progress-text mb-3">{{ unavailable }} {{ 'komponenta nije' if unavailable == 1 else 'komponente nisu' }} na stanju. U korpu ide {{ in_stock_total|km }}.</p>
                 {% else %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> <strong>Problemi sa kompatibilnošću:</strong>
-                    <ul class="mb-0 mt-2">
-                        {% for message in compatibility_messages %}
-                        <li>{{ message }}</li>
-                        {% endfor %}
-                    </ul>
+                <div class="mb-3"></div>
+                {% endif %}
+
+                {% if power.cpu_w or power.gpu_w %}
+                {% set scale = ([power.psu or 0, power.recommended]|max) * 1.1 %}
+                {% set state = '' if not power.psu else ('is-error' if power.psu < power.load else ('is-warn' if power.psu < power.recommended else 'is-ok')) %}
+                <div class="pb-power {{ state }}"{% if power.psu %} style="--pb-psu: {{ (power.psu / scale * 100)|round(1) }}%"{% endif %}>
+                    <div class="pb-power-head">
+                        <span class="pb-power-title"><i class="fas fa-bolt" aria-hidden="true"></i> Potrošnja</span>
+                        <span class="pb-power-load">~{{ power.load }} W</span>
+                    </div>
+                    <div class="pb-meter" aria-hidden="true">
+                        <span class="pb-meter-load" style="width: {{ (power.load / scale * 100)|round(1) }}%"></span>
+                        <span class="pb-meter-rec" style="left: {{ (power.recommended / scale * 100)|round(1) }}%"></span>
+                    </div>
+                    <p class="pb-power-text">{% if power.psu %}Napajanje <strong>{{ power.psu }} W</strong>, preporuka <strong>{{ power.recommended }} W</strong>.{% else %}Preporučeno napajanje: <strong>{{ power.recommended }} W</strong> ili jače.{% endif %}</p>
                 </div>
                 {% endif %}
-            {% endif %}
-        </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h2 class="mb-0">Komponente</h2>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th style="width: 15%;">Tip Komponente</th>
-                            <th style="width: 40%;">Proizvod</th>
-                            <th style="width: 15%;">Cena</th>
-                            <th style="width: 15%;">Stanje</th>
-                            <th style="width: 15%;">Akcije</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for component in components %}
-                        <tr>
-                            <td>{{ component.component_type }}</td>
-                            <td>
-                                <a href="{{ url_for('product.product_detail', product_id=component.id) }}" class="text-decoration-none">
-                                    {{ component.name }}
-                                </a>
-                            </td>
-                            <td>{{ component.price|round(2) }} KM</td>
-                            <td>
-                                {% if component.stock > 10 %}
-                                <span class="badge bg-success">Na stanju</span>
-                                {% elif component.stock > 0 %}
-                                <span class="badge bg-warning">Na izmaku ({{ component.stock }})</span>
-                                {% else %}
-                                <span class="badge bg-danger">Nema na stanju</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if component.stock > 0 and current_user.is_authenticated %}
-                                <form action="{{ url_for('interaction.add_to_cart') }}" method="POST">
-                                    {{ add_to_cart_form.hidden_tag() }}
-                                    {{ add_to_cart_form.product_id(value=component.id) }}
-                                    {{ add_to_cart_form.quantity(value=1, type="hidden") }}
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-cart-plus"></i> Dodaj u korpu
-                                    </button>
-                                </form>
-                                {% elif component.stock <= 0 %}
-                                <button class="btn btn-sm btn-secondary" disabled>Nema na stanju</button>
-                                {% else %}
-                                <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline-primary">Prijavite se da kupite</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="2" class="text-end">Ukupno:</th>
-                            <th>{{ total_price|round(2) }} KM</th>
-                            <th colspan="2"></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
+                <ul class="pb-checks">
+                    {% for c in result.checks %}
+                    <li class="pb-check is-{{ c.status }}"><i class="fas {{ ICON[c.status] }}" aria-hidden="true"></i>
+                        <div><strong>{{ c.title }}</strong>{% if c.detail %}<span>{{ c.detail }}</span>{% endif %}</div></li>
+                    {% endfor %}
+                    {% if result.missing_labels %}
+                    <li class="pb-check is-todo"><i class="fas fa-list-check" aria-hidden="true"></i>
+                        <div><strong>Nedostaje</strong><span>{{ result.missing_labels|join(', ') }}</span></div></li>
+                    {% endif %}
+                </ul>
 
-    {% if related_builds %}
-    <h3 class="mt-5 mb-3">Slične Konfiguracije</h3>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for related in related_builds %}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="{{ url_for('builder.view_build', build_id=related.id) }}" class="text-decoration-none">
-                            {{ related.name }}
-                        </a>
-                    </h5>
-                    <p class="card-text">{{ related.description|truncate(100) }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">{{ related.components|length }} komponenti</small>
-                        <small class="text-muted">Autor: {{ related.user.username }}</small>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="{{ url_for('builder.view_build', build_id=related.id) }}" class="btn btn-sm btn-outline-primary">Pogledaj Konfiguraciju</a>
+                <div class="pb-actions">
+                    {% if current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('builder.add_build_to_cart', build_id=build.id) }}" class="m-0 d-grid">
+                        {{ add_to_cart_form.hidden_tag() }}
+                        <button type="submit" class="btn btn-primary btn-lg"{% if not in_stock_total %} disabled{% endif %}>
+                            <i class="fas fa-cart-plus" aria-hidden="true"></i> Dodaj sve u korpu
+                        </button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary btn-lg">Prijavite se da naručite</a>
+                    {% endif %}
+                    <button type="button" class="btn btn-outline-secondary" id="pb-share" data-url="{{ request.url }}"{% if not build.is_public %} hidden{% endif %}>
+                        <i class="fas fa-link" aria-hidden="true"></i> Kopiraj link
+                    </button>
                 </div>
             </div>
-        </div>
-        {% endfor %}
+        </aside>
     </div>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const btn = document.getElementById('pb-share');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(btn.dataset.url);
+            btn.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i> Link kopiran';
+        } catch (e) {
+            window.prompt('Kopirajte link:', btn.dataset.url);
+        }
+    });
+})();
+</script>
 {% endblock %}

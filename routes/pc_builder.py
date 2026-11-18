@@ -226,26 +226,24 @@ def view_build(build_id):
         flash('Nemate dozvolu da pregledate ovu konfiguraciju.', 'danger')
         return redirect(url_for('builder.builder'))
 
-    # Get components
-    components = build.components
-
-    # Check compatibility
-    is_compatible, compatibility_messages = check_pc_build_compatibility(components)
-
-    # Calculate total price
-    total_price = sum(component.price for component in components)
-
-    # Add to cart form
-    add_to_cart_form = AddToCartForm()
+    # Komponente redom kao u konfiguratoru, sa slikom kategorije za svaki slot
+    order = {key: i for i, (key, _, _, _) in enumerate(SLOTS)}
+    labels = {key: label for key, label, _, _ in SLOTS}
+    components = sorted(build.components, key=lambda c: order.get(c.component_type, len(order)))
+    result = analyze_build(components)
+    in_stock = [c for c in components if c.stock > 0 and c.is_publicly_visible]
 
     return render_template('pc_builder/view_build.html',
-                          title=f'PC Konfiguracija: {build.name}',
-                          build=build,
-                          components=components,
-                          is_compatible=is_compatible,
-                          compatibility_messages=compatibility_messages,
-                          total_price=total_price,
-                          add_to_cart_form=add_to_cart_form)
+                           title=f'PC Konfiguracija: {build.name}',
+                           build=build,
+                           components=components,
+                           labels=labels,
+                           result=result,
+                           total_price=sum(c.price for c in components),
+                           in_stock_total=sum(c.price for c in in_stock),
+                           unavailable=len(components) - len(in_stock),
+                           is_owner=current_user.is_authenticated and build.user_id == current_user.id,
+                           add_to_cart_form=AddToCartForm())
 
 
 @builder_bp.route('/build/<int:build_id>/delete', methods=['POST'])
@@ -270,33 +268,21 @@ def delete_build(build_id):
 @builder_bp.route('/build/<int:build_id>/add-to-cart', methods=['POST'])
 @login_required
 def add_build_to_cart(build_id):
-    """Add all components from a build to the cart"""
+    """Dodaje sve dostupne komponente konfiguracije u korpu (CSRF provjerava CSRFProtect)."""
     from models import CartItem
-    from flask import request
-    from flask_wtf.csrf import validate_csrf
-    import logging
-
-    # Get the CSRF token from the form
-    csrf_token = request.form.get('csrf_token')
-
-    # Log the CSRF token for debugging
-    logging.info(f"CSRF token: {csrf_token}")
-
-    # Skip CSRF validation for now to see if that's the issue
-    if not csrf_token:
-        logging.warning("No CSRF token found in form submission")
-        # Continue anyway for testing
 
     build = PCBuild.query.get_or_404(build_id)
+    if not build.is_public and build.user_id != current_user.id:
+        flash('Nemate dozvolu za ovu konfiguraciju.', 'danger')
+        return redirect(url_for('builder.builder'))
 
-    # Get components
     components = build.components
 
     # Add each component to cart
     added_count = 0
     for component in components:
-        # Check if in stock
-        if component.stock <= 0:
+        # Samo artikli koji su na stanju i vidljivi na sajtu
+        if component.stock <= 0 or not component.is_publicly_visible:
             flash(f'{component.name} nije na stanju i nije dodat u korpu.', 'warning')
             continue
 
@@ -307,7 +293,8 @@ def add_build_to_cart(build_id):
         ).first()
 
         if cart_item:
-            # Update quantity
+            if cart_item.quantity >= component.stock:
+                continue  # već je u korpi sve što ima na stanju
             cart_item.quantity += 1
         else:
             # Add new item

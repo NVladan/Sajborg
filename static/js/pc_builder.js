@@ -424,17 +424,26 @@
         }
     });
 
-    $$('[data-load-build]').forEach((btn) => btn.addEventListener('click', async () => {
-        const res = await fetch('/pc-builder/load/' + btn.dataset.loadBuild);
+    async function loadSaved(id) {
+        const res = await fetch('/pc-builder/load/' + encodeURIComponent(id));
         const data = await res.json();
         if (!data.success) { if (window.showModalAlert) window.showModalAlert(data.message, 'Greška', 'danger'); return; }
         build = {};
-        data.build.components.forEach((c) => { if (c.component_type) build[c.component_type] = c; });
+        // Samo komponente koje su i dalje na stanju
+        data.build.components.forEach((c) => { if (c.component_type && c.stock > 0) build[c.component_type] = c; });
         refresh();
-    }));
+    }
+    $$('[data-load-build]').forEach((btn) => btn.addEventListener('click', () => loadSaved(btn.dataset.loadBuild)));
+    // /pc-builder/?build=12 otvara sačuvanu konfiguraciju za izmjenu
+    const fromUrl = new URLSearchParams(location.search).get('build');
+    if (fromUrl) {
+        loadSaved(fromUrl);
+        history.replaceState(null, '', location.pathname);
+    }
 
     // Konfiguracija sačuvana prije izmjena na sajtu: izbaci dijelove kojih više nema u ponudi
     (async () => {
+        if (fromUrl) return; // učitava se sačuvana konfiguracija, stara iz pregledača se zamjenjuje
         const types = Object.keys(build);
         for (const type of types) {
             // eslint-disable-next-line no-await-in-loop

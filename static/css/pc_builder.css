@@ -277,3 +277,17 @@ body:has(.pb-picker.show) #chat-widget-container, body:has(.pb-picker.showing) #
 @media (prefers-reduced-motion: reduce) {
     .pb-progress-bar span, .pb-meter-load, .pb-meter-rec { transition: none; }
 }
+
+/* Sačuvana konfiguracija */
+.pb-back { display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--ink-muted); text-decoration: none; }
+.pb-back:hover { color: var(--accent); }
+.pb-back i { font-size: 0.7rem; }
+.pb-byline { color: var(--ink-faint); font-size: 0.9rem; }
+.pb-head-actions form { display: inline-flex; }
+@media (max-width: 640px) {
+    /* Pregled sačuvane konfiguracije: slika proizvoda ostaje, cijena desno od naziva */
+    .pb-view .pb-slot.is-filled { grid-template-columns: 40px minmax(0, 1fr); align-items: center; }
+    .pb-view .pb-slot.is-filled .pb-slot-icon { display: grid; }
+    .pb-view .pb-slot-part { flex-wrap: nowrap; align-items: flex-start; }
+    .pb-view .pb-part-price { width: auto; padding-left: 0; }
+}

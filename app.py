@@ -122,7 +122,12 @@ def create_app(config_name='default'):
     @app.context_processor
     def inject_global_vars():
         # IZMJENA OVDJE: Dodajemo filter_by(is_public=True)
-        all_categories = Category.query.filter_by(parent_id=None, is_public=True).order_by(Category.name).all()
+        try:
+            all_categories = Category.query.filter_by(parent_id=None, is_public=True).order_by(Category.name).all()
+        except Exception:
+            # Baza nedostupna: stranice (npr. 500) se i dalje prikazuju, samo bez kategorija u footeru
+            db.session.rollback()
+            all_categories = []
         # Footer: kategorije po važnosti komponente (procesori, ploče, grafičke…), ostale abecedno
         from pc_build_check import SLOTS
         rank = {key: i for i, (key, _, _, _) in enumerate(SLOTS)}
@@ -204,6 +209,12 @@ def create_app(config_name='default'):
         @app.errorhandler(500)
         def internal_server_error(e):
             from flask import render_template
+            from extensions import db
+            # Neuspjela transakcija bi oborila i prikaz stranice greške (header/footer čitaju bazu)
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
             return render_template('errors/500.html'), 500
 
     return app
