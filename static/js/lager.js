@@ -56,8 +56,8 @@
     function query() { return (search.value || '').trim().toLowerCase(); }
 
     function rowVisible(row, q) {
-        // Nedavno rasprodati artikli ostaju vidljivi (crveno), ostali bez stanja samo uz prekidač
-        if (!showZero() && row.dataset.stock === '0' && !row.classList.contains('is-recent')) return false;
+        // Artikli bez stanja samo uz prekidač (nedavno rasprodati su i dalje u "Nedavno izmijenjeno")
+        if (!showZero() && row.dataset.stock === '0') return false;
         if (!q) return true;
         return q.split(/\s+/).every((word) => row.dataset.q.includes(word));
     }
