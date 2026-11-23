@@ -281,7 +281,9 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
 @media (prefers-reduced-motion: reduce) {
     .lg-row.is-saved { animation: none; }
 }
-body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #chat-widget-container { display: none; }
+/* chat i obavještenje o kolačićima ne smiju prekriti "Odustani/Sačuvaj" u panelu (vraćaju se kad se zatvori) */
+body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #chat-widget-container,
+body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #cookie-consent-banner { display: none; }
 
 /* ---------- Nedavno izmijenjeno: vidljivo isticanje ---------- */
 .lg-row.is-recent { background: color-mix(in srgb, var(--accent) 9%, transparent); }

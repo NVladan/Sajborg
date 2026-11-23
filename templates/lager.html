@@ -3,6 +3,10 @@
 
 {% block title %}Lager{% endblock %}
 
+{# Tastatura na telefonu smanjuje stranicu umjesto da prekrije panel za izmjenu:
+   naslov i "Sačuvaj" ostaju vidljivi (Chrome/Firefox na Androidu; Safari ovo ignoriše) #}
+{% block viewport %}{{ super() }}, interactive-widget=resizes-content{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/admin_ui.css', v=cache_buster) }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/lager.css', v=cache_buster) }}">
