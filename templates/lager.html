@@ -22,7 +22,8 @@
         <span class="lg-tags">
             {% if p.id in recent_ids %}<span class="lg-tag is-recent" title="Jedan od {{ recent_ids|length }} zadnje izmijenjenih artikala"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Izmijenjeno <span data-utc="{{ p.updated_at.isoformat() ~ 'Z' if p.updated_at else '' }}"></span></span>{% endif %}
             {% if p.for_company %}<span class="lg-tag is-firm" title="Na firmu">Firma</span>{% endif %}
-            {% if p.reservation_note %}<span class="lg-tag is-res" title="Rezervacija: {{ p.reservation_note }}"><i class="fas fa-bookmark" aria-hidden="true"></i> {{ p.reservation_note|truncate(28, True, '…') }}</span>{% endif %}
+            {# Puni tekst: na telefonu nema tooltipa, pa rezervacija ide u zaseban red (lager.css) #}
+            {% if p.reservation_note %}<span class="lg-tag is-res" title="Rezervacija: {{ p.reservation_note }}"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="lg-res-text"><span class="lg-res-label">Rezervisano:</span> {{ p.reservation_note }}</span></span>{% endif %}
             {% if p.internal_note %}<span class="lg-tag is-note" title="{{ p.internal_note }}"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ p.internal_note|truncate(36, True, '…') }}</span>{% endif %}
         </span>
     </td>
@@ -88,6 +89,10 @@
 
     <div class="lg-layout">
         <nav class="lg-cats" aria-label="Kategorije lagera">
+            {# Samo na telefonu/tabletu: ostaje zalijepljeno lijevo u traci i otvara sve kategorije odjednom #}
+            <button type="button" class="lg-cats-all" data-bs-toggle="offcanvas" data-bs-target="#lg-catsheet" aria-controls="lg-catsheet">
+                <i class="fas fa-table-cells-large" aria-hidden="true"></i> Kategorije
+            </button>
             <button type="button" class="lg-cat" data-pane="pregled">
                 <span class="lg-cat-name"><i class="fas fa-chart-simple" aria-hidden="true"></i> <span class="lg-cat-long">Pregled vrijednosti</span><span class="lg-cat-short">Vrijednost</span></span>
             </button>
@@ -181,6 +186,30 @@
             <div class="lg-noresult adm-panel" id="lg-noresult" hidden>
                 {{ ui.empty('fa-magnifying-glass', 'Ništa ne odgovara pretrazi', 'Probajte kraći naziv ili model, npr. „5600" ili „B650".') }}
             </div>
+        </div>
+    </div>
+</div>
+
+{# ---------- Sve kategorije (telefon) ---------- #}
+<div class="offcanvas offcanvas-bottom lg-sheet" tabindex="-1" id="lg-catsheet" aria-labelledby="lg-catsheet-title">
+    <div class="offcanvas-header">
+        <h2 class="offcanvas-title adm-panel-title" id="lg-catsheet-title">Kategorije</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Zatvori"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="lg-sheet-grid">
+            <button type="button" class="lg-sheet-cat is-view" data-pane="pregled">
+                <span class="lg-sheet-name"><i class="fas fa-chart-simple" aria-hidden="true"></i> Pregled vrijednosti</span>
+            </button>
+            <button type="button" class="lg-sheet-cat is-view" data-pane="nedavno">
+                <span class="lg-sheet-name"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Nedavno izmijenjeno</span>
+            </button>
+            {% for cat in categories %}
+            <button type="button" class="lg-sheet-cat{% if not cat.in_stock %} is-empty{% endif %}" data-pane="{{ cat.slug }}">
+                <span class="lg-sheet-name">{{ catname(cat.name) }}</span>
+                <span class="lg-sheet-count" data-count-for="{{ cat.slug }}">{{ cat.in_stock }}</span>
+            </button>
+            {% endfor %}
         </div>
     </div>
 </div>

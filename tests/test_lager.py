@@ -40,6 +40,17 @@ def test_admin_sees_all_items_with_value(admin_client, lager_items):
     assert 'Marko' in html                     # rezervacija
 
 
+def test_reservation_shown_in_full_for_phones(admin_client, lager_items):
+    """Na telefonu nema tooltipa: rezervacija mora biti cijela u stranici, ne skraćena."""
+    note = 'Marko Marković, 2 kom, plaćen avans 100 KM, preuzima u petak'
+    db.session.get(LagerProduct, lager_items['in_stock']).reservation_note = note
+    db.session.commit()
+    html = admin_client.get('/lager/').get_data(as_text=True)
+    assert f'<span class="lg-res-label">Rezervisano:</span> {note}</span>' in html
+    assert 'id="lg-catsheet"' in html          # panel sa svim kategorijama (telefon)
+    assert html.count('data-pane="CPU"') == 2  # traka + panel
+
+
 def test_distributer_never_gets_sold_out_items_or_stock_buttons(client, lager_items):
     html = login_as(client, 'distributer').get('/lager/').get_data(as_text=True)
     assert 'AMD Ryzen 5 5600' in html

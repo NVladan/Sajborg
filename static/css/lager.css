@@ -171,6 +171,11 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
 .lg-tag i { font-size: 0.68rem; }
 .lg-tag.is-firm { background: var(--accent-soft); color: var(--accent); }
 .lg-tag.is-res { background: color-mix(in srgb, var(--adm-pending) 14%, transparent); color: var(--adm-pending); }
+.lg-res-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Na računaru je dovoljna ikona + tooltip; natpis ostaje za čitače ekrana */
+@media (min-width: 641px) {
+    .lg-res-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 
 .lg-c-qty { white-space: nowrap; text-align: center; width: 8rem; }
 .lg-table thead th {
@@ -262,7 +267,8 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
     .lg-value-pcs { display: none; }
 }
 @media (max-width: 640px) {
-    .lg-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name act" "qty sale"; }
+    /* 3 kolone: naziv/rezervacija idu do olovke, a ne samo do širine cijene ispod */
+    .lg-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "name name act" "qty sale sale"; }
     .lg-row td { border: 0; padding: 0.15rem 0; }
     .lg-row { padding: 0.65rem 1rem; border-top: 1px solid var(--border); }
     .lg-row:first-child { border-top: 0; }
@@ -329,6 +335,124 @@ body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #
     .lg-pane-actions { width: 100%; }
     .lg-pane-actions .btn { flex: 1; }
     .lg-c-sale { align-self: center; text-align: right; }
+    /* Rezervacija: zaseban, cijeli red ispod naziva, puni tekst bez skraćivanja (nema tooltipa na dodir) */
+    .lg-tags { margin-top: 0.3rem; }
+    .lg-tag.is-res {
+        order: -1;
+        flex: 1 1 100%;
+        align-items: baseline;
+        gap: 0.45rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        font-weight: 500;
+        line-height: 1.35;
+        white-space: normal;
+        background: color-mix(in srgb, var(--adm-pending) 15%, var(--surface));
+        box-shadow: inset 3px 0 0 var(--adm-pending);
+        color: var(--ink-strong);
+    }
+    .lg-tag.is-res i { font-size: 0.78rem; color: var(--adm-pending); }
+    .lg-res-text { overflow: visible; overflow-wrap: anywhere; }
+    .lg-res-label { font-weight: 700; } /* tamni tekst: narandžasta na svijetloj podlozi nema dovoljan kontrast */
     /* chat dugme ne smije prekrivati cijene u zadnjem redu */
     .lg-main { padding-bottom: 4.5rem; }
 }
+
+/* ---------- Kategorije na telefonu: jasnije kartice + dugme "Kategorije" sa svim kategorijama ---------- */
+.lg-cats-all { display: none; }
+@media (max-width: 991.98px) {
+    /* naslov kategorije ne smije završiti ispod menija + zalijepljene trake kategorija */
+    .lg-pane { scroll-margin-top: calc(var(--lg-nav-h) + 2.25rem); }
+    .lg-cats { gap: 0.4rem; padding: 0.45rem; box-shadow: var(--shadow-sm); }
+    .lg-cat {
+        padding: 0.45rem 0.8rem;
+        border: 1px solid var(--border-strong);
+        border-radius: 999px;
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+    }
+    .lg-cat.is-empty { border-style: dashed; }
+    .lg-cat.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .lg-cat.is-active .lg-cat-count,
+    .lg-cat.is-active .lg-cat-name i { color: var(--on-accent); }
+    .lg-cat.is-active.has-recent .lg-cat-name::after { background: var(--on-accent); }
+    /* Zalijepljeno lijevo dok se traka pomjera; kartice "nestaju" ispod njega */
+    .lg-cats-all {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        border: 1px solid var(--ink-strong);
+        border-radius: 999px;
+        background: var(--ink-strong);
+        color: var(--surface);
+        font-size: 0.9rem;
+        font-weight: 700;
+        box-shadow: -0.5rem 0 0 0.05rem var(--surface), 0.7rem 0 0.6rem -0.2rem var(--surface);
+    }
+    .lg-cats-all:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.lg-sheet.offcanvas-bottom {
+    --bs-offcanvas-height: auto;
+    max-height: 85vh;
+    border-radius: 18px 18px 0 0;
+    background: var(--surface);
+    color: var(--ink);
+}
+.lg-sheet .offcanvas-header { padding: 1rem 1.25rem 0.5rem; }
+.lg-sheet .offcanvas-body { padding: 0.5rem 1rem calc(1rem + env(safe-area-inset-bottom)); }
+.lg-sheet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.lg-sheet-cat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 52px;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface-2);
+    color: var(--ink-strong);
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: left;
+}
+.lg-sheet-cat.is-view { background: var(--surface); }
+.lg-sheet-name { min-width: 0; overflow-wrap: anywhere; }
+.lg-sheet-name i { margin-right: 0.3rem; color: var(--ink-faint); }
+.lg-sheet-count {
+    flex: none;
+    min-width: 1.75rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background: var(--surface-3);
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.lg-sheet-cat.is-empty { background: transparent; border-style: dashed; color: var(--ink-faint); }
+.lg-sheet-cat.is-active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.lg-sheet-cat.is-active i { color: inherit; }
+.lg-sheet-cat.is-active .lg-sheet-count { background: color-mix(in srgb, var(--on-accent) 22%, transparent); color: var(--on-accent); }
+.lg-sheet-cat.has-recent .lg-sheet-name::after {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-left: 0.4rem;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: middle;
+}
+.lg-sheet-cat.is-active.has-recent .lg-sheet-name::after { background: var(--on-accent); }
+body:has(.lg-sheet.show) #chat-widget-container, body:has(.lg-sheet.showing) #chat-widget-container { display: none; }

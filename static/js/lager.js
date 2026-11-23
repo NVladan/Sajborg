@@ -27,7 +27,7 @@
     const csrf = () => (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
 
     const panes = $$('.lg-pane');
-    const catButtons = $$('.lg-cat');
+    const catButtons = $$('.lg-cat, .lg-sheet-cat');
     const search = $('#lg-q');
     const zeroToggle = $('#lg-zero');
     const markupInput = $('#lg-markup');
@@ -117,12 +117,7 @@
             b.classList.toggle('is-active', active);
             if (active) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
         });
-        // Na telefonu je lista kategorija vodoravna: aktivnu dovedi u vidno polje
-        const activeBtn = $('.lg-cat.is-active');
-        const bar = activeBtn && activeBtn.parentElement;
-        if (bar && bar.scrollWidth > bar.clientWidth) {
-            bar.scrollTo({ left: activeBtn.offsetLeft - bar.clientWidth / 2 + activeBtn.offsetWidth / 2, behavior: remember === false ? 'auto' : 'smooth' });
-        }
+        centerActiveChip(remember !== false);
         noResult.hidden = true;
         if (remember !== false) {
             store.set('lg-tab', id);
@@ -133,11 +128,41 @@
         }
     }
 
+    // Na telefonu je lista kategorija vodoravna: aktivnu dovedi u vidno polje (desno od dugmeta "Kategorije")
+    function centerActiveChip(smooth) {
+        const activeBtn = $('.lg-cat.is-active');
+        const bar = activeBtn && activeBtn.parentElement;
+        if (!bar || bar.scrollWidth <= bar.clientWidth) return;
+        const allBtn = $('.lg-cats-all', bar);
+        const pinned = allBtn ? allBtn.offsetWidth : 0;
+        const visible = bar.clientWidth - pinned;
+        bar.scrollTo({ left: activeBtn.offsetLeft - pinned - visible / 2 + activeBtn.offsetWidth / 2, behavior: smooth ? 'smooth' : 'auto' });
+    }
+
+    function scrollToPane(id) {
+        if (!window.matchMedia('(max-width: 991.98px)').matches) return;
+        const pane = $(`.lg-pane[data-pane-id="${CSS.escape(id)}"]`);
+        if (pane) pane.scrollIntoView({ block: 'start' });
+    }
+
+    // Panel "Kategorije" (telefon): Bootstrap zaključava skrol dok je otvoren, pa skrolujemo tek kad se zatvori
+    const sheetEl = $('#lg-catsheet');
+    let sheetTarget = null;
+    if (sheetEl) sheetEl.addEventListener('hidden.bs.offcanvas', () => {
+        if (sheetTarget) {
+            scrollToPane(sheetTarget);
+            centerActiveChip(false); // glatko pomjeranje trake bi prekinuo skrol stranice
+        }
+        sheetTarget = null;
+    });
+
     catButtons.forEach((b) => b.addEventListener('click', () => {
         show(b.dataset.pane);
-        if (window.matchMedia('(max-width: 991.98px)').matches) {
-            const pane = $(`.lg-pane[data-pane-id="${CSS.escape(b.dataset.pane)}"]`);
-            if (pane) pane.scrollIntoView({ block: 'start' });
+        if (sheetEl && b.closest('#lg-catsheet')) {
+            sheetTarget = b.dataset.pane;
+            bootstrap.Offcanvas.getOrCreateInstance(sheetEl).hide();
+        } else {
+            scrollToPane(b.dataset.pane);
         }
     }));
     $$('[data-goto]').forEach((b) => b.addEventListener('click', () => show(b.dataset.goto)));
@@ -326,8 +351,8 @@
     $$('[data-utc]').forEach((el) => { el.textContent = localTime(el.dataset.utc); });
     // Tačka u bočnoj koloni kod kategorija sa nedavnim izmjenama
     $$('.lg-main .lg-row.is-recent').forEach((r) => {
-        const b = $(`.lg-cat[data-pane="${CSS.escape(r.dataset.slug)}"]`);
-        if (b) b.classList.add('has-recent');
+        const slug = CSS.escape(r.dataset.slug);
+        $$(`.lg-cat[data-pane="${slug}"], .lg-sheet-cat[data-pane="${slug}"]`).forEach((b) => b.classList.add('has-recent'));
     });
     buildRecent();
     updateAllSales();
