@@ -303,7 +303,11 @@
     if (drawerEl) drawerEl.addEventListener('shown.bs.offcanvas', () => {
         if (!window.matchMedia('(pointer: fine)').matches) return; // na telefonu ne otvaraj tastaturu sama
         const first = $('#lg-f-name') || $('#lg-f-res');
-        if (first) first.focus();
+        if (!first) return;
+        first.focus();
+        // focus() stavlja kursor na kraj i odsiječe početak naziva (proizvođač, model) koji je bitniji
+        first.setSelectionRange(0, 0);
+        first.scrollLeft = 0;
     });
 
     root.addEventListener('click', (e) => {
