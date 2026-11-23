@@ -51,6 +51,31 @@ def test_reservation_shown_in_full_for_phones(admin_client, lager_items):
     assert html.count('data-pane="CPU"') == 2  # traka + panel
 
 
+def test_lager_has_no_chat_but_other_pages_do(admin_client, lager_items):
+    lager = admin_client.get('/lager/').get_data(as_text=True)
+    assert 'chat-widget-container' not in lager
+    assert 'js/chat.js' not in lager
+    home = admin_client.get('/').get_data(as_text=True)
+    assert 'chat-widget-container' in home and 'js/chat.js' in home
+
+
+def test_reservation_has_clear_button(admin_client, lager_items):
+    html = admin_client.get('/lager/').get_data(as_text=True)
+    assert 'class="lg-res-clear"' in html
+    assert 'aria-label="Obriši rezervaciju za AMD Ryzen 5 5600"' in html
+
+
+@pytest.mark.parametrize('role', ['admin', 'distributer'])
+def test_clear_reservation_without_opening_editor(client, lager_items, role):
+    login_as(client, role)
+    resp = client.post('/lager/update_note', json={
+        'product_id': lager_items['in_stock'], 'note_type': 'reservation_note', 'note_value': ''})
+    assert resp.status_code == 200 and resp.get_json()['success']
+    assert db.session.get(LagerProduct, lager_items['in_stock']).reservation_note == ''
+    html = client.get('/lager/').get_data(as_text=True)
+    assert 'lg-res-clear' not in html
+
+
 def test_distributer_never_gets_sold_out_items_or_stock_buttons(client, lager_items):
     html = login_as(client, 'distributer').get('/lager/').get_data(as_text=True)
     assert 'AMD Ryzen 5 5600' in html

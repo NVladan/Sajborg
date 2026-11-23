@@ -208,7 +208,8 @@
     </main>
     {% endblock %}
 
-    {% if current_user.is_authenticated %}
+    {# Stranica može isključiti chat sa {% set hide_chat = true %} (npr. lager) #}
+    {% if current_user.is_authenticated and not hide_chat %}
     <div id="chat-widget-container">
         <audio id="chat-notification-sound" src="{{ url_for('static', filename='sounds/notification.mp3') }}" preload="auto"></audio>
 
@@ -282,7 +283,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='js/modal_utils.js', v=cache_buster) }}"></script>
     <script src="{{ url_for('static', filename='js/main.js', v=cache_buster) }}"></script>
-    {% if current_user.is_authenticated %}
+    {% if current_user.is_authenticated and not hide_chat %}
     <script src="{{ url_for('static', filename='js/chat.js', v=cache_buster) }}"></script>
     {% endif %}
 

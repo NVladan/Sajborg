@@ -265,6 +265,45 @@
         row.classList.add('is-saved');
     }
 
+    /* ---------- Brisanje rezervacije (× na oznaci, uz potvrdu) ---------- */
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    async function clearReservation(id) {
+        try {
+            const res = await fetch(cfg.updateNoteUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+                body: JSON.stringify({ product_id: parseInt(id, 10), note_type: 'reservation_note', note_value: '' }),
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || 'Greška');
+            // i kopija u "Nedavno izmijenjeno"
+            $$(`.lg-row[data-id="${id}"]`).forEach((r) => {
+                r.dataset.res = '';
+                const tag = $('.lg-tag.is-res', r);
+                if (tag) tag.remove();
+                flashRow(r);
+            });
+        } catch (err) {
+            if (window.showModalAlert) window.showModalAlert('Rezervacija nije obrisana: ' + err.message, 'Greška', 'danger');
+        }
+    }
+
+    root.addEventListener('click', (e) => {
+        const btn = e.target.closest('.lg-res-clear');
+        if (!btn) return;
+        const row = btn.closest('.lg-row');
+        const id = row.dataset.id;
+        if (typeof window.showModalConfirm === 'function') {
+            // poruka ide u modal kao HTML, pa tekst iz baze mora biti escapovan
+            window.showModalConfirm(
+                `Obrisati rezervaciju <strong>${esc(row.dataset.res)}</strong> za artikal ${esc(row.dataset.name)}?`,
+                () => clearReservation(id), null, 'Brisanje rezervacije', 'Obriši', 'Odustani');
+        } else if (window.confirm(`Obrisati rezervaciju "${row.dataset.res}"?`)) {
+            clearReservation(id);
+        }
+    });
+
     /* ---------- Izmjena artikla (bočni panel) ---------- */
     const drawerEl = $('#lg-edit');
     const drawer = drawerEl && window.bootstrap ? bootstrap.Offcanvas.getOrCreateInstance(drawerEl) : null;
@@ -311,7 +350,7 @@
     });
 
     root.addEventListener('click', (e) => {
-        if (e.target.closest('.lg-step-btn, a, input, select, textarea, label')) return;
+        if (e.target.closest('.lg-step-btn, .lg-res-clear, a, input, select, textarea, label')) return;
         const row = e.target.closest('.lg-row');
         if (row) openEditor(row);
     });

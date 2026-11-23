@@ -173,6 +173,27 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
 .lg-tag.is-res { background: color-mix(in srgb, var(--adm-pending) 14%, transparent); color: var(--adm-pending); }
 .lg-res-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lg-res-label { font-weight: 700; }
+.lg-res-clear {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    margin: 0 -0.25rem 0 0.05rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+}
+.lg-res-clear:hover { opacity: 1; background: color-mix(in srgb, var(--adm-pending) 25%, transparent); }
+.lg-res-clear:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (max-width: 640px) {
+    /* veća površina za prst, desno u bloku rezervacije */
+    .lg-res-clear { align-self: center; width: 34px; height: 34px; margin: -0.35rem -0.45rem -0.35rem auto; opacity: 1; }
+    .lg-res-clear:hover { background: color-mix(in srgb, var(--adm-pending) 20%, transparent); }
+}
 
 .lg-c-qty { white-space: nowrap; text-align: center; width: 8rem; }
 .lg-table thead th {
@@ -281,8 +302,7 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
 @media (prefers-reduced-motion: reduce) {
     .lg-row.is-saved { animation: none; }
 }
-/* chat i obavještenje o kolačićima ne smiju prekriti "Odustani/Sačuvaj" u panelu (vraćaju se kad se zatvori) */
-body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #chat-widget-container,
+/* obavještenje o kolačićima ne smije prekriti "Odustani/Sačuvaj" u panelu (vraća se kad se zatvori); chat se na lageru ne prikazuje */
 body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #cookie-consent-banner { display: none; }
 
 /* ---------- Nedavno izmijenjeno: vidljivo isticanje ---------- */
@@ -353,8 +373,6 @@ body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #
     }
     .lg-tag.is-res i { font-size: 0.78rem; color: var(--adm-pending); }
     .lg-res-text { overflow: visible; overflow-wrap: anywhere; }
-    /* chat dugme ne smije prekrivati cijene u zadnjem redu */
-    .lg-main { padding-bottom: 4.5rem; }
 }
 
 /* ---------- Kategorije na telefonu: jasnije kartice + dugme "Kategorije" sa svim kategorijama ---------- */
@@ -453,4 +471,3 @@ body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #
     vertical-align: middle;
 }
 .lg-sheet-cat.is-active.has-recent .lg-sheet-name::after { background: var(--on-accent); }
-body:has(.lg-sheet.show) #chat-widget-container, body:has(.lg-sheet.showing) #chat-widget-container { display: none; }

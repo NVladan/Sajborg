@@ -1,5 +1,7 @@
 {% extends 'layout.html' %}
 {% import 'admin/_ui.html' as ui %}
+{# Lager je radni alat: bez chat dugmeta (prekrivalo je cijene, panel i potvrde) #}
+{% set hide_chat = true %}
 
 {% block title %}Lager{% endblock %}
 
@@ -27,7 +29,8 @@
             {% if p.id in recent_ids %}<span class="lg-tag is-recent" title="Jedan od {{ recent_ids|length }} zadnje izmijenjenih artikala"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Izmijenjeno <span data-utc="{{ p.updated_at.isoformat() ~ 'Z' if p.updated_at else '' }}"></span></span>{% endif %}
             {% if p.for_company %}<span class="lg-tag is-firm" title="Na firmu">Firma</span>{% endif %}
             {# Puni tekst: na telefonu nema tooltipa, pa rezervacija ide u zaseban red (lager.css) #}
-            {% if p.reservation_note %}<span class="lg-tag is-res" title="Rezervacija: {{ p.reservation_note }}"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="lg-res-text"><span class="lg-res-label">Rezervisano:</span> {{ p.reservation_note }}</span></span>{% endif %}
+            {# × briše rezervaciju uz potvrdu, bez otvaranja izmjene (lager.js) #}
+            {% if p.reservation_note %}<span class="lg-tag is-res" title="Rezervacija: {{ p.reservation_note }}"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="lg-res-text"><span class="lg-res-label">Rezervisano:</span> {{ p.reservation_note }}</span><button type="button" class="lg-res-clear" title="Obriši rezervaciju" aria-label="Obriši rezervaciju za {{ p.name }}"><i class="fas fa-xmark" aria-hidden="true"></i></button></span>{% endif %}
             {% if p.internal_note %}<span class="lg-tag is-note" title="{{ p.internal_note }}"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ p.internal_note|truncate(36, True, '…') }}</span>{% endif %}
         </span>
     </td>
@@ -366,6 +369,7 @@ window.LAGER = {
     recentIds: {{ recent_ids|tojson }},
     updateStockUrl: {{ url_for('lager.update_stock')|tojson }},
     updateDetailsUrl: {{ url_for('lager.update_details', product_id=0)|tojson }},
+    updateNoteUrl: {{ url_for('lager.update_note')|tojson }},
 };
 window.LAGER.subcategories = {
     {% for cat in categories %}{{ cat.name|tojson }}: {{ cat.subcategories|tojson }}{{ ',' if not loop.last }}
