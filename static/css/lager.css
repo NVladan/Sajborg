@@ -172,10 +172,7 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
 .lg-tag.is-firm { background: var(--accent-soft); color: var(--accent); }
 .lg-tag.is-res { background: color-mix(in srgb, var(--adm-pending) 14%, transparent); color: var(--adm-pending); }
 .lg-res-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Na računaru je dovoljna ikona + tooltip; natpis ostaje za čitače ekrana */
-@media (min-width: 641px) {
-    .lg-res-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-}
+.lg-res-label { font-weight: 700; }
 
 .lg-c-qty { white-space: nowrap; text-align: center; width: 8rem; }
 .lg-table thead th {
@@ -354,7 +351,6 @@ body:has(.lg-drawer.show) #chat-widget-container, body:has(.lg-drawer.showing) #
     }
     .lg-tag.is-res i { font-size: 0.78rem; color: var(--adm-pending); }
     .lg-res-text { overflow: visible; overflow-wrap: anywhere; }
-    .lg-res-label { font-weight: 700; } /* tamni tekst: narandžasta na svijetloj podlozi nema dovoljan kontrast */
     /* chat dugme ne smije prekrivati cijene u zadnjem redu */
     .lg-main { padding-bottom: 4.5rem; }
 }
