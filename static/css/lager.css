@@ -285,17 +285,49 @@ html:has(.lg), body:has(.lg) { overflow-x: clip !important; }
     .lg-value-pcs { display: none; }
 }
 @media (max-width: 640px) {
-    /* 3 kolone: naziv/rezervacija idu do olovke, a ne samo do širine cijene ispod */
-    .lg-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "name name act" "qty sale sale"; }
-    .lg-row td { border: 0; padding: 0.15rem 0; }
-    .lg-row { padding: 0.65rem 1rem; border-top: 1px solid var(--border); }
+    /* Red: gore naziv/rezervacija/oznake (do olovke), dolje zasjenjena traka s brojevima:
+       količina lijevo, nabavna i prodajna desno jedna ispod druge (staje i na 360px) */
+    .lg-row {
+        --lg-strip: color-mix(in srgb, var(--ink) 5%, transparent);
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "name name name" "qty buy buy" "qty sale sale";
+        position: relative;
+        padding: 0.85rem 1rem 0.95rem;
+        border-top: 1px solid var(--border);
+    }
+    .lg-row td, .lg-row td:first-child, .lg-row td:last-child { border: 0; padding: 0; }
     .lg-row:first-child { border-top: 0; }
-    .lg-row td:first-child, .lg-row td:last-child { padding-left: 0; padding-right: 0; }
     .lg-c-name { grid-area: name; }
-    .lg-c-act { grid-area: act; }
-    .lg-c-qty { grid-area: qty; text-align: left; }
-    .lg-c-num:not(.lg-c-sale) { display: none; }
-    .lg-c-sale { grid-area: sale; }
+    /* olovka u uglu: rezervacija, oznake i traka s brojevima idu istom širinom */
+    .lg-name { padding-right: 2.25rem; font-size: 0.97rem; }
+    .lg-row td.lg-c-act { position: absolute; top: 0.6rem; right: 0.6rem; }
+    .lg-row td.lg-c-qty, .lg-row td.lg-c-buy, .lg-row td.lg-c-sale { background: var(--lg-strip); }
+    .lg-row td.lg-c-qty {
+        grid-area: qty;
+        display: flex;
+        align-items: center;
+        margin-top: 0.7rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 10px 0 0 10px;
+    }
+    .lg-row td.lg-c-buy, .lg-row td.lg-c-sale { min-width: 0; padding-right: 0.8rem; text-align: right; }
+    .lg-row td.lg-c-buy { grid-area: buy; margin-top: 0.7rem; padding-top: 0.5rem; border-radius: 0 10px 0 0; font-size: 0.9rem; }
+    .lg-row td.lg-c-sale { grid-area: sale; padding-bottom: 0.5rem; border-radius: 0 0 10px 0; font-size: 0.97rem; }
+    .lg-c-buy::before, .lg-c-sale::before {
+        content: attr(data-label);
+        margin-right: 0.55rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--ink-faint);
+    }
+    /* distributer nema −/+, samo broj */
+    .lg-c-qty > .lg-qty { padding-left: 0.2rem; font-size: 1rem; }
+    .lg-c-qty > .lg-qty::after { content: ' kom.'; font-weight: 500; color: var(--ink-muted); }
+    .lg-step-btn { width: 32px; height: 32px; font-size: 0.72rem; }
+    .lg-step .lg-qty { min-width: 2.4ch; font-size: 1rem; }
+    /* podkategorija kao traka, da se grupe jasno odvoje */
+    .lg-group-head { padding: 0.6rem 1rem; background: var(--surface-2); border-bottom: 1px solid var(--border); }
     .lg-group-add { opacity: 1; }
 }
 
@@ -353,7 +385,6 @@ body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #
     .lg-pane-head { flex-wrap: wrap; gap: 0.6rem; }
     .lg-pane-actions { width: 100%; }
     .lg-pane-actions .btn { flex: 1; }
-    .lg-c-sale { align-self: center; text-align: right; }
     /* Rezervacija: zaseban, cijeli red ispod naziva, puni tekst bez skraćivanja (nema tooltipa na dodir) */
     .lg-tags { margin-top: 0.3rem; }
     .lg-tag.is-res {
@@ -471,3 +502,10 @@ body:has(.lg-drawer.show) #cookie-consent-banner, body:has(.lg-drawer.showing) #
     vertical-align: middle;
 }
 .lg-sheet-cat.is-active.has-recent .lg-sheet-name::after { background: var(--on-accent); }
+
+/* Telefon: red već ima plavu traku i podlogu, pa je "Izmijenjeno" samo plavi tekst, ne puna pilula */
+@media (max-width: 640px) {
+    .lg-tags { margin-top: 0.4rem; row-gap: 0.4rem; }
+    .lg-tag.is-recent, .lg-row.is-zero .lg-tag.is-recent { padding-left: 0; background: transparent; color: var(--accent); }
+    .lg-row.is-zero .lg-tag.is-recent { color: var(--adm-cancelled); }
+}

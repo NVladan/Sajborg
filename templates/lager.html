@@ -45,7 +45,7 @@
         <span class="lg-qty">{{ p.stock or 0 }}</span>
         {% endif %}
     </td>
-    <td class="lg-c-num" data-label="Nabavna">{{ ui.km(p.purchase_price or 0) }}</td>
+    <td class="lg-c-num lg-c-buy" data-label="Nabavna">{{ ui.km(p.purchase_price or 0) }}</td>
     <td class="lg-c-num lg-c-sale" data-label="Prodajna"><span class="lg-sale"></span></td>
     <td class="lg-c-act">
         <button type="button" class="adm-act lg-edit" title="{{ 'Izmijeni' if can_edit else 'Napomene' }}" aria-label="{{ 'Izmijeni' if can_edit else 'Napomene za' }} {{ p.name }}">
